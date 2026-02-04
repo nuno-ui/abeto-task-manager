@@ -1,13 +1,39 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { X, Sparkles, Send, Loader2, Check, ChevronRight } from 'lucide-react';
-import { ProjectData, AIQuestion } from '@/lib/ai';
+import { useState } from 'react';
+import { X, Sparkles, Loader2, Check, ChevronDown, ChevronRight, Clock, Zap } from 'lucide-react';
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  questions?: AIQuestion[];
+interface GeneratedTask {
+  title: string;
+  description: string;
+  phase: string;
+  status: string;
+  difficulty: string;
+  ai_potential: string;
+  ai_assist_description?: string;
+  estimated_hours: string;
+  is_foundational: boolean;
+  is_critical_path: boolean;
+  acceptance_criteria?: string[];
+  tools_needed?: string[];
+  knowledge_areas?: string[];
+  order_index: number;
+}
+
+interface GeneratedProject {
+  title: string;
+  slug: string;
+  description: string;
+  why_it_matters?: string;
+  status: string;
+  priority: string;
+  difficulty?: string;
+  category?: string;
+  start_date?: string;
+  target_date?: string;
+  estimated_hours_min?: number;
+  estimated_hours_max?: number;
+  owner_team_id?: string;
 }
 
 interface AIProjectCreatorProps {
@@ -17,162 +43,156 @@ interface AIProjectCreatorProps {
 }
 
 export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjectCreatorProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [project, setProject] = useState<ProjectData>({});
-  const [currentQuestions, setCurrentQuestions] = useState<AIQuestion[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [isComplete, setIsComplete] = useState(false);
   const [creating, setCreating] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [project, setProject] = useState<GeneratedProject | null>(null);
+  const [tasks, setTasks] = useState<GeneratedTask[]>([]);
+  const [summary, setSummary] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set(['discovery', 'planning', 'development']));
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSubmitDescription = async () => {
+  const handleGenerate = async () => {
     if (!input.trim() || loading) return;
 
-    const userMessage = input.trim();
-    setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setLoading(true);
+    setError(null);
+    setProject(null);
+    setTasks([]);
 
     try {
       const response = await fetch('/api/ai/create-project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: userMessage })
+        body: JSON.stringify({ description: input.trim() })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to process');
+        throw new Error(data.error || 'Failed to generate project');
       }
 
-      setProject(prev => ({ ...prev, ...data.project }));
-      setCurrentQuestions(data.questions || []);
-      setIsComplete(data.complete);
+      setProject(data.project);
+      setTasks(data.tasks || []);
+      setSummary(data.summary || '');
 
-      const assistantContent = data.summary || 'I understand. Let me help you create this project.';
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: assistantContent,
-        questions: data.questions
-      }]);
-
-    } catch (error) {
-      console.error('Error:', error);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.'
-      }]);
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate project');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAnswerQuestions = async () => {
-    if (Object.keys(answers).length === 0 || loading) return;
+  const handleCreate = async () => {
+    if (!project || creating) return;
 
-    // Display user's answers
-    const answersText = Object.entries(answers)
-      .map(([field, value]) => `${field}: ${value}`)
-      .join('\n');
-
-    setMessages(prev => [...prev, { role: 'user', content: answersText }]);
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/ai/create-project', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          answers,
-          currentProject: project
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to process');
-      }
-
-      setProject(prev => ({ ...prev, ...data.project }));
-      setCurrentQuestions(data.questions || []);
-      setIsComplete(data.complete);
-      setAnswers({});
-
-      const assistantContent = data.summary || 'Thanks for the information!';
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: assistantContent,
-        questions: data.questions
-      }]);
-
-    } catch (error) {
-      console.error('Error:', error);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.'
-      }]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateProject = async () => {
-    if (creating) return;
     setCreating(true);
+    setError(null);
 
     try {
-      const response = await fetch('/api/projects', {
+      // Create the project
+      const projectResponse = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(project)
       });
 
-      if (!response.ok) {
-        const data = await response.json();
+      if (!projectResponse.ok) {
+        const data = await projectResponse.json();
         throw new Error(data.error || 'Failed to create project');
+      }
+
+      const createdProject = await projectResponse.json();
+
+      // Create all tasks
+      if (tasks.length > 0) {
+        const tasksResponse = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tasks: tasks.map(task => ({
+              ...task,
+              project_id: createdProject.id
+            }))
+          })
+        });
+
+        if (!tasksResponse.ok) {
+          console.error('Failed to create some tasks');
+        }
       }
 
       onProjectCreated();
       handleClose();
 
-    } catch (error) {
-      console.error('Error creating project:', error);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `Failed to create project: ${error instanceof Error ? error.message : 'Unknown error'}`
-      }]);
+    } catch (err) {
+      console.error('Error creating project:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create project');
     } finally {
       setCreating(false);
     }
   };
 
   const handleClose = () => {
-    setMessages([]);
     setInput('');
-    setProject({});
-    setCurrentQuestions([]);
-    setAnswers({});
-    setIsComplete(false);
+    setProject(null);
+    setTasks([]);
+    setSummary('');
+    setError(null);
     onClose();
+  };
+
+  const togglePhase = (phase: string) => {
+    setExpandedPhases(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(phase)) {
+        newSet.delete(phase);
+      } else {
+        newSet.add(phase);
+      }
+      return newSet;
+    });
+  };
+
+  const phases = ['discovery', 'planning', 'development', 'testing', 'training', 'rollout', 'monitoring'];
+  const tasksByPhase = phases.reduce((acc, phase) => {
+    acc[phase] = tasks.filter(t => t.phase === phase);
+    return acc;
+  }, {} as Record<string, GeneratedTask[]>);
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return 'bg-red-500/20 text-red-400';
+      case 'high': return 'bg-orange-500/20 text-orange-400';
+      case 'medium': return 'bg-yellow-500/20 text-yellow-400';
+      default: return 'bg-green-500/20 text-green-400';
+    }
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'complex': return 'bg-purple-500/20 text-purple-400';
+      case 'hard': return 'bg-red-500/20 text-red-400';
+      case 'medium': return 'bg-yellow-500/20 text-yellow-400';
+      case 'easy': return 'bg-green-500/20 text-green-400';
+      default: return 'bg-zinc-500/20 text-zinc-400';
+    }
+  };
+
+  const getAIPotentialIcon = (potential: string) => {
+    if (potential === 'high' || potential === 'full') {
+      return <Zap className="w-3.5 h-3.5 text-violet-400" />;
+    }
+    return null;
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 rounded-2xl border border-zinc-800 w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+      <div className="bg-zinc-900 rounded-2xl border border-zinc-800 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
           <div className="flex items-center gap-3">
@@ -180,8 +200,8 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
               <Sparkles className="w-5 h-5 text-violet-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Create Project with AI</h2>
-              <p className="text-sm text-zinc-400">Describe your project in natural language</p>
+              <h2 className="text-lg font-semibold text-white">AI Project Generator</h2>
+              <p className="text-sm text-zinc-400">Describe your idea and get a complete project plan</p>
             </div>
           </div>
           <button
@@ -193,206 +213,243 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden flex">
-          {/* Chat Area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {messages.length === 0 && (
-                <div className="text-center py-8">
-                  <Sparkles className="w-12 h-12 text-violet-400 mx-auto mb-4" />
-                  <p className="text-zinc-300 mb-2">Describe your project idea</p>
-                  <p className="text-sm text-zinc-500">
-                    For example: "I need a dashboard to track SDR performance metrics with weekly reports"
+        <div className="flex-1 overflow-y-auto">
+          {!project ? (
+            /* Input Stage */
+            <div className="p-6">
+              <div className="max-w-2xl mx-auto">
+                <div className="text-center mb-8">
+                  <Sparkles className="w-16 h-16 text-violet-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">What do you want to build?</h3>
+                  <p className="text-zinc-400">
+                    Describe your project idea in a few words. AI will generate a complete project plan with tasks, timelines, and more.
                   </p>
                 </div>
-              )}
 
-              {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                      msg.role === 'user'
-                        ? 'bg-violet-600 text-white'
-                        : 'bg-zinc-800 text-zinc-100'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  </div>
-                </div>
-              ))}
-
-              {/* Questions */}
-              {currentQuestions.length > 0 && !isComplete && (
-                <div className="bg-zinc-800/50 rounded-xl p-4 space-y-4">
-                  <p className="text-sm text-zinc-400 font-medium">Please answer these questions:</p>
-                  {currentQuestions.map((q, i) => (
-                    <div key={i} className="space-y-2">
-                      <label className="text-sm text-zinc-300">{q.question}</label>
-                      {q.options && q.options.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {q.options.map((opt, j) => (
-                            <button
-                              key={j}
-                              onClick={() => setAnswers(prev => ({ ...prev, [q.field]: opt }))}
-                              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                                answers[q.field] === opt
-                                  ? 'bg-violet-600 text-white'
-                                  : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <input
-                          type={q.type === 'date' ? 'date' : q.type === 'number' ? 'number' : 'text'}
-                          value={answers[q.field] || ''}
-                          onChange={(e) => setAnswers(prev => ({ ...prev, [q.field]: e.target.value }))}
-                          className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:border-violet-500"
-                          placeholder={`Enter ${q.field}...`}
-                        />
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={handleAnswerQuestions}
-                    disabled={Object.keys(answers).length === 0 || loading}
-                    className="w-full py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        Continue
-                        <ChevronRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {loading && messages.length > 0 && (
-                <div className="flex justify-start">
-                  <div className="bg-zinc-800 rounded-2xl px-4 py-3">
-                    <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Area */}
-            {messages.length === 0 && (
-              <div className="p-4 border-t border-zinc-800">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
+                <div className="space-y-4">
+                  <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSubmitDescription()}
-                    placeholder="Describe your project..."
-                    className="flex-1 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500"
+                    placeholder="e.g., Build an AI-powered chat and voice bot for customer support..."
+                    className="w-full h-32 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
                     disabled={loading}
                   />
+
+                  {error && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
+                      {error}
+                    </div>
+                  )}
+
                   <button
-                    onClick={handleSubmitDescription}
+                    onClick={handleGenerate}
                     disabled={!input.trim() || loading}
-                    className="px-4 py-3 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white transition-colors"
+                    className="w-full py-3 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors flex items-center justify-center gap-2"
                   >
                     {loading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Generating complete project plan...
+                      </>
                     ) : (
-                      <Send className="w-5 h-5" />
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Generate Project Plan
+                      </>
                     )}
                   </button>
+
+                  <p className="text-xs text-zinc-500 text-center">
+                    AI will generate project details, 8-15 tasks across all phases, time estimates, and more
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            /* Preview Stage */
+            <div className="p-6 space-y-6">
+              {/* Summary */}
+              {summary && (
+                <div className="p-4 bg-violet-500/10 border border-violet-500/30 rounded-xl">
+                  <p className="text-sm text-violet-300">{summary}</p>
+                </div>
+              )}
 
-          {/* Project Preview */}
-          {Object.keys(project).length > 0 && (
-            <div className="w-64 border-l border-zinc-800 p-4 overflow-y-auto">
-              <h3 className="text-sm font-medium text-zinc-400 mb-3">Project Preview</h3>
-              <div className="space-y-3">
-                {project.title && (
+              {/* Project Details */}
+              <div className="bg-zinc-800/50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Project Details</h3>
+
+                <div className="space-y-4">
                   <div>
-                    <p className="text-xs text-zinc-500">Title</p>
-                    <p className="text-sm text-white">{project.title}</p>
+                    <h4 className="text-xl font-bold text-white">{project.title}</h4>
+                    <p className="text-sm text-zinc-500 font-mono">/{project.slug}</p>
                   </div>
-                )}
-                {project.slug && (
-                  <div>
-                    <p className="text-xs text-zinc-500">Slug</p>
-                    <p className="text-sm text-zinc-400 font-mono">{project.slug}</p>
-                  </div>
-                )}
-                {project.description && (
-                  <div>
-                    <p className="text-xs text-zinc-500">Description</p>
-                    <p className="text-sm text-zinc-300 line-clamp-3">{project.description}</p>
-                  </div>
-                )}
-                {project.status && (
-                  <div>
-                    <p className="text-xs text-zinc-500">Status</p>
-                    <span className="inline-block px-2 py-0.5 bg-zinc-700 rounded text-xs text-white capitalize">
-                      {project.status}
+
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(project.priority)}`}>
+                      {project.priority} priority
                     </span>
+                    {project.difficulty && (
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getDifficultyColor(project.difficulty)}`}>
+                        {project.difficulty}
+                      </span>
+                    )}
+                    {project.category && (
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-zinc-700 text-zinc-300">
+                        {project.category}
+                      </span>
+                    )}
                   </div>
-                )}
-                {project.priority && (
-                  <div>
-                    <p className="text-xs text-zinc-500">Priority</p>
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs capitalize ${
-                      project.priority === 'critical' ? 'bg-red-500/20 text-red-400' :
-                      project.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                      project.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-green-500/20 text-green-400'
-                    }`}>
-                      {project.priority}
-                    </span>
+
+                  <p className="text-sm text-zinc-300 whitespace-pre-line">{project.description}</p>
+
+                  {project.why_it_matters && (
+                    <div className="pt-3 border-t border-zinc-700">
+                      <p className="text-xs text-zinc-500 mb-1">Why it matters</p>
+                      <p className="text-sm text-zinc-400">{project.why_it_matters}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-3 border-t border-zinc-700">
+                    {project.start_date && (
+                      <div>
+                        <p className="text-xs text-zinc-500">Start Date</p>
+                        <p className="text-sm text-white">{project.start_date}</p>
+                      </div>
+                    )}
+                    {project.target_date && (
+                      <div>
+                        <p className="text-xs text-zinc-500">Target Date</p>
+                        <p className="text-sm text-white">{project.target_date}</p>
+                      </div>
+                    )}
+                    {(project.estimated_hours_min || project.estimated_hours_max) && (
+                      <div>
+                        <p className="text-xs text-zinc-500">Estimated Hours</p>
+                        <p className="text-sm text-white">
+                          {project.estimated_hours_min}-{project.estimated_hours_max}h
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-zinc-500">Tasks</p>
+                      <p className="text-sm text-white">{tasks.length} tasks</p>
+                    </div>
                   </div>
-                )}
-                {project.target_date && (
-                  <div>
-                    <p className="text-xs text-zinc-500">Target Date</p>
-                    <p className="text-sm text-zinc-300">{project.target_date}</p>
-                  </div>
-                )}
+                </div>
               </div>
 
-              {isComplete && (
-                <button
-                  onClick={handleCreateProject}
-                  disabled={creating}
-                  className="w-full mt-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  {creating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Create Project
-                    </>
-                  )}
-                </button>
+              {/* Tasks by Phase */}
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-4">Generated Tasks ({tasks.length})</h3>
+
+                <div className="space-y-2">
+                  {phases.map(phase => {
+                    const phaseTasks = tasksByPhase[phase];
+                    if (phaseTasks.length === 0) return null;
+
+                    const isExpanded = expandedPhases.has(phase);
+
+                    return (
+                      <div key={phase} className="bg-zinc-800/50 rounded-xl overflow-hidden">
+                        <button
+                          onClick={() => togglePhase(phase)}
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-zinc-800 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            {isExpanded ? (
+                              <ChevronDown className="w-4 h-4 text-zinc-400" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-zinc-400" />
+                            )}
+                            <span className="text-sm font-medium text-white capitalize">{phase}</span>
+                            <span className="text-xs text-zinc-500">({phaseTasks.length} tasks)</span>
+                          </div>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="px-4 pb-3 space-y-2">
+                            {phaseTasks.map((task, i) => (
+                              <div
+                                key={i}
+                                className="p-3 bg-zinc-900/50 rounded-lg border border-zinc-800"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <h5 className="text-sm font-medium text-white truncate">
+                                        {task.title}
+                                      </h5>
+                                      {getAIPotentialIcon(task.ai_potential)}
+                                      {task.is_critical_path && (
+                                        <span className="text-xs text-red-400">Critical</span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-zinc-400 mt-1 line-clamp-2">
+                                      {task.description}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <span className={`px-1.5 py-0.5 rounded text-xs ${getDifficultyColor(task.difficulty)}`}>
+                                      {task.difficulty}
+                                    </span>
+                                    <span className="text-xs text-zinc-500 flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {task.estimated_hours}h
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
+                  {error}
+                </div>
               )}
             </div>
           )}
         </div>
+
+        {/* Footer */}
+        {project && (
+          <div className="px-6 py-4 border-t border-zinc-800 flex items-center justify-between">
+            <button
+              onClick={() => {
+                setProject(null);
+                setTasks([]);
+                setSummary('');
+              }}
+              className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              Start Over
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={creating}
+              className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-xl text-white font-medium transition-colors"
+            >
+              {creating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  Create Project & {tasks.length} Tasks
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

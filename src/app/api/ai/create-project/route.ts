@@ -1,113 +1,146 @@
 import { NextResponse } from 'next/server';
-import { anthropic, PROJECT_SCHEMA, ProjectData, AIQuestion } from '@/lib/ai';
+import { anthropic } from '@/lib/ai';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const SYSTEM_PROMPT = `You are an AI assistant helping users create projects for a task management system called Abeto. Your role is to:
+const SYSTEM_PROMPT = `You are an expert project manager AI for Abeto, a task management system. When given a brief project idea, you MUST generate a COMPLETE, DETAILED project plan with ALL fields populated and a comprehensive set of tasks.
 
-1. Parse the user's natural language description of their project
-2. Extract as many project fields as possible from the description
-3. Ask targeted follow-up questions for critical missing fields
-4. Be conversational but efficient - don't ask unnecessary questions
+Your job is to take a simple idea and expand it into a fully-fleshed professional project plan that a COO would approve.
 
-Project Schema:
-${JSON.stringify(PROJECT_SCHEMA, null, 2)}
-
-Available Teams (use these IDs when setting owner_team_id):
+## Available Teams:
 {{TEAMS}}
 
-RULES:
-- Always generate a slug from the title (lowercase, replace spaces with hyphens)
-- If the description mentions urgency or deadlines, set priority accordingly
-- If dates are mentioned, parse them to YYYY-MM-DD format
-- Ask at most 2 questions at a time to keep the flow conversational
-- When you have title, status, and priority filled, you can mark as complete (other fields are optional)
-- Be smart about inferring information - don't ask for things you can reasonably guess
+## Your Response MUST include:
 
-Your response MUST be valid JSON in this exact format:
+1. **Project Details** - ALL fields populated with intelligent defaults:
+   - title: Professional, clear project title
+   - slug: URL-friendly version (lowercase, hyphens)
+   - description: 2-3 paragraph detailed description explaining the project scope, goals, and expected outcomes
+   - why_it_matters: Business justification and strategic importance
+   - status: "planning" (default for new projects)
+   - priority: Based on business impact (low/medium/high/critical)
+   - difficulty: Technical complexity (trivial/easy/medium/hard/complex)
+   - category: Project category (e.g., "product", "infrastructure", "operations", "research")
+   - start_date: Realistic start date (YYYY-MM-DD format, typically 1-2 weeks from now)
+   - target_date: Realistic end date based on scope (YYYY-MM-DD format)
+   - estimated_hours_min: Minimum hours estimate
+   - estimated_hours_max: Maximum hours estimate
+   - owner_team_id: Best matching team ID from the list above
+
+2. **Tasks** - Generate 8-15 comprehensive tasks covering all project phases:
+   Each task must have:
+   - title: Clear, actionable task title
+   - description: Detailed description of what needs to be done
+   - phase: One of: discovery, planning, development, testing, training, rollout, monitoring
+   - status: "backlog" (default)
+   - difficulty: trivial/easy/medium/hard/complex
+   - ai_potential: How much AI can help (none/low/medium/high/full)
+   - ai_assist_description: If ai_potential > none, describe how AI can help
+   - estimated_hours: Hour range as string (e.g., "4-8", "16-24")
+   - is_foundational: true if other tasks depend on this
+   - is_critical_path: true if delays would delay the whole project
+   - acceptance_criteria: Array of specific criteria to consider task done
+   - tools_needed: Array of tools/technologies needed
+   - knowledge_areas: Array of expertise areas required
+
+## Task Distribution Guidelines:
+- 1-2 Discovery tasks (research, requirements gathering)
+- 2-3 Planning tasks (architecture, design, specs)
+- 3-5 Development tasks (core implementation)
+- 2-3 Testing tasks (QA, validation)
+- 1-2 Training tasks (documentation, team training)
+- 1-2 Rollout tasks (deployment, launch)
+- 1 Monitoring task (post-launch tracking)
+
+## Response Format (STRICT JSON):
 {
   "project": {
-    "title": "string or null",
-    "slug": "string or null",
-    "description": "string or null",
-    "status": "planning|active|paused|completed or null",
-    "priority": "low|medium|high|critical or null",
-    "start_date": "YYYY-MM-DD or null",
-    "target_date": "YYYY-MM-DD or null",
-    "budget": "number or null",
-    "owner_team_id": "uuid or null"
+    "title": "string",
+    "slug": "string",
+    "description": "string (2-3 paragraphs)",
+    "why_it_matters": "string",
+    "status": "planning",
+    "priority": "low|medium|high|critical",
+    "difficulty": "trivial|easy|medium|hard|complex",
+    "category": "string",
+    "start_date": "YYYY-MM-DD",
+    "target_date": "YYYY-MM-DD",
+    "estimated_hours_min": number,
+    "estimated_hours_max": number,
+    "owner_team_id": "uuid from teams list"
   },
-  "questions": [
+  "tasks": [
     {
-      "field": "field_name",
-      "question": "Natural language question to ask user",
-      "options": ["option1", "option2"],
-      "type": "text|select|date|number"
+      "title": "string",
+      "description": "string",
+      "phase": "discovery|planning|development|testing|training|rollout|monitoring",
+      "status": "backlog",
+      "difficulty": "trivial|easy|medium|hard|complex",
+      "ai_potential": "none|low|medium|high|full",
+      "ai_assist_description": "string or null",
+      "estimated_hours": "string (e.g., '4-8')",
+      "is_foundational": boolean,
+      "is_critical_path": boolean,
+      "acceptance_criteria": ["string"],
+      "tools_needed": ["string"],
+      "knowledge_areas": ["string"],
+      "order_index": number (1, 2, 3...)
     }
   ],
-  "complete": true/false,
-  "summary": "Brief summary of what you understood and filled in"
-}`;
+  "summary": "Brief executive summary of what was created"
+}
+
+IMPORTANT:
+- Generate REAL, DETAILED content - not placeholders
+- Tasks should be specific and actionable
+- Use realistic time estimates
+- Today's date is {{TODAY}}
+- Be thorough - this should be ready to execute immediately`;
+
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createClient(supabaseUrl, serviceRoleKey);
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { description, answers, currentProject } = body;
+    const { description } = body;
 
-    if (!description && !answers) {
+    if (!description) {
       return NextResponse.json(
-        { error: 'Either description or answers is required' },
+        { error: 'Project description is required' },
         { status: 400 }
       );
     }
 
-    // Fetch available teams for context
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const supabase = getSupabaseAdmin();
 
+    // Fetch available teams for context
     const { data: teams } = await supabase
       .from('teams')
       .select('id, name, slug');
 
-    const teamsContext = teams
+    const teamsContext = teams && teams.length > 0
       ? teams.map(t => `- ${t.name} (ID: ${t.id})`).join('\n')
-      : 'No teams available';
+      : '- Technology (use null for owner_team_id)';
 
-    const systemPrompt = SYSTEM_PROMPT.replace('{{TEAMS}}', teamsContext);
+    const today = new Date().toISOString().split('T')[0];
 
-    // Build the conversation context
-    let userMessage = '';
-
-    if (description && !answers) {
-      // Initial description
-      userMessage = `User's project description: "${description}"
-
-Please analyze this description and:
-1. Extract any project fields you can infer
-2. Ask follow-up questions for missing critical fields (title, status, priority at minimum)`;
-    } else if (answers && currentProject) {
-      // Follow-up with answers
-      userMessage = `Current project data: ${JSON.stringify(currentProject)}
-
-User's answers to your questions:
-${Object.entries(answers).map(([field, answer]) => `- ${field}: "${answer}"`).join('\n')}
-
-Please:
-1. Update the project data with these answers
-2. If any critical fields are still missing, ask follow-up questions
-3. Mark as complete if you have enough information`;
-    }
+    const systemPrompt = SYSTEM_PROMPT
+      .replace('{{TEAMS}}', teamsContext)
+      .replace('{{TODAY}}', today);
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
+      max_tokens: 4096,
       system: systemPrompt,
       messages: [
         {
           role: 'user',
-          content: userMessage
+          content: `Create a complete project plan for: "${description}"`
         }
       ]
     });
@@ -122,18 +155,24 @@ Please:
     const responseText = textContent.text;
 
     // Try to extract JSON from the response
-    let jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('Could not parse AI response as JSON');
     }
 
     const aiResponse = JSON.parse(jsonMatch[0]);
 
+    // Validate we have required data
+    if (!aiResponse.project?.title) {
+      throw new Error('AI did not generate a valid project');
+    }
+
+    // Return the complete response - let the frontend handle creation
     return NextResponse.json({
-      project: aiResponse.project || {},
-      questions: aiResponse.questions || [],
-      complete: aiResponse.complete || false,
-      summary: aiResponse.summary || ''
+      project: aiResponse.project,
+      tasks: aiResponse.tasks || [],
+      summary: aiResponse.summary || 'Project plan generated successfully',
+      complete: true
     });
 
   } catch (error) {
