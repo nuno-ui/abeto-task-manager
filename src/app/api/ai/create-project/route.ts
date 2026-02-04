@@ -20,7 +20,7 @@ Your job is to take a simple idea and expand it into a fully-fleshed professiona
    - why_it_matters: Business justification and strategic importance
    - status: "planning" (default for new projects)
    - priority: Based on business impact (low/medium/high/critical)
-   - difficulty: Technical complexity (trivial/easy/medium/hard/complex)
+   - difficulty: Technical complexity (easy/medium/hard) - ONLY these 3 values allowed
    - category: Project category (e.g., "product", "infrastructure", "operations", "research")
    - start_date: Realistic start date (YYYY-MM-DD format, typically 1-2 weeks from now)
    - target_date: Realistic end date based on scope (YYYY-MM-DD format)
@@ -34,7 +34,7 @@ Your job is to take a simple idea and expand it into a fully-fleshed professiona
    - description: Detailed description of what needs to be done
    - phase: One of: discovery, planning, development, testing, training, rollout, monitoring
    - status: "backlog" (default)
-   - difficulty: trivial/easy/medium/hard/complex
+   - difficulty: easy/medium/hard (ONLY these 3 values)
    - ai_potential: How much AI can help (none/low/medium/high/full)
    - ai_assist_description: If ai_potential > none, describe how AI can help
    - estimated_hours: Hour range as string (e.g., "4-8", "16-24")
@@ -62,7 +62,7 @@ Your job is to take a simple idea and expand it into a fully-fleshed professiona
     "why_it_matters": "string",
     "status": "planning",
     "priority": "low|medium|high|critical",
-    "difficulty": "trivial|easy|medium|hard|complex",
+    "difficulty": "easy|medium|hard",
     "category": "string",
     "start_date": "YYYY-MM-DD",
     "target_date": "YYYY-MM-DD",
@@ -76,7 +76,7 @@ Your job is to take a simple idea and expand it into a fully-fleshed professiona
       "description": "string",
       "phase": "discovery|planning|development|testing|training|rollout|monitoring",
       "status": "backlog",
-      "difficulty": "trivial|easy|medium|hard|complex",
+      "difficulty": "easy|medium|hard",
       "ai_potential": "none|low|medium|high|full",
       "ai_assist_description": "string or null",
       "estimated_hours": "string (e.g., '4-8')",

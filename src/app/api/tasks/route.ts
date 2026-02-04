@@ -27,6 +27,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No tasks provided' }, { status: 400 });
     }
 
+    // Helper to normalize difficulty value to valid enum
+    const normalizeDifficulty = (d: string | undefined): string => {
+      const val = (d || 'medium').toLowerCase();
+      if (['easy', 'medium', 'hard'].includes(val)) return val;
+      if (val === 'trivial') return 'easy';
+      if (val === 'complex') return 'hard';
+      return 'medium';
+    };
+
+    // Helper to normalize ai_potential value to valid enum
+    const normalizeAiPotential = (a: string | undefined): string => {
+      const val = (a || 'none').toLowerCase();
+      if (['none', 'low', 'medium', 'high'].includes(val)) return val;
+      if (val === 'full') return 'high';
+      return 'none';
+    };
+
     // Validate and prepare tasks
     const preparedTasks = tasksToCreate.map((task: any, index: number) => {
       if (!task.title || !task.project_id) {
@@ -39,8 +56,8 @@ export async function POST(request: Request) {
         project_id: task.project_id,
         phase: task.phase || 'development',
         status: task.status || 'backlog',
-        difficulty: task.difficulty || 'medium',
-        ai_potential: task.ai_potential || 'none',
+        difficulty: normalizeDifficulty(task.difficulty),
+        ai_potential: normalizeAiPotential(task.ai_potential),
         ai_assist_description: task.ai_assist_description || null,
         estimated_hours: task.estimated_hours || null,
         is_foundational: task.is_foundational || false,

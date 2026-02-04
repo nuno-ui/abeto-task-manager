@@ -25,6 +25,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
+    // Helper to normalize difficulty value to valid enum
+    const normalizeDifficulty = (d: string | undefined): string => {
+      if (!d) return 'medium';
+      const val = d.toLowerCase();
+      if (['easy', 'medium', 'hard'].includes(val)) return val;
+      if (val === 'trivial') return 'easy';
+      if (val === 'complex') return 'hard';
+      return 'medium';
+    };
+
     // Generate slug if not provided
     const slug = body.slug || body.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
@@ -34,6 +44,7 @@ export async function POST(request: Request) {
       description: body.description || null,
       status: body.status || 'planning',
       priority: body.priority || 'medium',
+      difficulty: normalizeDifficulty(body.difficulty),
       start_date: body.start_date || null,
       target_date: body.target_date || null,
       owner_team_id: body.owner_team_id || null,
@@ -45,7 +56,6 @@ export async function POST(request: Request) {
     if (body.estimated_hours_max !== undefined) projectData.estimated_hours_max = body.estimated_hours_max;
     if (body.why_it_matters !== undefined) projectData.why_it_matters = body.why_it_matters;
     if (body.category !== undefined) projectData.category = body.category;
-    if (body.difficulty !== undefined) projectData.difficulty = body.difficulty;
 
     const { data: project, error } = await supabase
       .from('projects')
