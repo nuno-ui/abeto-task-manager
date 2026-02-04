@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Abeto Task Manager
 
-## Getting Started
+A comprehensive task management system built for Operations teams, with full project and task tracking, comments, and activity logging.
 
-First, run the development server:
+## Features
+
+- **Project Management**: Create, edit, and track projects with status, priority, and progress
+- **Task Management**: Detailed task breakdown with phases (Discovery → Monitoring)
+- **Team Collaboration**: Comments on projects and tasks, activity tracking
+- **COO-Friendly**: Designed for operational oversight with stakeholders, acceptance criteria, and success metrics
+- **AI Assessment**: Track AI potential for each task
+
+## Tech Stack
+
+- **Frontend**: Next.js 16, React, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **Deployment**: Vercel
+
+## Setup Instructions
+
+### 1. Create a Supabase Project
+
+1. Go to [supabase.com](https://supabase.com) and create a new project
+2. Wait for the project to be ready
+
+### 2. Run the Database Schema
+
+1. Go to your Supabase project → SQL Editor
+2. Copy the contents of `supabase/schema.sql`
+3. Paste and run it to create all tables, indexes, and policies
+
+### 3. Configure Environment Variables
+
+1. Copy `.env.local.example` to `.env.local`
+2. Fill in your Supabase credentials:
+   - `NEXT_PUBLIC_SUPABASE_URL`: Found in Project Settings → API
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Found in Project Settings → API
+
+### 4. Configure Authentication (Optional)
+
+For Google OAuth:
+1. Go to Supabase → Authentication → Providers
+2. Enable Google provider
+3. Add your Google OAuth credentials
+
+### 5. Install Dependencies and Run
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── (app)/           # Authenticated routes
+│   │   ├── dashboard/   # Dashboard page
+│   │   ├── projects/    # Projects listing and detail
+│   │   └── layout.tsx   # App layout with sidebar
+│   ├── auth/            # Auth callback
+│   ├── login/           # Login page
+│   └── page.tsx         # Root redirect
+├── components/
+│   ├── ui/              # Reusable UI components
+│   ├── layout/          # Layout components (Sidebar, Header)
+│   ├── projects/        # Project components
+│   ├── tasks/           # Task components
+│   └── comments/        # Comment components
+├── lib/
+│   ├── supabase/        # Supabase client setup
+│   └── utils.ts         # Utility functions
+├── types/
+│   └── database.ts      # TypeScript types
+└── middleware.ts        # Auth middleware
+```
 
-## Learn More
+## Database Schema
 
-To learn more about Next.js, take a look at the following resources:
+The database includes:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **teams**: Organization teams (Operations, Technology, Sales, etc.)
+- **users**: User profiles with team assignments
+- **pillars**: Project categorization (Data Foundation, Knowledge Generation, Human Empowerment)
+- **projects**: Main project records
+- **tasks**: Detailed task breakdown per project
+- **comments**: Threaded comments on projects and tasks
+- **activity_log**: Audit trail of all changes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploying to Vercel
 
-## Deploy on Vercel
+1. Push this repo to GitHub
+2. Import the project in Vercel
+3. Add environment variables in Vercel:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Private - Abeto Internal Use
