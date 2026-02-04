@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // For development/demo purposes, allow access to dashboard and projects without auth
+  // For development/demo purposes, allow access to all app routes without auth
   // In production, you might want to re-enable auth for these routes
   const publicPaths = [
     '/login',
@@ -46,6 +46,10 @@ export async function updateSession(request: NextRequest) {
     '/api',
     '/dashboard',
     '/projects',
+    '/tasks',
+    '/activity',
+    '/team',
+    '/settings',
     '/'
   ];
 
