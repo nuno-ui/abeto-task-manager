@@ -8,9 +8,10 @@ interface HeaderProps {
   title?: string;
   onCreateNew?: () => void;
   createLabel?: string;
+  extraActions?: React.ReactNode;
 }
 
-export function Header({ title, onCreateNew, createLabel = 'New' }: HeaderProps) {
+export function Header({ title, onCreateNew, createLabel = 'New', extraActions }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
@@ -31,6 +32,9 @@ export function Header({ title, onCreateNew, createLabel = 'New' }: HeaderProps)
             className="w-64 pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
+
+        {/* Extra actions */}
+        {extraActions}
 
         {/* Create button */}
         {onCreateNew && (

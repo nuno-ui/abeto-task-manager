@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, LayoutGrid, List } from 'lucide-react';
+import { Plus, Search, Filter, LayoutGrid, List, Sparkles } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ProjectForm } from '@/components/projects/ProjectForm';
+import { AIProjectCreator } from '@/components/projects/AIProjectCreator';
 import { Button, Modal, Select, Input } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { slugify } from '@/lib/utils';
@@ -16,6 +17,7 @@ export default function ProjectsPage() {
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAICreator, setShowAICreator] = useState(false);
   const [creating, setCreating] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -130,6 +132,15 @@ export default function ProjectsPage() {
         title="Projects"
         onCreateNew={() => setShowCreateModal(true)}
         createLabel="New Project"
+        extraActions={
+          <button
+            onClick={() => setShowAICreator(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-sm font-medium text-white transition-colors"
+          >
+            <Sparkles className="w-4 h-4" />
+            New with AI
+          </button>
+        }
       />
 
       <div className="p-6 space-y-6">
@@ -258,6 +269,13 @@ export default function ProjectsPage() {
           loading={creating}
         />
       </Modal>
+
+      {/* AI Project Creator */}
+      <AIProjectCreator
+        isOpen={showAICreator}
+        onClose={() => setShowAICreator(false)}
+        onProjectCreated={fetchData}
+      />
     </div>
   );
 }

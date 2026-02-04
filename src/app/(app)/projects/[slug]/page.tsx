@@ -412,6 +412,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             <CommentList
               comments={comments}
               onAddComment={handleAddComment}
+              projectId={project.id}
+              onDataRefresh={fetchProjectData}
             />
           </div>
         )}

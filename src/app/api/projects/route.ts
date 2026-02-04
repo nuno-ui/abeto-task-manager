@@ -3,6 +3,62 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createClient(supabaseUrl, serviceRoleKey);
+}
+
+export async function POST(request: Request) {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 });
+  }
+
+  try {
+    const body = await request.json();
+    const supabase = getSupabaseAdmin();
+
+    // Ensure required fields
+    if (!body.title) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    // Generate slug if not provided
+    const slug = body.slug || body.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+    const projectData = {
+      title: body.title,
+      slug,
+      description: body.description || null,
+      status: body.status || 'planning',
+      priority: body.priority || 'medium',
+      start_date: body.start_date || null,
+      target_date: body.target_date || null,
+      budget: body.budget || null,
+      owner_team_id: body.owner_team_id || null,
+      pillar_id: body.pillar_id || null,
+    };
+
+    const { data: project, error } = await supabase
+      .from('projects')
+      .insert(projectData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating project:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(project, { status: 201 });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function GET() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

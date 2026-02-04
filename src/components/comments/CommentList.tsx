@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Send, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { Avatar, Button } from '@/components/ui';
+import { AICommentAction } from './AICommentAction';
 import { formatRelativeTime } from '@/lib/utils';
 import type { Comment } from '@/types/database';
 
@@ -12,6 +13,9 @@ interface CommentListProps {
   onEditComment?: (id: string, content: string) => Promise<void>;
   onDeleteComment?: (id: string) => Promise<void>;
   currentUserId?: string;
+  projectId?: string;
+  taskId?: string;
+  onDataRefresh?: () => void;
 }
 
 export function CommentList({
@@ -20,6 +24,9 @@ export function CommentList({
   onEditComment,
   onDeleteComment,
   currentUserId,
+  projectId,
+  taskId,
+  onDataRefresh,
 }: CommentListProps) {
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -153,6 +160,12 @@ export function CommentList({
                   >
                     Reply
                   </button>
+                  <AICommentAction
+                    commentContent={comment.content}
+                    projectId={projectId}
+                    taskId={taskId}
+                    onUpdatesApplied={onDataRefresh}
+                  />
                 </div>
               )}
             </div>
