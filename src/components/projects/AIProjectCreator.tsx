@@ -108,6 +108,9 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
 
       // Create all tasks
       if (tasks.length > 0) {
+        console.log('Creating tasks for project:', createdProject.id);
+        console.log('Tasks to create:', tasks.length);
+
         const tasksResponse = await fetch('/api/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -119,8 +122,14 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
           })
         });
 
+        const tasksResult = await tasksResponse.json();
+
         if (!tasksResponse.ok) {
-          console.error('Failed to create some tasks');
+          console.error('Failed to create tasks:', tasksResult.error);
+          // Don't throw - project was created, tasks just failed
+          alert(`Project created but some tasks failed to create: ${tasksResult.error}`);
+        } else {
+          console.log('Tasks created successfully:', tasksResult.count);
         }
       }
 
