@@ -64,8 +64,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
       setTeams(data.teams || []);
       setPillars(data.pillars || []);
 
-      // Fetch comments separately (can be empty for now)
-      setComments([]);
+      // Fetch comments for this project
+      if (data.project?.id) {
+        const commentsResponse = await fetch(`/api/comments?project_id=${data.project.id}`);
+        if (commentsResponse.ok) {
+          const commentsData = await commentsResponse.json();
+          setComments(commentsData);
+        }
+      }
     } catch (error) {
       console.error('Error fetching project:', error);
     } finally {
@@ -142,20 +148,58 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   const handleAddComment = async (content: string, parentId?: string) => {
     if (!project) return;
 
-    const supabase = createClient();
-
     try {
-      const { error } = await supabase.from('comments').insert({
-        project_id: project.id,
-        content,
-        parent_comment_id: parentId || null,
-        author_id: (await supabase.auth.getUser()).data.user?.id,
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: project.id,
+          content,
+          parent_comment_id: parentId || null,
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to add comment');
+      }
+
       fetchProjectData();
     } catch (error) {
       console.error('Error adding comment:', error);
+    }
+  };
+
+  const handleEditComment = async (id: string, content: string) => {
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, content }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to edit comment');
+      }
+
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error editing comment:', error);
+    }
+  };
+
+  const handleDeleteComment = async (id: string) => {
+    try {
+      const response = await fetch(`/api/comments?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete comment');
+      }
+
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
     }
   };
 
@@ -412,6 +456,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             <CommentList
               comments={comments}
               onAddComment={handleAddComment}
+              onEditComment={handleEditComment}
+              onDeleteComment={handleDeleteComment}
               projectId={project.id}
               onDataRefresh={fetchProjectData}
             />
