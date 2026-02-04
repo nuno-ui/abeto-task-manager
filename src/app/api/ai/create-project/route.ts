@@ -135,12 +135,12 @@ export async function POST(request: Request) {
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: systemPrompt,
       messages: [
         {
           role: 'user',
-          content: `Create a complete project plan for: "${description}"`
+          content: `Create a complete project plan for: "${description}"\n\nIMPORTANT: Respond with valid JSON only. Ensure all strings are properly escaped.`
         }
       ]
     });
@@ -160,7 +160,40 @@ export async function POST(request: Request) {
       throw new Error('Could not parse AI response as JSON');
     }
 
-    const aiResponse = JSON.parse(jsonMatch[0]);
+    let jsonString = jsonMatch[0];
+
+    // Clean up common JSON issues from AI responses
+    // 1. Remove trailing commas before ] or }
+    jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
+    // 2. Fix unescaped newlines inside strings
+    jsonString = jsonString.replace(/(?<!\\)\\n/g, '\\n');
+    // 3. Remove control characters
+    jsonString = jsonString.replace(/[\x00-\x1F\x7F]/g, (char) => {
+      if (char === '\n' || char === '\r' || char === '\t') return char;
+      return '';
+    });
+
+    let aiResponse;
+    try {
+      aiResponse = JSON.parse(jsonString);
+    } catch (parseError) {
+      console.error('JSON parse error, attempting recovery:', parseError);
+      console.error('Raw JSON (first 500 chars):', jsonString.substring(0, 500));
+
+      // Try a more aggressive cleanup
+      jsonString = jsonString
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove all control chars
+        .replace(/,\s*,/g, ',') // Remove double commas
+        .replace(/\[\s*,/g, '[') // Remove leading commas in arrays
+        .replace(/,\s*\]/g, ']'); // Remove trailing commas in arrays
+
+      try {
+        aiResponse = JSON.parse(jsonString);
+      } catch (secondError) {
+        console.error('Second parse attempt failed:', secondError);
+        throw new Error('Could not parse AI response as valid JSON. Please try again.');
+      }
+    }
 
     // Validate we have required data
     if (!aiResponse.project?.title) {
