@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     // Generate slug if not provided
     const slug = body.slug || body.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-    const projectData = {
+    const projectData: Record<string, any> = {
       title: body.title,
       slug,
       description: body.description || null,
@@ -36,10 +36,16 @@ export async function POST(request: Request) {
       priority: body.priority || 'medium',
       start_date: body.start_date || null,
       target_date: body.target_date || null,
-      budget: body.budget || null,
       owner_team_id: body.owner_team_id || null,
       pillar_id: body.pillar_id || null,
     };
+
+    // Only add optional fields if they exist in the request
+    if (body.estimated_hours_min !== undefined) projectData.estimated_hours_min = body.estimated_hours_min;
+    if (body.estimated_hours_max !== undefined) projectData.estimated_hours_max = body.estimated_hours_max;
+    if (body.why_it_matters !== undefined) projectData.why_it_matters = body.why_it_matters;
+    if (body.category !== undefined) projectData.category = body.category;
+    if (body.difficulty !== undefined) projectData.difficulty = body.difficulty;
 
     const { data: project, error } = await supabase
       .from('projects')

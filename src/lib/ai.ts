@@ -22,7 +22,6 @@ export const PROJECT_SCHEMA = {
   },
   start_date: { type: 'date', required: false, description: 'Project start date (YYYY-MM-DD)' },
   target_date: { type: 'date', required: false, description: 'Target completion date (YYYY-MM-DD)' },
-  budget: { type: 'number', required: false, description: 'Project budget in dollars' },
   owner_team_id: { type: 'uuid', required: false, description: 'ID of the team that owns this project' },
 };
 
@@ -67,7 +66,6 @@ export interface ProjectData {
   priority?: string;
   start_date?: string;
   target_date?: string;
-  budget?: number;
   owner_team_id?: string;
 }
 
