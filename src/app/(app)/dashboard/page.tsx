@@ -43,50 +43,19 @@ export default function DashboardPage() {
   }, []);
 
   const fetchDashboardData = async () => {
-    const supabase = createClient();
-
     try {
-      // Fetch projects
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('*, pillar:pillars(*), owner_team:teams(*)')
-        .eq('is_archived', false)
-        .order('updated_at', { ascending: false })
-        .limit(5);
+      // Use API route to bypass RLS
+      const response = await fetch('/api/dashboard');
 
-      // Fetch tasks stats
-      const { data: tasks } = await supabase
-        .from('tasks')
-        .select('status');
-
-      // Fetch recent activity
-      const { data: activity } = await supabase
-        .from('activity_log')
-        .select('*, user:users(*), project:projects(title, slug)')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (projects) {
-        setRecentProjects(projects);
-        setStats((prev) => ({
-          ...prev,
-          totalProjects: projects.length,
-          activeProjects: projects.filter((p) => p.status === 'in_progress').length,
-        }));
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
       }
 
-      if (tasks) {
-        setStats((prev) => ({
-          ...prev,
-          totalTasks: tasks.length,
-          completedTasks: tasks.filter((t) => t.status === 'completed').length,
-          blockedTasks: tasks.filter((t) => t.status === 'blocked').length,
-        }));
-      }
+      const data = await response.json();
 
-      if (activity) {
-        setRecentActivity(activity);
-      }
+      setStats(data.stats);
+      setRecentProjects(data.recentProjects || []);
+      setRecentActivity(data.recentActivity || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {

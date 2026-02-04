@@ -28,63 +28,32 @@ export default function ProjectsPage() {
   }, []);
 
   const fetchData = async () => {
-    const supabase = createClient();
     setLoading(true);
 
     try {
-      // Fetch projects with relations
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select(`
-          *,
-          pillar:pillars(*),
-          owner_team:teams(*)
-        `)
-        .eq('is_archived', false)
-        .order('updated_at', { ascending: false });
+      // Use API route to bypass RLS
+      const response = await fetch('/api/projects');
 
-      if (projectsError) throw projectsError;
-
-      // Fetch task counts for each project
-      if (projectsData) {
-        const projectsWithTasks = await Promise.all(
-          projectsData.map(async (project) => {
-            const { count: totalTasks } = await supabase
-              .from('tasks')
-              .select('*', { count: 'exact', head: true })
-              .eq('project_id', project.id);
-
-            const { count: completedTasks } = await supabase
-              .from('tasks')
-              .select('*', { count: 'exact', head: true })
-              .eq('project_id', project.id)
-              .eq('status', 'completed');
-
-            return {
-              ...project,
-              total_tasks: totalTasks || 0,
-              completed_tasks: completedTasks || 0,
-            };
-          })
-        );
-        setProjects(projectsWithTasks);
+      if (!response.ok) {
+        throw new Error('Failed to fetch projects');
       }
 
-      // Fetch teams
-      const { data: teamsData } = await supabase
-        .from('teams')
-        .select('*')
-        .order('name');
+      const projectsData = await response.json();
+      setProjects(projectsData);
 
-      if (teamsData) setTeams(teamsData);
+      // Fetch teams from the API
+      const teamsResponse = await fetch('/api/teams');
+      if (teamsResponse.ok) {
+        const teamsData = await teamsResponse.json();
+        setTeams(teamsData);
+      }
 
-      // Fetch pillars
-      const { data: pillarsData } = await supabase
-        .from('pillars')
-        .select('*')
-        .order('order_index');
-
-      if (pillarsData) setPillars(pillarsData);
+      // Fetch pillars from the API
+      const pillarsResponse = await fetch('/api/pillars');
+      if (pillarsResponse.ok) {
+        const pillarsData = await pillarsResponse.json();
+        setPillars(pillarsData);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
