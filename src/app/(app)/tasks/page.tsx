@@ -64,6 +64,66 @@ export default function TasksPage() {
       <Header title="All Tasks" />
 
       <div className="p-6 space-y-6">
+        {/* Phase Summary Stats */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-zinc-400">Task Distribution by Phase</h3>
+            <span className="text-sm text-zinc-500">{tasks.length} total tasks</span>
+          </div>
+          <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-zinc-800">
+            {phases.map(phase => {
+              const count = tasks.filter(t => t.phase === phase).length;
+              const percentage = tasks.length > 0 ? (count / tasks.length) * 100 : 0;
+              if (percentage === 0) return null;
+              const colors: Record<string, string> = {
+                discovery: 'bg-blue-500',
+                planning: 'bg-purple-500',
+                development: 'bg-amber-500',
+                testing: 'bg-green-500',
+                training: 'bg-cyan-500',
+                rollout: 'bg-pink-500',
+                monitoring: 'bg-indigo-500',
+              };
+              return (
+                <div
+                  key={phase}
+                  className={`${colors[phase] || 'bg-zinc-600'} transition-all`}
+                  style={{ width: `${percentage}%` }}
+                  title={`${phase}: ${count} tasks (${Math.round(percentage)}%)`}
+                />
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-3 mt-3">
+            {phases.map(phase => {
+              const count = tasks.filter(t => t.phase === phase).length;
+              if (count === 0) return null;
+              const colors: Record<string, string> = {
+                discovery: 'text-blue-400',
+                planning: 'text-purple-400',
+                development: 'text-amber-400',
+                testing: 'text-green-400',
+                training: 'text-cyan-400',
+                rollout: 'text-pink-400',
+                monitoring: 'text-indigo-400',
+              };
+              return (
+                <button
+                  key={phase}
+                  onClick={() => setPhaseFilter(phaseFilter === phase ? 'all' : phase)}
+                  className={`text-xs px-2 py-1 rounded-md transition-colors ${
+                    phaseFilter === phase
+                      ? 'bg-zinc-700 text-white'
+                      : 'bg-zinc-800/50 hover:bg-zinc-800'
+                  } ${colors[phase] || 'text-zinc-400'}`}
+                >
+                  {phase}: {count}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Filters */}
         <div className="flex items-center gap-4">
           <select
