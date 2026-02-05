@@ -59,6 +59,15 @@ export async function POST(request: Request) {
       return mapping[val] || (['not_started', 'in_progress', 'blocked', 'in_review', 'completed', 'cancelled'].includes(val) ? val : 'not_started');
     };
 
+    // Helper to normalize priority value to valid enum
+    const normalizePriority = (p: string | undefined): string => {
+      const val = (p || 'medium').toLowerCase();
+      if (['critical', 'high', 'medium', 'low'].includes(val)) return val;
+      if (val === 'urgent') return 'critical';
+      if (val === 'normal') return 'medium';
+      return 'medium';
+    };
+
     // Validate and prepare tasks
     const preparedTasks = tasksToCreate.map((task: any, index: number) => {
       if (!task.title || !task.project_id) {
@@ -71,6 +80,7 @@ export async function POST(request: Request) {
         project_id: task.project_id,
         phase: task.phase || 'development',
         status: normalizeTaskStatus(task.status),
+        priority: normalizePriority(task.priority),
         difficulty: normalizeDifficulty(task.difficulty),
         ai_potential: normalizeAiPotential(task.ai_potential),
         ai_assist_description: task.ai_assist_description || null,

@@ -71,6 +71,30 @@ export async function POST(request: Request) {
     if (body.why_it_matters !== undefined) projectData.why_it_matters = body.why_it_matters;
     if (body.category !== undefined) projectData.category = body.category;
 
+    // Rich fields for COO Dashboard
+    if (body.human_role_before !== undefined) projectData.human_role_before = body.human_role_before;
+    if (body.human_role_after !== undefined) projectData.human_role_after = body.human_role_after;
+    if (body.who_is_empowered !== undefined) projectData.who_is_empowered = body.who_is_empowered;
+    if (body.new_capabilities !== undefined) projectData.new_capabilities = body.new_capabilities;
+    if (body.data_required !== undefined) projectData.data_required = body.data_required;
+    if (body.data_generates !== undefined) projectData.data_generates = body.data_generates;
+    if (body.data_improves !== undefined) projectData.data_improves = body.data_improves;
+    if (body.ops_process !== undefined) projectData.ops_process = body.ops_process;
+    if (body.current_loa !== undefined) projectData.current_loa = body.current_loa;
+    if (body.potential_loa !== undefined) projectData.potential_loa = body.potential_loa;
+    if (body.resources_used !== undefined) projectData.resources_used = body.resources_used;
+    if (body.api_endpoints !== undefined) projectData.api_endpoints = body.api_endpoints;
+    if (body.prerequisites !== undefined) projectData.prerequisites = body.prerequisites;
+    if (body.benefits !== undefined) projectData.benefits = body.benefits;
+    if (body.missing_api_data !== undefined) projectData.missing_api_data = body.missing_api_data;
+    if (body.integrations_needed !== undefined) projectData.integrations_needed = body.integrations_needed;
+    if (body.depends_on !== undefined) projectData.depends_on = body.depends_on;
+    if (body.enables !== undefined) projectData.enables = body.enables;
+    if (body.related_to !== undefined) projectData.related_to = body.related_to;
+    if (body.primary_users !== undefined) projectData.primary_users = body.primary_users;
+    if (body.data_status !== undefined) projectData.data_status = body.data_status;
+    if (body.next_milestone !== undefined) projectData.next_milestone = body.next_milestone;
+
     const { data: project, error } = await supabase
       .from('projects')
       .insert(projectData)

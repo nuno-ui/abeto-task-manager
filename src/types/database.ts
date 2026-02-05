@@ -77,6 +77,45 @@ export interface Project {
   is_archived: boolean;
   created_at: string;
   updated_at: string;
+
+  // =============================================================================
+  // RICH FIELDS (COO Dashboard Critical)
+  // =============================================================================
+
+  // Human Role fields
+  human_role_before: string | null;
+  human_role_after: string | null;
+  who_is_empowered: string[];
+  new_capabilities: string[];
+
+  // Data Requirements
+  data_required: string[];
+  data_generates: string[];
+  data_improves: string[];
+
+  // Operations context
+  ops_process: string | null;
+  current_loa: string | null;
+  potential_loa: string | null;
+
+  // Resources and dependencies
+  resources_used: string[];
+  api_endpoints: string[];
+  prerequisites: string[];
+  benefits: string[];
+  missing_api_data: string[];
+  integrations_needed: string[];
+
+  // Project relationships (as arrays of slugs)
+  depends_on: string[];
+  enables: string[];
+  related_to: string[];
+
+  // Additional metadata
+  primary_users: string[];
+  data_status: string | null;
+  next_milestone: string | null;
+
   // Joined
   pillar?: Pillar;
   owner_team?: Team;
@@ -94,6 +133,7 @@ export interface Task {
   description: string | null;
   phase: TaskPhase;
   status: TaskStatus;
+  priority: ProjectPriority; // Added: was missing
   difficulty: DifficultyLevel;
   owner_team_id: string | null;
   assignee_id: string | null;
@@ -223,6 +263,30 @@ export interface CreateProjectInput {
   notion_url?: string;
   github_url?: string;
   tags?: string[];
+
+  // Rich fields for COO Dashboard
+  human_role_before?: string;
+  human_role_after?: string;
+  who_is_empowered?: string[];
+  new_capabilities?: string[];
+  data_required?: string[];
+  data_generates?: string[];
+  data_improves?: string[];
+  ops_process?: string;
+  current_loa?: string;
+  potential_loa?: string;
+  resources_used?: string[];
+  api_endpoints?: string[];
+  prerequisites?: string[];
+  benefits?: string[];
+  missing_api_data?: string[];
+  integrations_needed?: string[];
+  depends_on?: string[];
+  enables?: string[];
+  related_to?: string[];
+  primary_users?: string[];
+  data_status?: string;
+  next_milestone?: string;
 }
 
 export interface UpdateProjectInput extends Partial<CreateProjectInput> {
@@ -239,6 +303,7 @@ export interface CreateTaskInput {
   description?: string;
   phase?: TaskPhase;
   status?: TaskStatus;
+  priority?: ProjectPriority; // Added: was missing
   difficulty?: DifficultyLevel;
   owner_team_id?: string;
   assignee_id?: string;
