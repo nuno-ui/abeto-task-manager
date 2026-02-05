@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { anthropic } from '@/lib/ai';
 import { createClient } from '@supabase/supabase-js';
+import { getCurrentUser } from '@/lib/supabase/auth';
+import { isAdmin, getUnauthorizedMessage } from '@/lib/supabase/authorization';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,6 +108,15 @@ function getSupabaseAdmin() {
 
 export async function POST(request: Request) {
   try {
+    // Check if user is admin - only admins can use AI features
+    const user = await getCurrentUser();
+    if (!isAdmin(user)) {
+      return NextResponse.json(
+        { error: getUnauthorizedMessage('AI project creation') },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { description } = body;
 

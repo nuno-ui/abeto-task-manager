@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { anthropic, PROJECT_SCHEMA, TASK_SCHEMA } from '@/lib/ai';
 import { createClient } from '@supabase/supabase-js';
+import { getCurrentUser } from '@/lib/supabase/auth';
+import { isAdmin, getUnauthorizedMessage } from '@/lib/supabase/authorization';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,6 +91,15 @@ Example for "delete project":
 
 export async function POST(request: Request) {
   try {
+    // Check if user is admin - only admins can use AI comment processing
+    const user = await getCurrentUser();
+    if (!isAdmin(user)) {
+      return NextResponse.json(
+        { error: getUnauthorizedMessage('AI comment processing') },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { content, projectId, taskId, context } = body;
 

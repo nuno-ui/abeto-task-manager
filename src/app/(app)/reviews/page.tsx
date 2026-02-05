@@ -6,7 +6,9 @@ import { ReviewerIdentification } from '@/components/reviews/ReviewerIdentificat
 import { ReviewProgress } from '@/components/reviews/ReviewProgress';
 import { ReviewFeedbackForm } from '@/components/reviews/ReviewFeedbackForm';
 import { CelebrationModal } from '@/components/reviews/CelebrationModal';
+import { ReviewOnboardingModal } from '@/components/reviews/ReviewOnboardingModal';
 import { ReviewerArea, Project, Task, ReviewFeedback } from '@/types/database';
+import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -49,8 +51,6 @@ interface ReviewStats {
   pendingProjects: number;
   progress: number;
 }
-
-const REVIEWER_ID = 'demo-reviewer-001'; // In production, get from auth
 
 // Field configurations by area
 const AREA_FIELDS: Record<ReviewerArea, { name: string; label: string; type: 'select' | 'text' | 'textarea'; options?: { value: string; label: string }[] }[]> = {
@@ -123,6 +123,7 @@ const priorityColors: Record<string, string> = {
 
 export default function ReviewsPage() {
   const router = useRouter();
+  const { user, preferredArea, isLoading: authLoading, isAuthenticated } = useAuth();
   const [reviewerArea, setReviewerArea] = useState<ReviewerArea | null>(null);
   const [projects, setProjects] = useState<EnrichedProject[]>([]);
   const [pendingProjects, setPendingProjects] = useState<EnrichedProject[]>([]);
@@ -138,28 +139,43 @@ export default function ReviewsPage() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [feedbackCount, setFeedbackCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [pendingArea, setPendingArea] = useState<ReviewerArea | null>(null);
 
-  // Load saved area from localStorage
+  // Get reviewer ID from auth
+  const reviewerId = user?.id || null;
+
+  // Load saved area from localStorage, or use preferred area from auth
   useEffect(() => {
+    if (authLoading) return;
+
+    // If user has a preferred area from auth, use that
+    if (preferredArea) {
+      setReviewerArea(preferredArea);
+      localStorage.setItem('reviewerArea', preferredArea);
+      return;
+    }
+
+    // Otherwise, check localStorage
     const savedArea = localStorage.getItem('reviewerArea') as ReviewerArea | null;
     if (savedArea) {
       setReviewerArea(savedArea);
     }
-  }, []);
+  }, [authLoading, preferredArea]);
 
-  // Fetch projects when area is selected
+  // Fetch projects when area is selected and user is authenticated
   useEffect(() => {
-    if (reviewerArea) {
+    if (reviewerArea && reviewerId) {
       fetchProjects();
     }
-  }, [reviewerArea]);
+  }, [reviewerArea, reviewerId]);
 
   const fetchProjects = async () => {
-    if (!reviewerArea) return;
+    if (!reviewerArea || !reviewerId) return;
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/reviews?reviewer_area=${reviewerArea}&reviewer_id=${REVIEWER_ID}`
+        `/api/reviews?reviewer_area=${reviewerArea}&reviewer_id=${reviewerId}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -176,19 +192,46 @@ export default function ReviewsPage() {
   };
 
   const handleSelectArea = async (area: ReviewerArea) => {
-    setReviewerArea(area);
-    localStorage.setItem('reviewerArea', area);
+    // Check if user has seen onboarding for this area
+    const onboardingKey = `reviewOnboarding_${area}`;
+    const hasSeenOnboarding = localStorage.getItem(onboardingKey);
+
+    if (!hasSeenOnboarding) {
+      // Show onboarding modal
+      setPendingArea(area);
+      setShowOnboarding(true);
+    } else {
+      // Skip onboarding, go directly to review
+      setReviewerArea(area);
+      localStorage.setItem('reviewerArea', area);
+    }
+  };
+
+  const handleStartReviewing = () => {
+    if (pendingArea) {
+      // Mark onboarding as seen
+      localStorage.setItem(`reviewOnboarding_${pendingArea}`, 'true');
+      setReviewerArea(pendingArea);
+      localStorage.setItem('reviewerArea', pendingArea);
+      setShowOnboarding(false);
+      setPendingArea(null);
+    }
+  };
+
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+    setPendingArea(null);
   };
 
   const startReviewSession = async (projectId: string) => {
-    if (!reviewerArea) return;
+    if (!reviewerArea || !reviewerId) return;
     try {
       const response = await fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: projectId,
-          reviewer_id: REVIEWER_ID,
+          reviewer_id: reviewerId,
           reviewer_area: reviewerArea,
         }),
       });
@@ -322,6 +365,33 @@ export default function ReviewsPage() {
 
   const currentProject = pendingProjects[currentIndex];
 
+  // Show auth loading state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen">
+        <Header title="Project Reviews" />
+        <div className="flex items-center justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen">
+        <Header title="Project Reviews" />
+        <div className="flex flex-col items-center justify-center p-12 gap-4">
+          <p className="text-zinc-400">Please sign in to access the review system.</p>
+          <a href="/login" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Sign In
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   // Show identification screen if no area selected
   if (!reviewerArea) {
     return (
@@ -331,6 +401,8 @@ export default function ReviewsPage() {
           <ReviewerIdentification
             currentArea={reviewerArea}
             onSelectArea={handleSelectArea}
+            preferredArea={preferredArea}
+            userName={user?.full_name || user?.email}
           />
         </div>
       </div>
@@ -666,6 +738,15 @@ export default function ReviewsPage() {
           localStorage.removeItem('reviewerArea');
         }}
       />
+
+      {/* Onboarding Modal */}
+      {showOnboarding && pendingArea && (
+        <ReviewOnboardingModal
+          area={pendingArea}
+          onClose={handleCloseOnboarding}
+          onStart={handleStartReviewing}
+        />
+      )}
     </div>
   );
 }

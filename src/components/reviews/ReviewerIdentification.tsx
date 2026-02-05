@@ -1,12 +1,14 @@
 'use client';
 
 import { ReviewerArea } from '@/types/database';
-import { Briefcase, Users, Code2, CheckCircle } from 'lucide-react';
+import { Briefcase, Users, Code2, CheckCircle, Star } from 'lucide-react';
 
 interface ReviewerIdentificationProps {
   currentArea?: ReviewerArea | null;
   onSelectArea: (area: ReviewerArea) => void;
   disabled?: boolean;
+  preferredArea?: ReviewerArea | null;
+  userName?: string | null;
 }
 
 const areas: {
@@ -62,12 +64,17 @@ export function ReviewerIdentification({
   currentArea,
   onSelectArea,
   disabled,
+  preferredArea,
+  userName,
 }: ReviewerIdentificationProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-white mb-2">Select Your Review Perspective</h2>
         <p className="text-zinc-400">
+          {userName ? (
+            <>Welcome, <span className="text-white font-medium">{userName}</span>! </>
+          ) : null}
           Choose the area that best represents your role. You can review from different perspectives in separate sessions.
         </p>
       </div>
@@ -76,6 +83,7 @@ export function ReviewerIdentification({
         {areas.map((area) => {
           const Icon = area.icon;
           const isSelected = currentArea === area.id;
+          const isRecommended = preferredArea === area.id;
 
           return (
             <button
@@ -85,12 +93,20 @@ export function ReviewerIdentification({
               className={`relative p-6 rounded-xl border-2 transition-all text-left ${
                 isSelected
                   ? 'border-blue-500 bg-blue-500/10'
+                  : isRecommended
+                  ? 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500 hover:bg-amber-500/10'
                   : 'border-zinc-700 bg-zinc-900 hover:border-zinc-600 hover:bg-zinc-800/50'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {isSelected && (
                 <div className="absolute top-3 right-3">
                   <CheckCircle className="w-6 h-6 text-blue-500" />
+                </div>
+              )}
+              {isRecommended && !isSelected && (
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-amber-500/20 rounded-full">
+                  <Star className="w-3 h-3 text-amber-500" fill="currentColor" />
+                  <span className="text-xs text-amber-400 font-medium">Recommended</span>
                 </div>
               )}
 
