@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { ReviewerIdentification } from '@/components/reviews/ReviewerIdentification';
 import { ReviewProgress } from '@/components/reviews/ReviewProgress';
-import { ReviewFeedbackForm } from '@/components/reviews/ReviewFeedbackForm';
+import { ReviewQuestionCard } from '@/components/reviews/ReviewQuestionCard';
+import { ProjectReviewInfo } from '@/components/reviews/ProjectReviewInfo';
+import { TaskReviewPanel } from '@/components/reviews/TaskReviewPanel';
 import { CelebrationModal } from '@/components/reviews/CelebrationModal';
 import { ReviewOnboardingModal } from '@/components/reviews/ReviewOnboardingModal';
 import { ReviewerArea, Project, Task, ReviewFeedback } from '@/types/database';
@@ -27,6 +29,19 @@ import {
   Clock,
   AlertCircle,
   X,
+  Star,
+  ThumbsUp,
+  ThumbsDown,
+  AlertTriangle,
+  Database,
+  Link2,
+  ArrowRight,
+  FileText,
+  Workflow,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
 } from 'lucide-react';
 
 interface EnrichedProject extends Project {
@@ -52,58 +67,202 @@ interface ReviewStats {
   progress: number;
 }
 
-// Field configurations by area
-const AREA_FIELDS: Record<ReviewerArea, { name: string; label: string; type: 'select' | 'text' | 'textarea'; options?: { value: string; label: string }[] }[]> = {
+// NEW: Review Questions organized by perspective
+// These are meaningful questions reviewers should consider and rate
+interface ReviewQuestion {
+  id: string;
+  question: string;
+  description: string;
+  type: 'rating' | 'boolean' | 'text' | 'select';
+  options?: { value: string; label: string; color?: string }[];
+  fieldRef?: string; // Reference to project field for context
+}
+
+const REVIEW_QUESTIONS: Record<ReviewerArea, ReviewQuestion[]> = {
   management: [
     {
-      name: 'priority',
-      label: 'Priority',
+      id: 'strategic_alignment',
+      question: 'Strategic Alignment',
+      description: 'How well does this project align with Abeto\'s vision and strategic goals?',
+      type: 'rating',
+    },
+    {
+      id: 'priority_appropriate',
+      question: 'Priority Assessment',
+      description: 'Is the current priority level appropriate given other initiatives?',
       type: 'select',
       options: [
-        { value: 'critical', label: 'Critical' },
-        { value: 'high', label: 'High' },
-        { value: 'medium', label: 'Medium' },
-        { value: 'low', label: 'Low' },
+        { value: 'too_high', label: 'Should be lower priority', color: 'red' },
+        { value: 'correct', label: 'Priority is correct', color: 'green' },
+        { value: 'too_low', label: 'Should be higher priority', color: 'blue' },
+      ],
+      fieldRef: 'priority',
+    },
+    {
+      id: 'resource_justified',
+      question: 'Resource Justification',
+      description: 'Is the estimated effort/cost justified by the expected business value?',
+      type: 'rating',
+    },
+    {
+      id: 'timeline_realistic',
+      question: 'Timeline Feasibility',
+      description: 'Is the project timeline realistic given current team capacity?',
+      type: 'select',
+      options: [
+        { value: 'too_aggressive', label: 'Timeline too aggressive', color: 'red' },
+        { value: 'realistic', label: 'Timeline is realistic', color: 'green' },
+        { value: 'conservative', label: 'Could be faster', color: 'blue' },
       ],
     },
     {
-      name: 'status',
-      label: 'Status',
-      type: 'select',
-      options: [
-        { value: 'idea', label: 'Idea' },
-        { value: 'planning', label: 'Planning' },
-        { value: 'in_progress', label: 'In Progress' },
-        { value: 'on_hold', label: 'On Hold' },
-        { value: 'completed', label: 'Completed' },
-      ],
+      id: 'dependencies_ok',
+      question: 'Dependencies Review',
+      description: 'Are all dependencies identified? Any blocking concerns?',
+      type: 'boolean',
+      fieldRef: 'depends_on',
     },
-    { name: 'target_date', label: 'Target Date', type: 'text' },
-    { name: 'next_milestone', label: 'Next Milestone', type: 'textarea' },
+    {
+      id: 'management_comment',
+      question: 'Strategic Notes',
+      description: 'Any strategic concerns, suggestions, or things to consider?',
+      type: 'text',
+    },
   ],
   operations_sales: [
-    { name: 'ops_process', label: 'Operational Process', type: 'textarea' },
-    { name: 'current_loa', label: 'Current Level of Automation', type: 'text' },
-    { name: 'potential_loa', label: 'Potential Level of Automation', type: 'text' },
-    { name: 'human_role_before', label: 'Human Role Before', type: 'textarea' },
-    { name: 'human_role_after', label: 'Human Role After', type: 'textarea' },
+    {
+      id: 'pain_point_valid',
+      question: 'Pain Point Validation',
+      description: 'Does this solve a real operational pain point? How painful is it today?',
+      type: 'rating',
+    },
+    {
+      id: 'user_impact',
+      question: 'User Impact',
+      description: 'Will the empowered users actually benefit from this?',
+      type: 'rating',
+      fieldRef: 'who_is_empowered',
+    },
+    {
+      id: 'process_clarity',
+      question: 'Process Understanding',
+      description: 'Is the current vs. future process clearly defined?',
+      type: 'select',
+      options: [
+        { value: 'unclear', label: 'Needs more clarity', color: 'red' },
+        { value: 'partial', label: 'Partially clear', color: 'yellow' },
+        { value: 'clear', label: 'Well defined', color: 'green' },
+      ],
+    },
+    {
+      id: 'adoption_risk',
+      question: 'Adoption Risk',
+      description: 'How likely is the team to actually adopt and use this?',
+      type: 'select',
+      options: [
+        { value: 'high_risk', label: 'High resistance expected', color: 'red' },
+        { value: 'medium_risk', label: 'Some change management needed', color: 'yellow' },
+        { value: 'low_risk', label: 'Easy adoption expected', color: 'green' },
+      ],
+    },
+    {
+      id: 'roi_confidence',
+      question: 'ROI Confidence',
+      description: 'How confident are you in the claimed benefits/time savings?',
+      type: 'rating',
+    },
+    {
+      id: 'ops_comment',
+      question: 'Operational Notes',
+      description: 'Any operational concerns, workflow suggestions, or user insights?',
+      type: 'text',
+    },
   ],
   product_tech: [
     {
-      name: 'difficulty',
-      label: 'Difficulty',
+      id: 'complexity_accurate',
+      question: 'Complexity Assessment',
+      description: 'Is the difficulty rating accurate? Any hidden complexity?',
       type: 'select',
       options: [
-        { value: 'easy', label: 'Easy' },
-        { value: 'medium', label: 'Medium' },
-        { value: 'hard', label: 'Hard' },
+        { value: 'underestimated', label: 'More complex than stated', color: 'red' },
+        { value: 'accurate', label: 'Complexity is accurate', color: 'green' },
+        { value: 'overestimated', label: 'Simpler than stated', color: 'blue' },
       ],
+      fieldRef: 'difficulty',
     },
-    { name: 'estimated_hours_min', label: 'Estimated Hours (Min)', type: 'text' },
-    { name: 'estimated_hours_max', label: 'Estimated Hours (Max)', type: 'text' },
-    { name: 'data_status', label: 'Data Status', type: 'text' },
+    {
+      id: 'hours_realistic',
+      question: 'Hours Estimate',
+      description: 'Are the estimated hours realistic for this scope?',
+      type: 'select',
+      options: [
+        { value: 'too_low', label: 'Will take longer', color: 'red' },
+        { value: 'realistic', label: 'Estimate is good', color: 'green' },
+        { value: 'too_high', label: 'Could be faster', color: 'blue' },
+      ],
+      fieldRef: 'estimated_hours_min',
+    },
+    {
+      id: 'tech_debt_risk',
+      question: 'Tech Debt Risk',
+      description: 'Will this create technical debt or maintenance burden?',
+      type: 'rating',
+    },
+    {
+      id: 'data_ready',
+      question: 'Data Readiness',
+      description: 'Is the required data available and accessible?',
+      type: 'select',
+      options: [
+        { value: 'not_ready', label: 'Data not available', color: 'red' },
+        { value: 'partial', label: 'Partial data available', color: 'yellow' },
+        { value: 'ready', label: 'Data is ready', color: 'green' },
+      ],
+      fieldRef: 'data_required',
+    },
+    {
+      id: 'integration_concerns',
+      question: 'Integration Complexity',
+      description: 'Any concerns about API integrations or system compatibility?',
+      type: 'boolean',
+      fieldRef: 'integrations_needed',
+    },
+    {
+      id: 'tech_comment',
+      question: 'Technical Notes',
+      description: 'Any technical concerns, architecture suggestions, or blockers?',
+      type: 'text',
+    },
   ],
 };
+
+// Task-level review questions (same for all areas)
+const TASK_REVIEW_QUESTIONS: ReviewQuestion[] = [
+  {
+    id: 'task_hours_check',
+    question: 'Hours Estimate',
+    description: 'Are the estimated hours for this task realistic?',
+    type: 'select',
+    options: [
+      { value: 'too_low', label: 'Underestimated', color: 'red' },
+      { value: 'accurate', label: 'Accurate', color: 'green' },
+      { value: 'too_high', label: 'Overestimated', color: 'blue' },
+    ],
+  },
+  {
+    id: 'task_blocker',
+    question: 'Blockers',
+    description: 'Are there any blockers or dependencies for this task?',
+    type: 'boolean',
+  },
+  {
+    id: 'task_comment',
+    question: 'Task Notes',
+    description: 'Any specific feedback on this task?',
+    type: 'text',
+  },
+];
 
 const statusColors: Record<string, string> = {
   idea: 'bg-indigo-500',
@@ -141,6 +300,9 @@ export default function ReviewsPage() {
   const [commentCount, setCommentCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [pendingArea, setPendingArea] = useState<ReviewerArea | null>(null);
+  const [activeTab, setActiveTab] = useState<'info' | 'review' | 'tasks'>('info');
+  const [reviewAnswers, setReviewAnswers] = useState<Record<string, string | number>>({});
+  const [taskFeedback, setTaskFeedback] = useState<Record<string, { taskId: string; hoursCheck?: 'too_low' | 'accurate' | 'too_high'; hasBlockers?: boolean; comment?: string }>>({});
 
   // Get reviewer ID from auth
   const reviewerId = user?.id || null;
@@ -341,7 +503,43 @@ export default function ReviewsPage() {
       setSessionId(null);
       setFeedback({});
       setComments([]);
+      setReviewAnswers({});
+      setTaskFeedback({});
+      setActiveTab('info');
     }
+  };
+
+  // Handle review question answer change
+  const handleAnswerChange = async (questionId: string, value: string | number) => {
+    setReviewAnswers(prev => ({ ...prev, [questionId]: value }));
+
+    // Save to backend if session exists
+    if (sessionId) {
+      try {
+        await fetch('/api/reviews/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            review_session_id: sessionId,
+            field_name: questionId,
+            current_value: '',
+            proposed_value: String(value),
+            is_area_specific: true,
+          }),
+        });
+        setFeedbackCount(prev => prev + 1);
+      } catch (error) {
+        console.error('Error saving answer:', error);
+      }
+    }
+  };
+
+  // Handle task feedback
+  const handleTaskFeedback = (taskId: string, feedback: Partial<{ hoursCheck?: 'too_low' | 'accurate' | 'too_high'; hasBlockers?: boolean; comment?: string }>) => {
+    setTaskFeedback(prev => ({
+      ...prev,
+      [taskId]: { ...prev[taskId], taskId, ...feedback },
+    }));
   };
 
   const handlePrevious = () => {
@@ -350,6 +548,9 @@ export default function ReviewsPage() {
       setSessionId(null);
       setFeedback({});
       setComments([]);
+      setReviewAnswers({});
+      setTaskFeedback({});
+      setActiveTab('info');
     }
   };
 
@@ -499,7 +700,7 @@ export default function ReviewsPage() {
                   <div className="flex items-center gap-3 mb-2">
                     <span className={`w-3 h-3 rounded-full ${statusColors[currentProject.status]}`} />
                     <h2 className="text-xl font-bold text-white">{currentProject.title}</h2>
-                    <span className={`text-sm ${priorityColors[currentProject.priority]}`}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${priorityColors[currentProject.priority]}`}>
                       {currentProject.priority}
                     </span>
                   </div>
@@ -511,7 +712,7 @@ export default function ReviewsPage() {
               </div>
 
               {/* Review status badges */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-zinc-500">Review Status:</span>
                 <div className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs ${
                   currentProject.review_status.management_reviewed ? 'bg-green-500/20 text-green-400' : 'bg-zinc-800 text-zinc-500'
@@ -534,147 +735,123 @@ export default function ReviewsPage() {
               </div>
             </div>
 
-            {/* Project Details */}
-            <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left column - Key Info */}
-              <div className="space-y-6">
-                {/* Quick stats */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-zinc-800/50 rounded-lg p-3 text-center">
-                    <p className="text-lg font-bold text-white">{currentProject.tasks.length}</p>
-                    <p className="text-xs text-zinc-400">Tasks</p>
-                  </div>
-                  <div className="bg-zinc-800/50 rounded-lg p-3 text-center">
-                    <p className="text-lg font-bold text-white">{currentProject.progress_percentage}%</p>
-                    <p className="text-xs text-zinc-400">Progress</p>
-                  </div>
-                  <div className="bg-zinc-800/50 rounded-lg p-3 text-center">
-                    <p className="text-lg font-bold text-white">
-                      {currentProject.estimated_hours_min || '?'}-{currentProject.estimated_hours_max || '?'}
-                    </p>
-                    <p className="text-xs text-zinc-400">Hours Est.</p>
-                  </div>
-                </div>
-
-                {/* Why it matters */}
-                {currentProject.why_it_matters && (
-                  <div className="bg-zinc-800/30 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-zinc-400 mb-2">Why It Matters</h4>
-                    <p className="text-sm text-white">{currentProject.why_it_matters}</p>
-                  </div>
+            {/* Tabbed Content */}
+            <div className="p-6">
+              {/* Tab Navigation */}
+              <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-4">
+                <button
+                  onClick={() => setActiveTab('info')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'info' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                  }`}
+                >
+                  <Layers className="w-4 h-4 inline mr-2" />
+                  Project Info
+                </button>
+                <button
+                  onClick={() => setActiveTab('review')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'review' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                  }`}
+                >
+                  <Star className="w-4 h-4 inline mr-2" />
+                  Your Review
+                </button>
+                {currentProject.tasks.length > 0 && (
+                  <button
+                    onClick={() => setActiveTab('tasks')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === 'tasks' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                    }`}
+                  >
+                    <CheckCircle className="w-4 h-4 inline mr-2" />
+                    Tasks ({currentProject.tasks.length})
+                  </button>
                 )}
+              </div>
 
-                {/* Benefits */}
-                {currentProject.benefits && currentProject.benefits.length > 0 && (
-                  <div className="bg-zinc-800/30 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-zinc-400 mb-2">Benefits</h4>
-                    <ul className="space-y-1">
-                      {currentProject.benefits.map((benefit, idx) => (
-                        <li key={idx} className="text-sm text-white flex items-start gap-2">
-                          <Check className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
+              {/* Tab Content */}
+              {activeTab === 'info' && (
+                <ProjectReviewInfo project={currentProject} />
+              )}
+
+              {activeTab === 'review' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-medium text-zinc-400 uppercase">
+                      {reviewerArea.replace('_', ' / ')} Review Questions
+                    </h3>
+                    <span className="text-xs text-zinc-500">
+                      {Object.keys(reviewAnswers).length} of {REVIEW_QUESTIONS[reviewerArea].length} answered
+                    </span>
                   </div>
-                )}
 
-                {/* Tasks list */}
-                <div className="bg-zinc-800/30 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-zinc-400 mb-3">Tasks ({currentProject.tasks.length})</h4>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {currentProject.tasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className={`flex items-center gap-3 p-2 rounded-lg transition-colors cursor-pointer ${
-                          selectedTaskId === task.id ? 'bg-blue-500/20 border border-blue-500/50' : 'bg-zinc-800/50 hover:bg-zinc-800'
-                        }`}
-                        onClick={() => setSelectedTaskId(selectedTaskId === task.id ? null : task.id)}
-                      >
-                        <div className={`w-2 h-2 rounded-full ${statusColors[task.status] || 'bg-zinc-500'}`} />
-                        <span className="text-sm text-white flex-1 truncate">{task.title}</span>
-                        <span className={`text-xs ${
-                          task.ai_potential === 'high' ? 'text-green-400' :
-                          task.ai_potential === 'medium' ? 'text-yellow-400' :
-                          task.ai_potential === 'low' ? 'text-red-400' : 'text-zinc-500'
-                        }`}>
-                          AI: {task.ai_potential || 'none'}
-                        </span>
-                        <MessageSquare className="w-4 h-4 text-zinc-500" />
-                      </div>
+                  {/* Review Questions */}
+                  <div className="space-y-4">
+                    {REVIEW_QUESTIONS[reviewerArea].map((question) => (
+                      <ReviewQuestionCard
+                        key={question.id}
+                        question={question}
+                        currentFieldValue={question.fieldRef ? (currentProject as any)[question.fieldRef] : undefined}
+                        value={reviewAnswers[question.id]}
+                        onChange={(value) => handleAnswerChange(question.id, value)}
+                        disabled={submitting}
+                      />
                     ))}
                   </div>
-                </div>
-              </div>
 
-              {/* Right column - Review Fields */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-zinc-400 uppercase">
-                  Your Review ({reviewerArea.replace('_', ' / ')})
-                </h3>
-
-                {/* Area-specific fields */}
-                {AREA_FIELDS[reviewerArea].map((field) => (
-                  <ReviewFeedbackForm
-                    key={field.name}
-                    fieldName={field.name}
-                    fieldLabel={field.label}
-                    fieldType={field.type}
-                    currentValue={(currentProject as any)[field.name]}
-                    options={field.options}
-                    onSubmit={(value, comment) => handleSubmitFeedback(field.name, value, comment)}
-                    existingProposedValue={feedback[field.name]?.proposed_value}
-                    existingComment={feedback[field.name]?.comment}
-                    disabled={submitting}
-                  />
-                ))}
-
-                {/* Add comment section */}
-                <div className="bg-zinc-800/30 rounded-lg p-4 space-y-3">
-                  <h4 className="text-sm font-medium text-white flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4" />
-                    Add Comment
-                    {selectedTaskId && (
-                      <span className="text-xs text-blue-400 bg-blue-500/20 px-2 py-0.5 rounded">
-                        on task
-                        <button onClick={() => setSelectedTaskId(null)} className="ml-1 hover:text-white">
-                          <X className="w-3 h-3 inline" />
-                        </button>
-                      </span>
+                  {/* General Comment */}
+                  <div className="bg-zinc-800/30 rounded-lg p-4 space-y-3 mt-6">
+                    <h4 className="text-sm font-medium text-white flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4" />
+                      Additional Comments
+                    </h4>
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Any other thoughts, suggestions, or concerns about this project..."
+                      className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 resize-none"
+                      rows={3}
+                    />
+                    {newComment.trim() && (
+                      <button
+                        onClick={handleAddComment}
+                        disabled={submitting}
+                        className="flex items-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg text-sm transition-colors disabled:opacity-50"
+                      >
+                        <Send className="w-4 h-4" />
+                        Save Comment
+                      </button>
                     )}
-                  </h4>
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder={selectedTaskId ? 'Comment on selected task...' : 'Add a general comment about this project...'}
-                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 resize-none"
-                    rows={3}
-                  />
-                  <button
-                    onClick={handleAddComment}
-                    disabled={!newComment.trim() || submitting}
-                    className="flex items-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg text-sm transition-colors disabled:opacity-50"
-                  >
-                    <Send className="w-4 h-4" />
-                    Add Comment
-                  </button>
 
-                  {/* Show added comments */}
-                  {comments.length > 0 && (
-                    <div className="space-y-2 pt-3 border-t border-zinc-700">
-                      <p className="text-xs text-zinc-500">Your comments ({comments.length})</p>
-                      {comments.map((comment) => (
-                        <div key={comment.id} className="text-sm text-zinc-300 bg-zinc-800/50 p-2 rounded">
-                          {comment.task_id && (
-                            <span className="text-xs text-blue-400 block mb-1">On task</span>
-                          )}
-                          {comment.content}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    {/* Show added comments */}
+                    {comments.length > 0 && (
+                      <div className="space-y-2 pt-3 border-t border-zinc-700">
+                        <p className="text-xs text-zinc-500">Your comments ({comments.length})</p>
+                        {comments.map((comment) => (
+                          <div key={comment.id} className="text-sm text-zinc-300 bg-zinc-800/50 p-2 rounded">
+                            {comment.task_id && (
+                              <span className="text-xs text-blue-400 block mb-1">On task</span>
+                            )}
+                            {comment.content}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {activeTab === 'tasks' && currentProject.tasks.length > 0 && (
+                <TaskReviewPanel
+                  tasks={currentProject.tasks}
+                  taskFeedback={taskFeedback}
+                  onTaskFeedback={handleTaskFeedback}
+                  selectedTaskId={selectedTaskId}
+                  onSelectTask={setSelectedTaskId}
+                  disabled={submitting}
+                />
+              )}
             </div>
 
             {/* Actions Footer */}
