@@ -6,17 +6,19 @@ import {
   FolderKanban,
   ListTodo,
   CheckCircle2,
-  Clock,
-  TrendingUp,
   Users,
   AlertTriangle,
   ArrowRight,
+  Sparkles,
+  Target,
+  Layers,
+  Zap,
+  AlertCircle,
+  PieChart,
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Badge, ProgressBar } from '@/components/ui';
-import { createClient } from '@/lib/supabase/client';
-import type { Project, Task, ActivityLog } from '@/types/database';
-import { formatRelativeTime } from '@/lib/utils';
+import type { Project } from '@/types/database';
 
 interface DashboardStats {
   totalProjects: number;
@@ -24,6 +26,29 @@ interface DashboardStats {
   totalTasks: number;
   completedTasks: number;
   blockedTasks: number;
+  inProgressTasks: number;
+  inReviewTasks: number;
+}
+
+interface TeamStat {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+  projectCount: number;
+  taskCount: number;
+  completedTasks: number;
+  inProgressTasks: number;
+}
+
+interface PillarStat {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+  projectCount: number;
+  activeProjects: number;
+  avgProgress: number;
 }
 
 export default function DashboardPage() {
@@ -33,9 +58,19 @@ export default function DashboardPage() {
     totalTasks: 0,
     completedTasks: 0,
     blockedTasks: 0,
+    inProgressTasks: 0,
+    inReviewTasks: 0,
   });
+  const [projectsByStatus, setProjectsByStatus] = useState<Record<string, number>>({});
+  const [projectsByPriority, setProjectsByPriority] = useState<Record<string, number>>({});
+  const [tasksByPhase, setTasksByPhase] = useState<Record<string, number>>({});
+  const [aiPotentialStats, setAiPotentialStats] = useState<Record<string, number>>({});
+  const [teamStats, setTeamStats] = useState<TeamStat[]>([]);
+  const [pillarStats, setPillarStats] = useState<PillarStat[]>([]);
+  const [upcomingTasks, setUpcomingTasks] = useState(0);
+  const [overdueTasks, setOverdueTasks] = useState(0);
+  const [avgProjectProgress, setAvgProjectProgress] = useState(0);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
-  const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,18 +79,21 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      // Use API route to bypass RLS
       const response = await fetch('/api/dashboard');
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data');
-      }
-
+      if (!response.ok) throw new Error('Failed to fetch dashboard data');
       const data = await response.json();
 
       setStats(data.stats);
+      setProjectsByStatus(data.projectsByStatus || {});
+      setProjectsByPriority(data.projectsByPriority || {});
+      setTasksByPhase(data.tasksByPhase || {});
+      setAiPotentialStats(data.aiPotentialStats || {});
+      setTeamStats(data.teamStats || []);
+      setPillarStats(data.pillarStats || []);
+      setUpcomingTasks(data.upcomingTasks || 0);
+      setOverdueTasks(data.overdueTasks || 0);
+      setAvgProjectProgress(data.avgProjectProgress || 0);
       setRecentProjects(data.recentProjects || []);
-      setRecentActivity(data.recentActivity || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -69,161 +107,371 @@ export default function DashboardPage() {
     value,
     subValue,
     color,
+    href,
   }: {
     icon: React.ElementType;
     label: string;
     value: number | string;
     subValue?: string;
     color: string;
-  }) => (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-zinc-400 mb-1">{label}</p>
-          <p className="text-2xl font-bold text-white">{value}</p>
-          {subValue && <p className="text-xs text-zinc-500 mt-1">{subValue}</p>}
-        </div>
-        <div className={`p-2 rounded-lg ${color}`}>
-          <Icon className="w-5 h-5" />
+    href?: string;
+  }) => {
+    const content = (
+      <div className={`bg-zinc-900 border border-zinc-800 rounded-xl p-5 ${href ? 'hover:border-zinc-700 transition-colors cursor-pointer' : ''}`}>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm text-zinc-400 mb-1">{label}</p>
+            <p className="text-2xl font-bold text-white">{value}</p>
+            {subValue && <p className="text-xs text-zinc-500 mt-1">{subValue}</p>}
+          </div>
+          <div className={`p-2 rounded-lg ${color}`}>
+            <Icon className="w-5 h-5" />
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+
+    return href ? <Link href={href}>{content}</Link> : content;
+  };
+
+  const phaseColors: Record<string, string> = {
+    discovery: '#3b82f6',
+    planning: '#8b5cf6',
+    development: '#f59e0b',
+    testing: '#10b981',
+    training: '#06b6d4',
+    rollout: '#ec4899',
+    monitoring: '#6366f1',
+  };
+
+  const priorityColors: Record<string, string> = {
+    critical: '#ef4444',
+    high: '#f97316',
+    medium: '#eab308',
+    low: '#22c55e',
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Header title="Dashboard" />
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 bg-zinc-900 rounded-xl animate-pulse" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 h-96 bg-zinc-900 rounded-xl animate-pulse" />
+            <div className="h-96 bg-zinc-900 rounded-xl animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
       <Header title="Dashboard" />
 
       <div className="p-6 space-y-6">
-        {/* Stats Grid */}
+        {/* Top Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={FolderKanban}
             label="Total Projects"
             value={stats.totalProjects}
-            subValue={`${stats.activeProjects} active`}
+            subValue={`${stats.activeProjects} in progress`}
             color="bg-blue-500/20 text-blue-400"
+            href="/projects"
           />
           <StatCard
             icon={ListTodo}
             label="Total Tasks"
             value={stats.totalTasks}
+            subValue={`${stats.inProgressTasks} in progress`}
             color="bg-purple-500/20 text-purple-400"
+            href="/tasks"
           />
           <StatCard
             icon={CheckCircle2}
-            label="Completed Tasks"
-            value={stats.completedTasks}
-            subValue={`${stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}% completion rate`}
+            label="Completion Rate"
+            value={`${stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%`}
+            subValue={`${stats.completedTasks} of ${stats.totalTasks} tasks`}
             color="bg-green-500/20 text-green-400"
           />
           <StatCard
-            icon={AlertTriangle}
-            label="Blocked Tasks"
-            value={stats.blockedTasks}
-            color="bg-red-500/20 text-red-400"
+            icon={Target}
+            label="Avg Progress"
+            value={`${avgProjectProgress}%`}
+            subValue="across all projects"
+            color="bg-cyan-500/20 text-cyan-400"
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Projects */}
-          <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-              <h2 className="font-semibold text-white">Recent Projects</h2>
-              <Link
-                href="/projects"
-                className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
-              >
-                View all <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-            <div className="p-4 space-y-3">
-              {loading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-16 bg-zinc-800 rounded-lg animate-pulse" />
-                  ))}
+        {/* Alert Row */}
+        {(overdueTasks > 0 || stats.blockedTasks > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {overdueTasks > 0 && (
+              <div className="bg-red-900/20 border border-red-900/30 rounded-xl p-4 flex items-center gap-4">
+                <div className="p-3 bg-red-500/20 rounded-lg">
+                  <AlertCircle className="w-6 h-6 text-red-400" />
                 </div>
-              ) : recentProjects.length === 0 ? (
-                <p className="text-sm text-zinc-500 text-center py-8">
-                  No projects yet. Create your first project!
-                </p>
-              ) : (
-                recentProjects.map((project) => (
-                  <Link
-                    key={project.id}
-                    href={`/projects/${project.slug}`}
-                    className="block p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-white truncate">
-                          {project.title}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="status" value={project.status}>
-                            {project.status.replace('_', ' ')}
-                          </Badge>
-                          <Badge variant="priority" value={project.priority}>
-                            {project.priority}
-                          </Badge>
+                <div>
+                  <p className="text-lg font-bold text-red-400">{overdueTasks} Overdue Tasks</p>
+                  <p className="text-sm text-zinc-400">Need immediate attention</p>
+                </div>
+              </div>
+            )}
+            {stats.blockedTasks > 0 && (
+              <div className="bg-orange-900/20 border border-orange-900/30 rounded-xl p-4 flex items-center gap-4">
+                <div className="p-3 bg-orange-500/20 rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-orange-400" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-orange-400">{stats.blockedTasks} Blocked Tasks</p>
+                  <p className="text-sm text-zinc-400">Waiting for resolution</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - 2/3 width */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Recent Projects */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
+              <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+                <h2 className="font-semibold text-white flex items-center gap-2">
+                  <FolderKanban className="w-5 h-5 text-blue-400" />
+                  Recent Projects
+                </h2>
+                <Link
+                  href="/projects"
+                  className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                >
+                  View all <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <div className="p-4 space-y-3">
+                {recentProjects.length === 0 ? (
+                  <p className="text-sm text-zinc-500 text-center py-8">
+                    No projects yet. Create your first project!
+                  </p>
+                ) : (
+                  recentProjects.map((project) => (
+                    <Link
+                      key={project.id}
+                      href={`/projects/${project.slug}`}
+                      className="block p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-white truncate">{project.title}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="status" value={project.status}>
+                              {project.status.replace('_', ' ')}
+                            </Badge>
+                            <Badge variant="priority" value={project.priority}>
+                              {project.priority}
+                            </Badge>
+                            {project.pillar && (
+                              <span
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: project.pillar.color }}
+                                title={project.pillar.name}
+                              />
+                            )}
+                          </div>
+                        </div>
+                        <div className="ml-4 w-24">
+                          <ProgressBar value={project.progress_percentage} size="sm" showLabel />
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <ProgressBar
-                          value={project.progress_percentage}
-                          size="sm"
-                          className="w-20"
+                    </Link>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Tasks by Phase */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
+              <div className="p-4 border-b border-zinc-800">
+                <h2 className="font-semibold text-white flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-purple-400" />
+                  Tasks by Phase
+                </h2>
+              </div>
+              <div className="p-4">
+                <div className="space-y-3">
+                  {Object.entries(tasksByPhase).map(([phase, count]) => (
+                    <div key={phase} className="flex items-center gap-3">
+                      <div className="w-24 text-sm text-zinc-400 capitalize">{phase}</div>
+                      <div className="flex-1 bg-zinc-800 rounded-full h-4 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${stats.totalTasks > 0 ? (count / stats.totalTasks) * 100 : 0}%`,
+                            backgroundColor: phaseColors[phase],
+                          }}
                         />
                       </div>
+                      <div className="w-12 text-right text-sm font-medium text-white">{count}</div>
                     </div>
-                  </Link>
-                ))
-              )}
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* AI Potential Distribution */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
+              <div className="p-4 border-b border-zinc-800">
+                <h2 className="font-semibold text-white flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-yellow-400" />
+                  AI Potential Distribution
+                </h2>
+              </div>
+              <div className="p-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-green-900/20 rounded-lg">
+                    <p className="text-2xl font-bold text-green-400">{aiPotentialStats.high || 0}</p>
+                    <p className="text-xs text-zinc-400">High</p>
+                  </div>
+                  <div className="text-center p-4 bg-yellow-900/20 rounded-lg">
+                    <p className="text-2xl font-bold text-yellow-400">{aiPotentialStats.medium || 0}</p>
+                    <p className="text-xs text-zinc-400">Medium</p>
+                  </div>
+                  <div className="text-center p-4 bg-red-900/20 rounded-lg">
+                    <p className="text-2xl font-bold text-red-400">{aiPotentialStats.low || 0}</p>
+                    <p className="text-xs text-zinc-400">Low</p>
+                  </div>
+                  <div className="text-center p-4 bg-zinc-800 rounded-lg">
+                    <p className="text-2xl font-bold text-zinc-400">{aiPotentialStats.none || 0}</p>
+                    <p className="text-xs text-zinc-500">None</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Recent Activity */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-              <h2 className="font-semibold text-white">Recent Activity</h2>
-              <Link
-                href="/activity"
-                className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
-              >
-                View all <ArrowRight className="w-4 h-4" />
-              </Link>
+          {/* Right Column - 1/3 width */}
+          <div className="space-y-6">
+            {/* Quick Stats */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+              <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                <PieChart className="w-5 h-5 text-cyan-400" />
+                Quick Stats
+              </h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-zinc-400">In Review</span>
+                  <span className="text-sm font-medium text-blue-400">{stats.inReviewTasks}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-zinc-400">Due this week</span>
+                  <span className="text-sm font-medium text-yellow-400">{upcomingTasks}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-zinc-400">Planning projects</span>
+                  <span className="text-sm font-medium text-purple-400">{projectsByStatus.planning || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-zinc-400">Ideas in queue</span>
+                  <span className="text-sm font-medium text-indigo-400">{projectsByStatus.idea || 0}</span>
+                </div>
+              </div>
             </div>
-            <div className="p-4 space-y-4 max-h-[400px] overflow-y-auto">
-              {loading ? (
+
+            {/* Projects by Priority */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+              <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-orange-400" />
+                By Priority
+              </h3>
+              <div className="space-y-2">
+                {Object.entries(projectsByPriority).map(([priority, count]) => (
+                  <div key={priority} className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: priorityColors[priority] }}
+                    />
+                    <span className="text-sm text-zinc-400 capitalize flex-1">{priority}</span>
+                    <span className="text-sm font-medium text-white">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pillars Overview */}
+            {pillarStats.length > 0 && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-violet-400" />
+                  Pillars
+                </h3>
                 <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="h-12 bg-zinc-800 rounded animate-pulse" />
+                  {pillarStats.map((pillar) => (
+                    <div key={pillar.id} className="p-3 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: pillar.color }}
+                        />
+                        <span className="text-sm font-medium text-white">{pillar.name}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-zinc-400">
+                        <span>{pillar.projectCount} projects</span>
+                        <span>{pillar.avgProgress}% avg</span>
+                      </div>
+                      <div className="mt-2">
+                        <ProgressBar value={pillar.avgProgress} size="sm" />
+                      </div>
+                    </div>
                   ))}
                 </div>
-              ) : recentActivity.length === 0 ? (
-                <p className="text-sm text-zinc-500 text-center py-8">
-                  No activity yet
-                </p>
-              ) : (
-                recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3">
-                    <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-zinc-300">
-                        <span className="font-medium text-white">
-                          {activity.user?.full_name || 'Someone'}
-                        </span>{' '}
-                        {activity.description || `${activity.action} a ${activity.entity_type}`}
-                      </p>
-                      <p className="text-xs text-zinc-500 mt-0.5">
-                        {formatRelativeTime(activity.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Team Workload */}
+            {teamStats.filter(t => t.taskCount > 0).length > 0 && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-green-400" />
+                    Team Workload
+                  </h3>
+                  <Link href="/team" className="text-xs text-blue-400 hover:text-blue-300">
+                    Manage
+                  </Link>
+                </div>
+                <div className="space-y-3">
+                  {teamStats
+                    .filter(team => team.taskCount > 0)
+                    .sort((a, b) => b.taskCount - a.taskCount)
+                    .slice(0, 5)
+                    .map((team) => (
+                      <div key={team.id} className="flex items-center gap-3">
+                        <div
+                          className="w-2 h-8 rounded-full"
+                          style={{ backgroundColor: team.color }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white truncate">{team.name}</p>
+                          <p className="text-xs text-zinc-500">
+                            {team.taskCount} tasks ({team.completedTasks} done)
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-white">{team.projectCount}</p>
+                          <p className="text-xs text-zinc-500">projects</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

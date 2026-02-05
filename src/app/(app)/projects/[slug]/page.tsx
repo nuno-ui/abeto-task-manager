@@ -14,6 +14,12 @@ import {
   MessageSquare,
   MoreVertical,
   Trash2,
+  Database,
+  Zap,
+  Target,
+  AlertTriangle,
+  Link2,
+  TrendingUp,
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { TaskCard } from '@/components/tasks/TaskCard';
@@ -153,8 +159,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [savingTask, setSavingTask] = useState(false);
   const [savingProject, setSavingProject] = useState(false);
-  const [activeTab, setActiveTab] = useState<'tasks' | 'comments' | 'activity'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'comments' | 'details'>('tasks');
   const [taskPhaseFilter, setTaskPhaseFilter] = useState('all');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingProject, setDeletingProject] = useState(false);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjectData();
@@ -333,6 +342,51 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
     }
   };
 
+  const handleDeleteProject = async () => {
+    if (!project) return;
+    setDeletingProject(true);
+
+    try {
+      const response = await fetch(`/api/projects?id=${project.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete project');
+      }
+
+      // Redirect to projects list
+      window.location.href = '/projects';
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert('Failed to delete project');
+    } finally {
+      setDeletingProject(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    setDeletingTaskId(taskId);
+
+    try {
+      const response = await fetch(`/api/tasks?id=${taskId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete task');
+      }
+
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete task');
+    } finally {
+      setDeletingTaskId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen">
@@ -433,6 +487,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   </Button>
                 </a>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
           </div>
 
@@ -499,6 +561,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             </span>
           </button>
           <button
+            onClick={() => setActiveTab('details')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'details'
+                ? 'text-blue-400 border-blue-400'
+                : 'text-zinc-400 border-transparent hover:text-white'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              Details
+            </span>
+          </button>
+          <button
             onClick={() => setActiveTab('comments')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'comments'
@@ -508,7 +583,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
           >
             <span className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
-              All Comments ({comments.length})
+              Comments ({comments.length})
             </span>
           </button>
         </div>
@@ -568,12 +643,255 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                             key={task.id}
                             task={task}
                             onClick={() => setEditingTask(task)}
+                            onDelete={handleDeleteTask}
+                            deleting={deletingTaskId === task.id}
                           />
                         ))}
                       </div>
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'details' && (
+          <div className="space-y-6">
+            {/* Why It Matters */}
+            {project.why_it_matters && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-violet-400" />
+                  Why It Matters
+                </h3>
+                <p className="text-zinc-300">{project.why_it_matters}</p>
+              </div>
+            )}
+
+            {/* Human Role - Before vs After */}
+            {(project.human_role_before || project.human_role_after) && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-400" />
+                  Human Role: Before vs After
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-red-900/20 border border-red-900/30 rounded-lg p-4">
+                    <span className="text-xs font-medium text-red-400 uppercase">❌ Before</span>
+                    <p className="text-zinc-300 mt-2">{project.human_role_before || 'Not specified'}</p>
+                  </div>
+                  <div className="bg-green-900/20 border border-green-900/30 rounded-lg p-4">
+                    <span className="text-xs font-medium text-green-400 uppercase">✅ After</span>
+                    <p className="text-zinc-300 mt-2">{project.human_role_after || 'Not specified'}</p>
+                  </div>
+                </div>
+                {project.who_is_empowered && project.who_is_empowered.length > 0 && (
+                  <div className="mt-4">
+                    <span className="text-xs text-zinc-500">Empowers:</span>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {project.who_is_empowered.map((role, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-violet-900/30 text-violet-300 text-xs rounded">
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {project.new_capabilities && project.new_capabilities.length > 0 && (
+                  <div className="mt-4">
+                    <span className="text-xs text-zinc-500">New Capabilities:</span>
+                    <ul className="mt-1 space-y-1">
+                      {project.new_capabilities.map((cap, idx) => (
+                        <li key={idx} className="text-sm text-zinc-300 flex items-center gap-2">
+                          <Zap className="w-3 h-3 text-yellow-400" />
+                          {cap}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Data Flow */}
+            {(project.data_required?.length > 0 || project.data_generates?.length > 0 || project.data_improves?.length > 0) && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Database className="w-4 h-4 text-cyan-400" />
+                  Data Flow
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {project.data_required && project.data_required.length > 0 && (
+                    <div className="bg-red-900/10 border border-red-900/20 rounded-lg p-4">
+                      <span className="text-xs font-medium text-red-400">🔴 Requires</span>
+                      <ul className="mt-2 space-y-1">
+                        {project.data_required.map((item, idx) => (
+                          <li key={idx} className="text-sm text-zinc-300">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {project.data_generates && project.data_generates.length > 0 && (
+                    <div className="bg-green-900/10 border border-green-900/20 rounded-lg p-4">
+                      <span className="text-xs font-medium text-green-400">🟢 Generates</span>
+                      <ul className="mt-2 space-y-1">
+                        {project.data_generates.map((item, idx) => (
+                          <li key={idx} className="text-sm text-zinc-300">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {project.data_improves && project.data_improves.length > 0 && (
+                    <div className="bg-blue-900/10 border border-blue-900/20 rounded-lg p-4">
+                      <span className="text-xs font-medium text-blue-400">🔵 Improves</span>
+                      <ul className="mt-2 space-y-1">
+                        {project.data_improves.map((item, idx) => (
+                          <li key={idx} className="text-sm text-zinc-300">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Benefits */}
+            {project.benefits && project.benefits.length > 0 && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-green-400" />
+                  Benefits
+                </h3>
+                <ul className="grid md:grid-cols-2 gap-2">
+                  {project.benefits.map((benefit, idx) => (
+                    <li key={idx} className="text-sm text-zinc-300 flex items-start gap-2">
+                      <span className="text-green-400 mt-0.5">✓</span>
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Dependencies & Relationships */}
+            {(project.depends_on?.length > 0 || project.enables?.length > 0 || project.prerequisites?.length > 0) && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Link2 className="w-4 h-4 text-orange-400" />
+                  Dependencies & Relationships
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {project.prerequisites && project.prerequisites.length > 0 && (
+                    <div>
+                      <span className="text-xs text-zinc-500">Prerequisites:</span>
+                      <ul className="mt-1 space-y-1">
+                        {project.prerequisites.map((item, idx) => (
+                          <li key={idx} className="text-sm text-zinc-300">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {project.depends_on && project.depends_on.length > 0 && (
+                    <div>
+                      <span className="text-xs text-zinc-500">Depends On:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {project.depends_on.map((slug, idx) => (
+                          <Link key={idx} href={`/projects/${slug}`} className="px-2 py-1 bg-orange-900/20 text-orange-300 text-xs rounded hover:bg-orange-900/40">
+                            {slug}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {project.enables && project.enables.length > 0 && (
+                    <div>
+                      <span className="text-xs text-zinc-500">Enables:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {project.enables.map((slug, idx) => (
+                          <Link key={idx} href={`/projects/${slug}`} className="px-2 py-1 bg-green-900/20 text-green-300 text-xs rounded hover:bg-green-900/40">
+                            {slug}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Technical Details */}
+            {(project.api_endpoints?.length > 0 || project.resources_used?.length > 0 || project.integrations_needed?.length > 0) && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-yellow-400" />
+                  Technical Details
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {project.api_endpoints && project.api_endpoints.length > 0 && (
+                    <div>
+                      <span className="text-xs text-zinc-500">API Endpoints:</span>
+                      <ul className="mt-1 space-y-1">
+                        {project.api_endpoints.map((endpoint, idx) => (
+                          <li key={idx} className="text-sm text-cyan-400 font-mono">{endpoint}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {project.resources_used && project.resources_used.length > 0 && (
+                    <div>
+                      <span className="text-xs text-zinc-500">Resources Used:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {project.resources_used.map((resource, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-zinc-800 text-zinc-300 text-xs rounded">
+                            {resource}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {project.integrations_needed && project.integrations_needed.length > 0 && (
+                    <div>
+                      <span className="text-xs text-zinc-500">Integrations Needed:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {project.integrations_needed.map((integration, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-purple-900/20 text-purple-300 text-xs rounded">
+                            {integration}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Operations Context */}
+            {(project.ops_process || project.current_loa || project.potential_loa) && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3">
+                  Operations Context
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {project.ops_process && (
+                    <div>
+                      <span className="text-xs text-zinc-500">Process:</span>
+                      <p className="text-sm text-zinc-300 mt-1">{project.ops_process}</p>
+                    </div>
+                  )}
+                  {project.current_loa && (
+                    <div>
+                      <span className="text-xs text-zinc-500">Current LOA:</span>
+                      <p className="text-sm text-zinc-300 mt-1">{project.current_loa}</p>
+                    </div>
+                  )}
+                  {project.potential_loa && (
+                    <div>
+                      <span className="text-xs text-zinc-500">Potential LOA:</span>
+                      <p className="text-sm text-zinc-300 mt-1">{project.potential_loa}</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -592,6 +910,39 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Delete Project"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-4 bg-red-900/20 border border-red-900/30 rounded-lg">
+            <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0" />
+            <div>
+              <p className="text-white font-medium">This action cannot be undone</p>
+              <p className="text-sm text-zinc-400 mt-1">
+                This will permanently delete "{project.title}" and all its {tasks.length} tasks.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button variant="ghost" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleDeleteProject}
+              disabled={deletingProject}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deletingProject ? 'Deleting...' : 'Delete Project'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Create Task Modal */}
       <Modal
@@ -647,19 +998,46 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
       >
         <ProjectForm
           initialData={{
-            ...project,
-            description: project.description || undefined,
-            why_it_matters: project.why_it_matters || undefined,
-            pillar_id: project.pillar_id || undefined,
-            category: project.category || undefined,
-            owner_team_id: project.owner_team_id || undefined,
-            estimated_hours_min: project.estimated_hours_min || undefined,
-            estimated_hours_max: project.estimated_hours_max || undefined,
-            start_date: project.start_date || undefined,
-            target_date: project.target_date || undefined,
-            prototype_url: project.prototype_url || undefined,
-            notion_url: project.notion_url || undefined,
-            github_url: project.github_url || undefined,
+            title: project.title,
+            slug: project.slug,
+            description: project.description ?? undefined,
+            why_it_matters: project.why_it_matters ?? undefined,
+            pillar_id: project.pillar_id ?? undefined,
+            category: project.category ?? undefined,
+            status: project.status,
+            priority: project.priority,
+            difficulty: project.difficulty,
+            owner_team_id: project.owner_team_id ?? undefined,
+            estimated_hours_min: project.estimated_hours_min ?? undefined,
+            estimated_hours_max: project.estimated_hours_max ?? undefined,
+            start_date: project.start_date ?? undefined,
+            target_date: project.target_date ?? undefined,
+            prototype_url: project.prototype_url ?? undefined,
+            notion_url: project.notion_url ?? undefined,
+            github_url: project.github_url ?? undefined,
+            tags: project.tags,
+            human_role_before: project.human_role_before ?? undefined,
+            human_role_after: project.human_role_after ?? undefined,
+            who_is_empowered: project.who_is_empowered,
+            new_capabilities: project.new_capabilities,
+            data_required: project.data_required,
+            data_generates: project.data_generates,
+            data_improves: project.data_improves,
+            ops_process: project.ops_process ?? undefined,
+            current_loa: project.current_loa ?? undefined,
+            potential_loa: project.potential_loa ?? undefined,
+            resources_used: project.resources_used,
+            api_endpoints: project.api_endpoints,
+            prerequisites: project.prerequisites,
+            benefits: project.benefits,
+            missing_api_data: project.missing_api_data,
+            integrations_needed: project.integrations_needed,
+            depends_on: project.depends_on,
+            enables: project.enables,
+            related_to: project.related_to,
+            primary_users: project.primary_users,
+            data_status: project.data_status ?? undefined,
+            next_milestone: project.next_milestone ?? undefined,
           }}
           teams={teams}
           pillars={pillars}

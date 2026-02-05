@@ -15,6 +15,8 @@ import {
   TrendingUp,
   AlertCircle,
   Zap,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { Badge, Avatar, ProgressBar } from '@/components/ui';
 import type { Task } from '@/types/database';
@@ -22,6 +24,8 @@ import type { Task } from '@/types/database';
 interface TaskCardProps {
   task: Task;
   onClick?: () => void;
+  onDelete?: (taskId: string) => void;
+  deleting?: boolean;
   showProject?: boolean;
   expanded?: boolean;
 }
@@ -43,7 +47,7 @@ const aiPotentialConfig = {
   high: { color: 'text-green-400', bg: 'bg-green-400/10', label: 'High AI Potential' },
 };
 
-export function TaskCard({ task, onClick, showProject = false, expanded: initialExpanded = false }: TaskCardProps) {
+export function TaskCard({ task, onClick, onDelete, deleting = false, showProject = false, expanded: initialExpanded = false }: TaskCardProps) {
   const [isExpanded, setIsExpanded] = useState(initialExpanded);
 
   const aiConfig = task.ai_potential ? aiPotentialConfig[task.ai_potential as keyof typeof aiPotentialConfig] : null;
@@ -92,6 +96,25 @@ export function TaskCard({ task, onClick, showProject = false, expanded: initial
                 <Zap className="w-3 h-3" />
                 Foundational
               </span>
+            )}
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm('Are you sure you want to delete this task?')) {
+                    onDelete(task.id);
+                  }
+                }}
+                disabled={deleting}
+                className="p-1 text-zinc-500 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                title="Delete task"
+              >
+                {deleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+              </button>
             )}
           </div>
         </div>

@@ -152,3 +152,60 @@ export async function GET() {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
+    }
+
+    const supabase = getSupabaseAdmin();
+
+    // First delete all tasks associated with this project
+    const { error: tasksError } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('project_id', id);
+
+    if (tasksError) {
+      console.error('Error deleting project tasks:', tasksError);
+      return NextResponse.json({ error: 'Failed to delete project tasks' }, { status: 500 });
+    }
+
+    // Then delete comments associated with this project
+    const { error: commentsError } = await supabase
+      .from('comments')
+      .delete()
+      .eq('project_id', id);
+
+    if (commentsError) {
+      console.error('Error deleting project comments:', commentsError);
+      // Continue anyway, comments might not exist
+    }
+
+    // Finally delete the project
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting project:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Project deleted successfully' });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

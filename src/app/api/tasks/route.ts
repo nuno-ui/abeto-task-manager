@@ -153,3 +153,49 @@ export async function GET() {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Task ID is required' }, { status: 400 });
+    }
+
+    const supabase = getSupabaseAdmin();
+
+    // Delete comments associated with this task
+    const { error: commentsError } = await supabase
+      .from('comments')
+      .delete()
+      .eq('task_id', id);
+
+    if (commentsError) {
+      console.error('Error deleting task comments:', commentsError);
+      // Continue anyway
+    }
+
+    // Delete the task
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting task:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Task deleted successfully' });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
