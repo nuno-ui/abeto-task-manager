@@ -33,9 +33,9 @@ Your job is to take a simple idea and expand it into a fully-fleshed professiona
    - title: Clear, actionable task title
    - description: Detailed description of what needs to be done
    - phase: One of: discovery, planning, development, testing, training, rollout, monitoring
-   - status: "backlog" (default)
+   - status: "not_started" (default for new tasks)
    - difficulty: easy/medium/hard (ONLY these 3 values)
-   - ai_potential: How much AI can help (none/low/medium/high/full)
+   - ai_potential: How much AI can help (none/low/medium/high - ONLY these 4 values)
    - ai_assist_description: If ai_potential > none, describe how AI can help
    - estimated_hours: Hour range as string (e.g., "4-8", "16-24")
    - is_foundational: true if other tasks depend on this
@@ -75,9 +75,9 @@ Your job is to take a simple idea and expand it into a fully-fleshed professiona
       "title": "string",
       "description": "string",
       "phase": "discovery|planning|development|testing|training|rollout|monitoring",
-      "status": "backlog",
+      "status": "not_started",
       "difficulty": "easy|medium|hard",
-      "ai_potential": "none|low|medium|high|full",
+      "ai_potential": "none|low|medium|high",
       "ai_assist_description": "string or null",
       "estimated_hours": "string (e.g., '4-8')",
       "is_foundational": boolean,

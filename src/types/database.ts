@@ -9,7 +9,7 @@ export type ProjectPriority = 'critical' | 'high' | 'medium' | 'low';
 export type TaskStatus = 'not_started' | 'in_progress' | 'blocked' | 'in_review' | 'completed' | 'cancelled';
 export type TaskPhase = 'discovery' | 'planning' | 'development' | 'testing' | 'training' | 'rollout' | 'monitoring';
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
-export type AIPotential = 'high' | 'medium' | 'low';
+export type AIPotential = 'none' | 'high' | 'medium' | 'low';
 
 // =============================================================================
 // TABLE TYPES

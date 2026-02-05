@@ -11,7 +11,7 @@ export const PROJECT_SCHEMA = {
   status: {
     type: 'enum',
     required: true,
-    options: ['planning', 'active', 'paused', 'completed'],
+    options: ['idea', 'planning', 'in_progress', 'on_hold', 'completed', 'cancelled'],
     description: 'Current project status'
   },
   priority: {
@@ -38,19 +38,19 @@ export const TASK_SCHEMA = {
   status: {
     type: 'enum',
     required: true,
-    options: ['backlog', 'ready', 'in_progress', 'review', 'done', 'blocked'],
+    options: ['not_started', 'in_progress', 'blocked', 'in_review', 'completed', 'cancelled'],
     description: 'Current task status'
   },
   difficulty: {
     type: 'enum',
     required: true,
-    options: ['trivial', 'easy', 'medium', 'hard', 'complex'],
+    options: ['easy', 'medium', 'hard'],
     description: 'Task difficulty level'
   },
   ai_potential: {
     type: 'enum',
     required: false,
-    options: ['none', 'low', 'medium', 'high', 'full'],
+    options: ['none', 'low', 'medium', 'high'],
     description: 'How much AI can assist with this task'
   },
   estimated_hours: { type: 'string', required: false, description: 'Estimated hours (e.g., "2-4", "8", "16-24")' },

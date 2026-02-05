@@ -35,6 +35,20 @@ export async function POST(request: Request) {
       return 'medium';
     };
 
+    // Helper to normalize project status to valid enum
+    const normalizeProjectStatus = (s: string | undefined): string => {
+      const mapping: Record<string, string> = {
+        'active': 'in_progress',
+        'paused': 'on_hold',
+        'draft': 'idea',
+        'backlog': 'idea',
+        'done': 'completed',
+        'archived': 'completed',
+      };
+      const val = (s || 'planning').toLowerCase();
+      return mapping[val] || (['idea', 'planning', 'in_progress', 'on_hold', 'completed', 'cancelled'].includes(val) ? val : 'planning');
+    };
+
     // Generate slug if not provided
     const slug = body.slug || body.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
@@ -42,7 +56,7 @@ export async function POST(request: Request) {
       title: body.title,
       slug,
       description: body.description || null,
-      status: body.status || 'planning',
+      status: normalizeProjectStatus(body.status),
       priority: body.priority || 'medium',
       difficulty: normalizeDifficulty(body.difficulty),
       start_date: body.start_date || null,

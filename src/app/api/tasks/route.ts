@@ -44,6 +44,21 @@ export async function POST(request: Request) {
       return 'none';
     };
 
+    // Helper to normalize task status to valid enum
+    const normalizeTaskStatus = (s: string | undefined): string => {
+      const mapping: Record<string, string> = {
+        'backlog': 'not_started',
+        'ready': 'not_started',
+        'done': 'completed',
+        'review': 'in_review',
+        'todo': 'not_started',
+        'pending': 'not_started',
+        'finished': 'completed',
+      };
+      const val = (s || 'not_started').toLowerCase();
+      return mapping[val] || (['not_started', 'in_progress', 'blocked', 'in_review', 'completed', 'cancelled'].includes(val) ? val : 'not_started');
+    };
+
     // Validate and prepare tasks
     const preparedTasks = tasksToCreate.map((task: any, index: number) => {
       if (!task.title || !task.project_id) {
@@ -55,7 +70,7 @@ export async function POST(request: Request) {
         description: task.description || null,
         project_id: task.project_id,
         phase: task.phase || 'development',
-        status: task.status || 'backlog',
+        status: normalizeTaskStatus(task.status),
         difficulty: normalizeDifficulty(task.difficulty),
         ai_potential: normalizeAiPotential(task.ai_potential),
         ai_assist_description: task.ai_assist_description || null,
