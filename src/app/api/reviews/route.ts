@@ -1,0 +1,251 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+export const dynamic = 'force-dynamic';
+
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createClient(supabaseUrl, serviceRoleKey);
+}
+
+// GET: Fetch projects pending review for a reviewer by area
+// Also returns review progress stats
+export async function GET(request: Request) {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const reviewerArea = searchParams.get('reviewer_area');
+    const reviewerId = searchParams.get('reviewer_id');
+
+    const supabase = getSupabaseAdmin();
+
+    // Fetch all non-archived projects with their review status
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        pillar:pillars(*),
+        owner_team:teams(*)
+      `)
+      .eq('is_archived', false)
+      .order('created_at', { ascending: false });
+
+    if (projectsError) {
+      console.error('Error fetching projects:', projectsError);
+      return NextResponse.json({ error: projectsError.message }, { status: 500 });
+    }
+
+    // Fetch tasks for all projects
+    const { data: tasks } = await supabase
+      .from('tasks')
+      .select('*')
+      .order('order_index');
+
+    // Fetch review status for all projects
+    const { data: reviewStatuses } = await supabase
+      .from('project_review_status')
+      .select('*');
+
+    // Fetch existing review sessions for this reviewer (if specified)
+    let reviewSessions: any[] = [];
+    if (reviewerId && reviewerArea) {
+      const { data: sessions } = await supabase
+        .from('project_review_sessions')
+        .select('*')
+        .eq('reviewer_id', reviewerId)
+        .eq('reviewer_area', reviewerArea);
+      reviewSessions = sessions || [];
+    }
+
+    // Map review status to projects
+    const reviewStatusMap = new Map(
+      (reviewStatuses || []).map(rs => [rs.project_id, rs])
+    );
+
+    // Map review sessions to projects (for this reviewer)
+    const sessionMap = new Map(
+      reviewSessions.map(s => [s.project_id, s])
+    );
+
+    // Group tasks by project
+    const tasksByProject = new Map<string, any[]>();
+    (tasks || []).forEach(task => {
+      const existing = tasksByProject.get(task.project_id) || [];
+      existing.push(task);
+      tasksByProject.set(task.project_id, existing);
+    });
+
+    // Enrich projects
+    const enrichedProjects = (projects || []).map(project => {
+      const reviewStatus = reviewStatusMap.get(project.id);
+      const session = sessionMap.get(project.id);
+      const projectTasks = tasksByProject.get(project.id) || [];
+
+      return {
+        ...project,
+        tasks: projectTasks,
+        review_status: reviewStatus || {
+          management_reviewed: false,
+          operations_sales_reviewed: false,
+          product_tech_reviewed: false,
+          all_reviewed: false,
+          alignment_score: null,
+        },
+        my_review_session: session || null,
+        is_reviewed_by_me: session?.status === 'completed',
+      };
+    });
+
+    // Separate into pending and completed for this reviewer
+    const pendingReview = enrichedProjects.filter(p => !p.is_reviewed_by_me);
+    const completedReview = enrichedProjects.filter(p => p.is_reviewed_by_me);
+
+    // Calculate progress stats
+    const totalProjects = enrichedProjects.length;
+    const reviewedProjects = completedReview.length;
+    const progress = totalProjects > 0 ? Math.round((reviewedProjects / totalProjects) * 100) : 0;
+
+    return NextResponse.json({
+      projects: enrichedProjects,
+      pendingReview,
+      completedReview,
+      stats: {
+        totalProjects,
+        reviewedProjects,
+        pendingProjects: pendingReview.length,
+        progress,
+      }
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// POST: Create or start a review session
+export async function POST(request: Request) {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 });
+  }
+
+  try {
+    const body = await request.json();
+    const supabase = getSupabaseAdmin();
+
+    if (!body.project_id || !body.reviewer_id || !body.reviewer_area) {
+      return NextResponse.json({
+        error: 'project_id, reviewer_id, and reviewer_area are required'
+      }, { status: 400 });
+    }
+
+    // Check if session already exists
+    const { data: existing } = await supabase
+      .from('project_review_sessions')
+      .select('*')
+      .eq('project_id', body.project_id)
+      .eq('reviewer_id', body.reviewer_id)
+      .eq('reviewer_area', body.reviewer_area)
+      .single();
+
+    if (existing) {
+      // Update to in_progress if not already completed
+      if (existing.status !== 'completed') {
+        const { data: updated, error: updateError } = await supabase
+          .from('project_review_sessions')
+          .update({
+            status: 'in_progress',
+            started_at: existing.started_at || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          return NextResponse.json({ error: updateError.message }, { status: 500 });
+        }
+        return NextResponse.json(updated);
+      }
+      return NextResponse.json(existing);
+    }
+
+    // Create new session
+    const sessionData = {
+      project_id: body.project_id,
+      reviewer_id: body.reviewer_id,
+      reviewer_area: body.reviewer_area,
+      status: 'in_progress',
+      started_at: new Date().toISOString(),
+    };
+
+    const { data: session, error } = await supabase
+      .from('project_review_sessions')
+      .insert(sessionData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating review session:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(session, { status: 201 });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// PUT: Complete a review session
+export async function PUT(request: Request) {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 });
+  }
+
+  try {
+    const body = await request.json();
+    const supabase = getSupabaseAdmin();
+
+    if (!body.id) {
+      return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
+    }
+
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (body.status) {
+      updateData.status = body.status;
+      if (body.status === 'completed') {
+        updateData.completed_at = new Date().toISOString();
+      }
+    }
+
+    const { data: session, error } = await supabase
+      .from('project_review_sessions')
+      .update(updateData)
+      .eq('id', body.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating review session:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(session);
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

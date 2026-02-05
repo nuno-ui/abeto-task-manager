@@ -369,3 +369,84 @@ export interface SortOption {
   field: string;
   direction: SortDirection;
 }
+
+// =============================================================================
+// REVIEW SYSTEM TYPES
+// =============================================================================
+
+export type ReviewerArea = 'management' | 'operations_sales' | 'product_tech';
+export type ReviewSessionStatus = 'pending' | 'in_progress' | 'completed';
+
+export interface ProjectReviewSession {
+  id: string;
+  project_id: string;
+  reviewer_id: string;
+  reviewer_area: ReviewerArea;
+  status: ReviewSessionStatus;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  project?: Project;
+  reviewer?: User;
+  feedback?: ReviewFeedback[];
+}
+
+export interface ReviewFeedback {
+  id: string;
+  review_session_id: string;
+  field_name: string;
+  current_value: string | null;
+  proposed_value: string | null;
+  comment: string | null;
+  is_area_specific: boolean;
+  created_at: string;
+}
+
+export interface ReviewComment {
+  id: string;
+  review_session_id: string;
+  project_id: string;
+  task_id: string | null;
+  content: string;
+  created_at: string;
+  // Joined
+  reviewer?: User;
+  task?: Task;
+}
+
+export interface ProjectReviewStatus {
+  id: string;
+  project_id: string;
+  management_reviewed: boolean;
+  operations_sales_reviewed: boolean;
+  product_tech_reviewed: boolean;
+  all_reviewed: boolean;
+  alignment_score: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Review Input Types
+export interface CreateReviewSessionInput {
+  project_id: string;
+  reviewer_id: string;
+  reviewer_area: ReviewerArea;
+}
+
+export interface CreateReviewFeedbackInput {
+  review_session_id: string;
+  field_name: string;
+  current_value?: string;
+  proposed_value?: string;
+  comment?: string;
+  is_area_specific?: boolean;
+}
+
+export interface CreateReviewCommentInput {
+  review_session_id: string;
+  project_id: string;
+  task_id?: string;
+  content: string;
+}

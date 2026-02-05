@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Activity,
+  ClipboardCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -21,6 +22,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
   { name: 'Tasks', href: '/tasks', icon: ListTodo },
+  { name: 'Reviews', href: '/reviews', icon: ClipboardCheck },
   { name: 'Activity', href: '/activity', icon: Activity },
   { name: 'Team', href: '/team', icon: Users },
   { name: 'Settings', href: '/settings', icon: Settings },
