@@ -303,9 +303,28 @@ export default function ReviewsPage() {
   const [activeTab, setActiveTab] = useState<'info' | 'review' | 'tasks'>('info');
   const [reviewAnswers, setReviewAnswers] = useState<Record<string, string | number>>({});
   const [taskFeedback, setTaskFeedback] = useState<Record<string, { taskId: string; hoursCheck?: 'too_low' | 'accurate' | 'too_high'; hasBlockers?: boolean; comment?: string }>>({});
+  const [streak, setStreak] = useState(0);
+  const [showKeyboardHints, setShowKeyboardHints] = useState(true);
 
   // Get reviewer ID from auth
   const reviewerId = user?.id || null;
+
+  // Load streak from localStorage
+  useEffect(() => {
+    const savedStreak = localStorage.getItem('reviewStreak');
+    const lastReviewDate = localStorage.getItem('lastReviewDate');
+    const today = new Date().toDateString();
+
+    if (savedStreak && lastReviewDate === today) {
+      setStreak(parseInt(savedStreak, 10));
+    } else if (lastReviewDate && lastReviewDate !== today) {
+      // Reset streak if not reviewed today
+      localStorage.setItem('reviewStreak', '0');
+      setStreak(0);
+    }
+  }, []);
+
+  // Keyboard shortcuts - defined later after handlers are created
 
   // Load saved area from localStorage, or use preferred area from auth
   useEffect(() => {
@@ -473,12 +492,21 @@ export default function ReviewsPage() {
         }),
       });
       if (response.ok) {
+        // Update streak
+        const newStreak = streak + 1;
+        setStreak(newStreak);
+        localStorage.setItem('reviewStreak', newStreak.toString());
+        localStorage.setItem('lastReviewDate', new Date().toDateString());
+
         // Move to next project or show celebration
         if (currentIndex < pendingProjects.length - 1) {
           setCurrentIndex(prev => prev + 1);
           setSessionId(null);
           setFeedback({});
           setComments([]);
+          setReviewAnswers({});
+          setTaskFeedback({});
+          setActiveTab('info');
           setStats(prev => ({
             ...prev,
             reviewedProjects: prev.reviewedProjects + 1,
@@ -553,6 +581,56 @@ export default function ReviewsPage() {
       setActiveTab('info');
     }
   };
+
+  // Keyboard shortcuts for faster navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // Don't trigger if no project loaded
+      if (!pendingProjects[currentIndex]) return;
+
+      switch (e.key) {
+        case '1':
+          setActiveTab('info');
+          break;
+        case '2':
+          setActiveTab('review');
+          break;
+        case '3':
+          if (pendingProjects[currentIndex]?.tasks?.length) setActiveTab('tasks');
+          break;
+        case 'ArrowLeft':
+          if (currentIndex > 0) {
+            setCurrentIndex(prev => prev - 1);
+            setSessionId(null);
+            setFeedback({});
+            setComments([]);
+            setReviewAnswers({});
+            setTaskFeedback({});
+            setActiveTab('info');
+          }
+          break;
+        case 'ArrowRight':
+          if (currentIndex < pendingProjects.length - 1) {
+            setCurrentIndex(prev => prev + 1);
+            setSessionId(null);
+            setFeedback({});
+            setComments([]);
+            setReviewAnswers({});
+            setTaskFeedback({});
+            setActiveTab('info');
+          }
+          break;
+        case 'Escape':
+          setShowKeyboardHints(false);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, pendingProjects]);
 
   // Start session when viewing a new project
   useEffect(() => {
@@ -636,6 +714,7 @@ export default function ReviewsPage() {
             reviewedProjects={stats.reviewedProjects}
             feedbackCount={feedbackCount}
             commentCount={commentCount}
+            streak={streak}
           />
           <div className="mt-8 text-center py-16 bg-zinc-900 rounded-xl border border-zinc-800">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
@@ -663,13 +742,29 @@ export default function ReviewsPage() {
       <Header title="Project Reviews" />
 
       <div className="p-6 space-y-6">
-        {/* Progress */}
+        {/* Progress with gamification */}
         <ReviewProgress
           totalProjects={stats.totalProjects}
           reviewedProjects={stats.reviewedProjects}
           feedbackCount={feedbackCount}
           commentCount={commentCount}
+          streak={streak}
+          currentProjectName={currentProject?.title}
         />
+
+        {/* Keyboard hints (dismissible) */}
+        {showKeyboardHints && currentProject && (
+          <div className="flex items-center justify-between px-4 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-xs text-zinc-400">
+            <div className="flex items-center gap-4">
+              <span><kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">1</kbd> <kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">2</kbd> <kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">3</kbd> Switch tabs</span>
+              <span><kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">←</kbd> <kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">→</kbd> Navigate</span>
+              <span><kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">Ctrl+Enter</kbd> Complete review</span>
+            </div>
+            <button onClick={() => setShowKeyboardHints(false)} className="text-zinc-500 hover:text-zinc-300">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Area indicator and switch */}
         <div className="flex items-center justify-between">
