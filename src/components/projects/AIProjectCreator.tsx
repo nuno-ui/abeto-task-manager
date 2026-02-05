@@ -181,8 +181,7 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
   };
 
   const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'complex': return 'bg-purple-500/20 text-purple-400';
+    switch (difficulty?.toLowerCase()) {
       case 'hard': return 'bg-red-500/20 text-red-400';
       case 'medium': return 'bg-yellow-500/20 text-yellow-400';
       case 'easy': return 'bg-green-500/20 text-green-400';

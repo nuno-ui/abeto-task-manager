@@ -41,9 +41,10 @@ const difficultyOptions = [
 ];
 
 const aiPotentialOptions = [
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
+  { value: 'none', label: 'None' },
   { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
 ];
 
 export function TaskForm({

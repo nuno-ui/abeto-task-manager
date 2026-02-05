@@ -103,9 +103,10 @@ export function getDifficultyColor(difficulty: string): string {
 
 export function getAIPotentialColor(potential: string): string {
   const colors: Record<string, string> = {
-    high: '#22c55e',
-    medium: '#eab308',
+    none: '#6b7280',
     low: '#ef4444',
+    medium: '#eab308',
+    high: '#22c55e',
   };
   return colors[potential] || '#6b7280';
 }
