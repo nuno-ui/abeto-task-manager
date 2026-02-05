@@ -24,6 +24,120 @@ import { Badge, Button, Modal, ProgressBar, Avatar } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { formatDate } from '@/lib/utils';
 import type { Project, Task, Team, User, Pillar, Comment, CreateTaskInput, CreateProjectInput } from '@/types/database';
+import { Send, Sparkles, Loader2 } from 'lucide-react';
+
+// Quick Comment Input Component with AI Action
+function QuickCommentInput({
+  projectId,
+  taskId,
+  onAddComment,
+  onDataRefresh,
+}: {
+  projectId?: string;
+  taskId?: string;
+  onAddComment: (content: string) => Promise<void>;
+  onDataRefresh: () => void;
+}) {
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim() || loading) return;
+
+    setLoading(true);
+    try {
+      await onAddComment(content);
+      setContent('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAIAction = async () => {
+    if (!content.trim() || aiLoading) return;
+
+    setAiLoading(true);
+    try {
+      // First, add the comment
+      await onAddComment(content);
+
+      // Then analyze it with AI
+      const response = await fetch('/api/ai/process-comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: content.trim(),
+          projectId,
+          taskId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.suggestions && data.suggestions.length > 0) {
+        // Apply suggestions automatically if there are any
+        const applyResponse = await fetch('/api/ai/apply-suggestions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ suggestions: data.suggestions }),
+        });
+
+        if (applyResponse.ok) {
+          onDataRefresh();
+        }
+      } else if (data.action) {
+        // Handle action commands
+        alert(`AI understood: ${data.action}\n\n${data.message || 'Please perform this action manually.'}`);
+      }
+
+      setContent('');
+    } catch (error) {
+      console.error('AI action failed:', error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex gap-2">
+      <input
+        type="text"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Add a comment or command (e.g., 'mark as completed', 'set priority to high')..."
+        className="flex-1 px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+        disabled={loading || aiLoading}
+      />
+      <button
+        type="button"
+        onClick={handleAIAction}
+        disabled={!content.trim() || loading || aiLoading}
+        className="px-3 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white transition-colors flex items-center gap-2"
+        title="Comment & Apply with AI"
+      >
+        {aiLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Sparkles className="w-4 h-4" />
+        )}
+      </button>
+      <button
+        type="submit"
+        disabled={!content.trim() || loading || aiLoading}
+        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white transition-colors"
+        title="Add Comment"
+      >
+        {loading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Send className="w-4 h-4" />
+        )}
+      </button>
+    </form>
+  );
+}
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
@@ -355,6 +469,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
 
+        {/* Quick Comment Section - Always Visible */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <MessageSquare className="w-5 h-5 text-violet-400" />
+            <h3 className="text-sm font-medium text-white">Quick Comment</h3>
+            <span className="text-xs text-zinc-500">({comments.length} comments)</span>
+          </div>
+          <QuickCommentInput
+            projectId={project.id}
+            onAddComment={handleAddComment}
+            onDataRefresh={fetchProjectData}
+          />
+        </div>
+
         {/* Tabs */}
         <div className="flex items-center gap-1 border-b border-zinc-800">
           <button
@@ -380,7 +508,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
           >
             <span className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
-              Comments ({comments.length})
+              All Comments ({comments.length})
             </span>
           </button>
         </div>

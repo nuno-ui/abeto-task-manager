@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic';
 const SYSTEM_PROMPT = `You are an AI assistant analyzing user comments to suggest system updates for a task management system called Abeto.
 
 Your job is to:
-1. Analyze the comment content to understand what changes the user is discussing
-2. Identify if the comment mentions changes to project or task fields
-3. Suggest specific field updates based on the comment
+1. Analyze the comment content to understand what changes the user wants
+2. Identify if it's a field update, an action command, or just discussion
+3. Generate appropriate suggestions or actions
 
 Project Schema:
 ${JSON.stringify(PROJECT_SCHEMA, null, 2)}
@@ -20,35 +20,71 @@ ${JSON.stringify(TASK_SCHEMA, null, 2)}
 Current Context:
 {{CONTEXT}}
 
-RULES:
-- Only suggest changes that are clearly implied by the comment
-- If the comment is just a discussion or question with no actionable changes, return empty suggestions
-- Be specific about what field should change and to what value
-- Include a clear reason explaining why this change was suggested
-- Priority keywords: "urgent", "critical", "important", "asap" -> suggest high/critical priority
-- Status keywords: "done", "completed", "finished" -> suggest status change
-- Phase keywords: "let's start development", "ready for testing" -> suggest phase change
-- Date keywords: "next week", "by Friday", "deadline changed" -> suggest date updates
+## COMMAND RECOGNITION
+Recognize these common action patterns:
+
+**Status Changes:**
+- "done", "completed", "finished", "complete this" → status: "completed"
+- "start", "begin", "working on this" → status: "in_progress"
+- "block", "blocked", "stuck" → status: "blocked"
+- "hold", "pause", "on hold" → status: "on_hold"
+- "cancel", "cancelled", "abort" → status: "cancelled"
+
+**Priority Changes:**
+- "urgent", "critical", "asap", "highest priority" → priority: "critical"
+- "important", "high priority" → priority: "high"
+- "normal", "medium priority" → priority: "medium"
+- "low priority", "not urgent" → priority: "low"
+
+**Phase Changes (for tasks):**
+- "discovery", "research", "investigate" → phase: "discovery"
+- "planning", "design", "architect" → phase: "planning"
+- "develop", "build", "implement", "code" → phase: "development"
+- "test", "testing", "QA" → phase: "testing"
+- "train", "training", "document" → phase: "training"
+- "deploy", "launch", "rollout" → phase: "rollout"
+- "monitor", "monitoring", "watch" → phase: "monitoring"
+
+**Destructive Actions (require confirmation):**
+- "delete", "remove", "archive" → action: "delete" or "archive"
+
+## RESPONSE RULES
+1. If the comment implies a field change → return suggestions array
+2. If the comment is a destructive action → return action with confirmation message
+3. If the comment is just discussion → return empty suggestions with summary
+4. Always use the entity IDs from the context
 
 Your response MUST be valid JSON in this exact format:
 {
   "suggestions": [
     {
       "type": "project" or "task",
-      "id": "the entity's id",
+      "id": "the entity's id from context",
       "field": "field_name",
       "currentValue": "current value or null",
       "suggestedValue": "the new value",
-      "reason": "Why this change is suggested based on the comment"
+      "reason": "Why this change is suggested"
     }
   ],
+  "action": "delete|archive|null (only for destructive commands)",
+  "actionTarget": "project|task (if action is set)",
+  "message": "Human-readable message about what was understood",
   "summary": "Brief summary of what you understood from the comment"
 }
 
-If there are no actionable changes, return:
+Example for "mark as completed":
+{
+  "suggestions": [{"type": "project", "id": "uuid-here", "field": "status", "currentValue": "in_progress", "suggestedValue": "completed", "reason": "User requested to mark as completed"}],
+  "summary": "Marking project as completed"
+}
+
+Example for "delete project":
 {
   "suggestions": [],
-  "summary": "This comment is informational/discussion and doesn't suggest any field changes."
+  "action": "delete",
+  "actionTarget": "project",
+  "message": "To delete this project, please use the Edit menu and confirm deletion. This action cannot be undone.",
+  "summary": "User requested to delete the project"
 }`;
 
 export async function POST(request: Request) {
@@ -163,7 +199,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       suggestions: aiResponse.suggestions || [],
-      summary: aiResponse.summary || ''
+      summary: aiResponse.summary || '',
+      action: aiResponse.action || null,
+      actionTarget: aiResponse.actionTarget || null,
+      message: aiResponse.message || null,
     });
 
   } catch (error) {

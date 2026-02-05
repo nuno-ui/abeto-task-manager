@@ -37,9 +37,10 @@ const phaseColors: Record<string, string> = {
 };
 
 const aiPotentialConfig = {
-  high: { color: 'text-green-400', bg: 'bg-green-400/10', label: 'High AI Potential' },
-  medium: { color: 'text-yellow-400', bg: 'bg-yellow-400/10', label: 'Medium AI Potential' },
+  none: { color: 'text-zinc-400', bg: 'bg-zinc-400/10', label: 'No AI Potential' },
   low: { color: 'text-red-400', bg: 'bg-red-400/10', label: 'Low AI Potential' },
+  medium: { color: 'text-yellow-400', bg: 'bg-yellow-400/10', label: 'Medium AI Potential' },
+  high: { color: 'text-green-400', bg: 'bg-green-400/10', label: 'High AI Potential' },
 };
 
 export function TaskCard({ task, onClick, showProject = false, expanded: initialExpanded = false }: TaskCardProps) {
