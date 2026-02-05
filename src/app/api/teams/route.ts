@@ -31,16 +31,21 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Fetch projects for each team
+    // Fetch ALL projects with pillar info
     const { data: projects } = await supabase
       .from('projects')
-      .select('id, title, slug, status, priority, owner_team_id, target_date, progress_percentage')
+      .select('id, title, slug, status, priority, owner_team_id, target_date, progress_percentage, pillar_id')
       .eq('is_archived', false);
 
-    // Fetch tasks for each team
+    // Fetch ALL tasks with project info to get pillar association
     const { data: tasks } = await supabase
       .from('tasks')
       .select('id, title, status, priority, owner_team_id, due_date, project_id');
+
+    // Fetch pillars to map team slugs
+    const { data: pillars } = await supabase
+      .from('pillars')
+      .select('id, name, slug');
 
     // Fetch users for each team
     const { data: users } = await supabase
@@ -48,16 +53,47 @@ export async function GET() {
       .select('id, email, full_name, avatar_url, team_id, role, is_active')
       .eq('is_active', true);
 
-    // Enrich teams with stats
+    // Create a mapping from team slug to pillar IDs (e.g., "marketing" team -> "marketing" pillar)
+    const teamSlugToPillarIds: Record<string, string[]> = {};
+    pillars?.forEach(pillar => {
+      // Match team slug to pillar slug (e.g., "marketing" -> "marketing")
+      const normalizedSlug = pillar.slug.toLowerCase().replace(/-/g, '_');
+      teamSlugToPillarIds[normalizedSlug] = teamSlugToPillarIds[normalizedSlug] || [];
+      teamSlugToPillarIds[normalizedSlug].push(pillar.id);
+    });
+
+    // Create project ID to pillar ID mapping
+    const projectToPillar: Record<string, string | null> = {};
+    projects?.forEach(p => {
+      projectToPillar[p.id] = p.pillar_id;
+    });
+
+    // Enrich teams with stats - include projects by owner_team_id OR by matching pillar
     const enrichedTeams = teams?.map(team => {
-      const teamProjects = projects?.filter(p => p.owner_team_id === team.id) || [];
-      const teamTasks = tasks?.filter(t => t.owner_team_id === team.id) || [];
+      const teamSlug = team.slug.toLowerCase().replace(/-/g, '_');
+      const matchingPillarIds = teamSlugToPillarIds[teamSlug] || [];
+
+      // Get projects: either directly assigned to team OR in matching pillar
+      const teamProjects = projects?.filter(p =>
+        p.owner_team_id === team.id ||
+        (matchingPillarIds.length > 0 && matchingPillarIds.includes(p.pillar_id))
+      ) || [];
+
+      // Get project IDs for task lookup
+      const teamProjectIds = teamProjects.map(p => p.id);
+
+      // Get tasks: either directly assigned to team OR belonging to team's projects
+      const teamTasks = tasks?.filter(t =>
+        t.owner_team_id === team.id ||
+        teamProjectIds.includes(t.project_id)
+      ) || [];
+
       const teamMembers = users?.filter(u => u.team_id === team.id) || [];
 
       return {
         ...team,
-        projects: teamProjects,
-        tasks: teamTasks,
+        projects: teamProjects.slice(0, 20), // Limit for performance
+        tasks: teamTasks.slice(0, 50), // Limit for performance
         members: teamMembers,
         stats: {
           projectCount: teamProjects.length,

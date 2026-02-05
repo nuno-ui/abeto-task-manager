@@ -15,6 +15,10 @@ import {
   Zap,
   AlertCircle,
   PieChart,
+  Plus,
+  Star,
+  Clock,
+  TrendingUp,
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Badge, ProgressBar } from '@/components/ui';
@@ -175,6 +179,45 @@ export default function DashboardPage() {
       <Header title="Dashboard" />
 
       <div className="p-6 space-y-6">
+        {/* Quick Actions Bar */}
+        <div className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-zinc-400">Quick Actions:</span>
+            <Link
+              href="/projects"
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Project
+            </Link>
+            <Link
+              href="/reviews"
+              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-sm rounded-lg transition-colors"
+            >
+              <Star className="w-4 h-4 text-yellow-400" />
+              Start Review
+            </Link>
+          </div>
+          <div className="hidden md:flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-zinc-400">{stats.activeProjects} active projects</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-zinc-500" />
+              <span className="text-zinc-400">{stats.inProgressTasks} tasks in progress</span>
+            </div>
+            {stats.totalTasks > 0 && (
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-green-500" />
+                <span className="text-green-400">
+                  {Math.round((stats.completedTasks / stats.totalTasks) * 100)}% complete
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Top Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard

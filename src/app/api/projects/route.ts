@@ -130,7 +130,7 @@ export async function GET() {
         *,
         pillar:pillars(*),
         owner_team:teams(*),
-        tasks(id)
+        tasks(id, status)
       `)
       .order('created_at', { ascending: false });
 
@@ -139,12 +139,23 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform to include task count
-    const projectsWithCounts = projects?.map(p => ({
-      ...p,
-      task_count: p.tasks?.length || 0,
-      tasks: undefined
-    }));
+    // Transform to include task counts and progress
+    const projectsWithCounts = projects?.map(p => {
+      const tasks = p.tasks || [];
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter((t: { status: string }) => t.status === 'completed').length;
+      const inProgressTasks = tasks.filter((t: { status: string }) => t.status === 'in_progress').length;
+
+      return {
+        ...p,
+        task_count: totalTasks,
+        total_tasks: totalTasks,
+        completed_tasks: completedTasks,
+        in_progress_tasks: inProgressTasks,
+        progress_percentage: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+        tasks: undefined
+      };
+    });
 
     return NextResponse.json(projectsWithCounts);
   } catch (error) {

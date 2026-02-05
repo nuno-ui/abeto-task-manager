@@ -370,8 +370,8 @@ export default function TeamPage() {
                       )}
                     </div>
 
-                    {/* Quick Stats */}
-                    <div className="hidden md:flex items-center gap-6 text-sm">
+                    {/* Quick Stats with Workload Bar */}
+                    <div className="hidden md:flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <FolderKanban className="w-4 h-4 text-zinc-500" />
                         <span className="text-zinc-300">{team.stats.projectCount} projects</span>
@@ -384,6 +384,31 @@ export default function TeamPage() {
                         <Users className="w-4 h-4 text-zinc-500" />
                         <span className="text-zinc-300">{team.stats.memberCount} members</span>
                       </div>
+                      {/* Workload Progress Bar */}
+                      {team.stats.taskCount > 0 && (
+                        <div className="flex items-center gap-2 ml-2">
+                          <div className="w-24 h-2 bg-zinc-800 rounded-full overflow-hidden flex">
+                            <div
+                              className="h-full bg-green-500"
+                              style={{ width: `${(team.stats.completedTasks / team.stats.taskCount) * 100}%` }}
+                              title={`${team.stats.completedTasks} completed`}
+                            />
+                            <div
+                              className="h-full bg-yellow-500"
+                              style={{ width: `${(team.stats.inProgressTasks / team.stats.taskCount) * 100}%` }}
+                              title={`${team.stats.inProgressTasks} in progress`}
+                            />
+                            <div
+                              className="h-full bg-red-500"
+                              style={{ width: `${(team.stats.blockedTasks / team.stats.taskCount) * 100}%` }}
+                              title={`${team.stats.blockedTasks} blocked`}
+                            />
+                          </div>
+                          <span className="text-xs text-zinc-500">
+                            {Math.round((team.stats.completedTasks / team.stats.taskCount) * 100)}%
+                          </span>
+                        </div>
+                      )}
                       {team.stats.overdueTasks > 0 && (
                         <div className="flex items-center gap-2 text-red-400">
                           <AlertCircle className="w-4 h-4" />
