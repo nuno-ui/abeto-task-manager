@@ -1008,6 +1008,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               estimated_hours: editingTask.estimated_hours || undefined,
               ai_assist_description: editingTask.ai_assist_description || undefined,
               due_date: editingTask.due_date || undefined,
+              problem_statement: editingTask.problem_statement || undefined,
+              deliverables: editingTask.deliverables || [],
             }}
             teams={teams}
             users={users}
