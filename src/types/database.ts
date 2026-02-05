@@ -116,6 +116,10 @@ export interface Project {
   data_status: string | null;
   next_milestone: string | null;
 
+  // Problem & Deliverables
+  problem_statement: string | null;
+  deliverables: string[];
+
   // Joined
   pillar?: Pillar;
   owner_team?: Team;
@@ -154,6 +158,9 @@ export interface Task {
   order_index: number;
   is_foundational: boolean;
   is_critical_path: boolean;
+  // Problem & Deliverables
+  problem_statement: string | null;
+  deliverables: string[];
   created_at: string;
   updated_at: string;
   // Joined
@@ -287,6 +294,8 @@ export interface CreateProjectInput {
   primary_users?: string[];
   data_status?: string;
   next_milestone?: string;
+  problem_statement?: string;
+  deliverables?: string[];
 }
 
 export interface UpdateProjectInput extends Partial<CreateProjectInput> {
@@ -319,6 +328,8 @@ export interface CreateTaskInput {
   due_date?: string;
   is_foundational?: boolean;
   is_critical_path?: boolean;
+  problem_statement?: string;
+  deliverables?: string[];
 }
 
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {

@@ -658,6 +658,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
         {activeTab === 'details' && (
           <div className="space-y-6">
+            {/* Problem Statement */}
+            {project.problem_statement && (
+              <div className="bg-red-900/10 border border-red-900/30 rounded-xl p-6">
+                <h3 className="text-sm font-medium text-red-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Problem Being Solved
+                </h3>
+                <p className="text-zinc-300">{project.problem_statement}</p>
+              </div>
+            )}
+
             {/* Why It Matters */}
             {project.why_it_matters && (
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
@@ -666,6 +677,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   Why It Matters
                 </h3>
                 <p className="text-zinc-300">{project.why_it_matters}</p>
+              </div>
+            )}
+
+            {/* Expected Deliverables */}
+            {project.deliverables && project.deliverables.length > 0 && (
+              <div className="bg-emerald-900/10 border border-emerald-900/30 rounded-xl p-6">
+                <h3 className="text-sm font-medium text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Expected Deliverables
+                </h3>
+                <ul className="space-y-2">
+                  {project.deliverables.map((item, idx) => (
+                    <li key={idx} className="text-zinc-300 flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-500 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 
@@ -1038,6 +1067,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             primary_users: project.primary_users,
             data_status: project.data_status ?? undefined,
             next_milestone: project.next_milestone ?? undefined,
+            problem_statement: project.problem_statement ?? undefined,
+            deliverables: project.deliverables,
           }}
           teams={teams}
           pillars={pillars}
