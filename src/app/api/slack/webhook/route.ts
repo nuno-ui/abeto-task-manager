@@ -102,11 +102,18 @@ async function getSlackUserInfo(slackUserId: string, botToken: string): Promise<
     });
     const userData = await userResponse.json();
 
+    console.log('[Slack] User lookup response:', {
+      ok: userData.ok,
+      userId: slackUserId,
+      name: userData.user?.real_name || userData.user?.name,
+      email: userData.user?.profile?.email,
+    });
+
     if (userData.ok && userData.user) {
       result.slackUserName = userData.user.real_name || userData.user.name || 'User';
       result.slackEmail = userData.user.profile?.email;
 
-      // Try to find matching user in Abeto by email
+      // Try to find matching user in Abeto by email first
       if (result.slackEmail) {
         const { data: abetoUser } = await getSupabaseClient()
           .from('users')
@@ -115,7 +122,7 @@ async function getSlackUserInfo(slackUserId: string, botToken: string): Promise<
           .single();
 
         if (abetoUser) {
-          // Supabase returns single relations as objects, not arrays when using .single()
+          console.log('[Slack] Found Abeto user by email:', abetoUser.email);
           const teamData = abetoUser.team as { name: string } | { name: string }[] | null;
           const teamName = Array.isArray(teamData) ? teamData[0]?.name : teamData?.name;
           result.abetoUser = {
@@ -124,6 +131,35 @@ async function getSlackUserInfo(slackUserId: string, botToken: string): Promise<
             email: abetoUser.email,
             team_name: teamName,
           };
+        }
+      }
+
+      // Fallback: Try to find by name if email didn't match
+      if (!result.abetoUser && result.slackUserName) {
+        const firstName = result.slackUserName.split(' ')[0].toLowerCase();
+        console.log('[Slack] Email lookup failed, trying name match:', firstName);
+
+        const { data: users } = await getSupabaseClient()
+          .from('users')
+          .select('id, full_name, email, team:teams(name)');
+
+        // Find user whose full_name starts with the same first name (case-insensitive)
+        const matchedUser = users?.find(u =>
+          u.full_name?.toLowerCase().startsWith(firstName)
+        );
+
+        if (matchedUser) {
+          console.log('[Slack] Found Abeto user by name match:', matchedUser.full_name);
+          const teamData = matchedUser.team as { name: string } | { name: string }[] | null;
+          const teamName = Array.isArray(teamData) ? teamData[0]?.name : teamData?.name;
+          result.abetoUser = {
+            id: matchedUser.id,
+            full_name: matchedUser.full_name || result.slackUserName,
+            email: matchedUser.email,
+            team_name: teamName,
+          };
+        } else {
+          console.log('[Slack] No Abeto user found for Slack user:', result.slackUserName);
         }
       }
     }
