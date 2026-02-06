@@ -75,6 +75,25 @@ interface HealthData {
     notReviewed: number;
   };
   supabaseUrl: string;
+  supabaseAnonKey: string | null;
+  supabaseProjectRef: string | null;
+  developerLinks: {
+    supabaseDashboard: string | null;
+    supabaseTableEditor: string | null;
+    supabaseSqlEditor: string | null;
+    supabaseApiDocs: string | null;
+    supabaseLogs: string | null;
+    supabaseAuth: string | null;
+    supabaseStorage: string | null;
+    apiDocsApp: string;
+    vercelDashboard: string;
+    githubRepo: string;
+  };
+  environment: {
+    nodeEnv: string;
+    vercelEnv: string;
+    region: string;
+  };
   timestamp: string;
 }
 
@@ -762,220 +781,283 @@ export default function SettingsPage() {
                 {/* Developer Tools Section */}
                 {activeSection === 'developer' && (
                   <div className="space-y-6">
-                    {/* Supabase Dashboard Link */}
+                    {/* Quick Links Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* API Documentation */}
+                      <a
+                        href={healthData?.developerLinks?.apiDocsApp || 'https://abeto-api-dashboard.vercel.app'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-4 p-4 bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 rounded-xl hover:from-blue-500/30 hover:to-blue-600/20 transition-all group"
+                      >
+                        <div className="p-3 bg-blue-500/20 rounded-lg">
+                          <Code className="w-6 h-6 text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-white">API Documentation</p>
+                          <p className="text-sm text-zinc-400">Interactive API explorer</p>
+                        </div>
+                        <ExternalLink className="w-5 h-5 text-zinc-500 group-hover:text-blue-400 transition-colors" />
+                      </a>
+
+                      {/* GitHub Repository */}
+                      <a
+                        href={healthData?.developerLinks?.githubRepo || 'https://github.com/nunomfelix/abeto-task-manager'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-4 p-4 bg-gradient-to-br from-zinc-500/20 to-zinc-600/10 border border-zinc-500/30 rounded-xl hover:from-zinc-500/30 hover:to-zinc-600/20 transition-all group"
+                      >
+                        <div className="p-3 bg-zinc-500/20 rounded-lg">
+                          <svg className="w-6 h-6 text-zinc-300" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-white">GitHub Repository</p>
+                          <p className="text-sm text-zinc-400">Source code & issues</p>
+                        </div>
+                        <ExternalLink className="w-5 h-5 text-zinc-500 group-hover:text-white transition-colors" />
+                      </a>
+
+                      {/* Vercel Dashboard */}
+                      <a
+                        href={healthData?.developerLinks?.vercelDashboard || 'https://vercel.com'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-4 p-4 bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 border border-zinc-700/50 rounded-xl hover:border-zinc-600 transition-all group"
+                      >
+                        <div className="p-3 bg-zinc-700/50 rounded-lg">
+                          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M24 22.525H0l12-21.05 12 21.05z"/>
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-white">Vercel Dashboard</p>
+                          <p className="text-sm text-zinc-400">Deployments & logs</p>
+                        </div>
+                        <ExternalLink className="w-5 h-5 text-zinc-500 group-hover:text-white transition-colors" />
+                      </a>
+                    </div>
+
+                    {/* Supabase Quick Access */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Database className="w-5 h-5 text-emerald-400" />
-                        Supabase Access
-                      </h3>
-                      <div className="space-y-4">
-                        {getSupabaseDashboardUrl() && (
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-emerald-500/20 rounded-lg">
+                            <Database className="w-6 h-6 text-emerald-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">Supabase Quick Access</h3>
+                            <p className="text-sm text-zinc-400">Project: {healthData?.supabaseProjectRef || 'Loading...'}</p>
+                          </div>
+                        </div>
+                        {healthData?.environment && (
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              healthData.environment.vercelEnv === 'production'
+                                ? 'bg-green-500/20 text-green-400'
+                                : 'bg-yellow-500/20 text-yellow-400'
+                            }`}>
+                              {healthData.environment.vercelEnv}
+                            </span>
+                            {healthData.environment.region !== 'local' && (
+                              <span className="px-2 py-1 text-xs bg-zinc-700 text-zinc-300 rounded-full">
+                                {healthData.environment.region}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                        {[
+                          { label: 'Table Editor', url: healthData?.developerLinks?.supabaseTableEditor, icon: '📊' },
+                          { label: 'SQL Editor', url: healthData?.developerLinks?.supabaseSqlEditor, icon: '💻' },
+                          { label: 'API Docs', url: healthData?.developerLinks?.supabaseApiDocs, icon: '📚' },
+                          { label: 'Logs', url: healthData?.developerLinks?.supabaseLogs, icon: '📋' },
+                          { label: 'Auth Users', url: healthData?.developerLinks?.supabaseAuth, icon: '👥' },
+                          { label: 'Storage', url: healthData?.developerLinks?.supabaseStorage, icon: '📁' },
+                          { label: 'Dashboard', url: healthData?.developerLinks?.supabaseDashboard, icon: '🏠' },
+                        ].filter(item => item.url).map((item) => (
                           <a
-                            href={getSupabaseDashboardUrl()!}
+                            key={item.label}
+                            href={item.url!}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/20 transition-colors group"
+                            className="flex items-center gap-2 p-3 bg-zinc-800/50 hover:bg-zinc-800 rounded-lg transition-colors group"
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-emerald-500/20 rounded-lg">
-                                <ExternalLink className="w-5 h-5 text-emerald-400" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-white">Open Supabase Dashboard</p>
-                                <p className="text-sm text-zinc-400">Manage tables, run SQL, view logs</p>
-                              </div>
-                            </div>
-                            <ExternalLink className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition-colors" />
+                            <span className="text-lg">{item.icon}</span>
+                            <span className="text-sm text-zinc-300 group-hover:text-white">{item.label}</span>
+                            <ExternalLink className="w-3 h-3 text-zinc-500 group-hover:text-emerald-400 ml-auto" />
                           </a>
-                        )}
+                        ))}
+                      </div>
 
-                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                      {/* Connection Details */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-zinc-800/30 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm text-zinc-400">Supabase URL</p>
+                            <p className="text-xs text-zinc-500 uppercase tracking-wide">Supabase URL</p>
                             <button
                               onClick={() => copyToClipboard(healthData?.supabaseUrl || '', 'url')}
                               className="text-zinc-400 hover:text-white transition-colors"
                             >
-                              {copied === 'url' ? (
-                                <Check className="w-4 h-4 text-green-400" />
-                              ) : (
-                                <Copy className="w-4 h-4" />
-                              )}
+                              {copied === 'url' ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                             </button>
                           </div>
-                          <p className="text-white font-mono text-sm truncate">
-                            {healthData?.supabaseUrl || 'Not configured'}
-                          </p>
+                          <p className="text-white font-mono text-sm truncate">{healthData?.supabaseUrl || 'Not configured'}</p>
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Quick Queries for Claude */}
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                      <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-                        <Terminal className="w-5 h-5 text-violet-400" />
-                        Quick SQL Queries
-                      </h3>
-                      <p className="text-sm text-zinc-400 mb-4">
-                        Copy these queries to use in Supabase SQL Editor or with Claude
-                      </p>
-
-                      <div className="space-y-4">
-                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                        <div className="p-4 bg-zinc-800/30 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm font-medium text-white">Get all projects with review status</p>
+                            <p className="text-xs text-zinc-500 uppercase tracking-wide">Anon Key (partial)</p>
                             <button
-                              onClick={() => copyToClipboard(
-                                `SELECT p.*, prs.management_reviewed, prs.operations_sales_reviewed, prs.product_tech_reviewed, prs.all_reviewed
-FROM projects p
-LEFT JOIN project_review_status prs ON p.id = prs.project_id
-ORDER BY p.created_at DESC;`,
-                                'query1'
-                              )}
+                              onClick={() => copyToClipboard(healthData?.supabaseAnonKey || '', 'anonKey')}
                               className="text-zinc-400 hover:text-white transition-colors"
                             >
-                              {copied === 'query1' ? (
-                                <Check className="w-4 h-4 text-green-400" />
-                              ) : (
-                                <Copy className="w-4 h-4" />
-                              )}
+                              {copied === 'anonKey' ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                             </button>
                           </div>
-                          <pre className="text-xs text-zinc-400 font-mono overflow-x-auto">
-{`SELECT p.*, prs.management_reviewed, prs.operations_sales_reviewed,
-       prs.product_tech_reviewed, prs.all_reviewed
-FROM projects p
-LEFT JOIN project_review_status prs ON p.id = prs.project_id
-ORDER BY p.created_at DESC;`}
-                          </pre>
-                        </div>
-
-                        <div className="p-4 bg-zinc-800/50 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm font-medium text-white">Get task counts by status per project</p>
-                            <button
-                              onClick={() => copyToClipboard(
-                                `SELECT p.title as project, t.status, COUNT(*) as count
-FROM tasks t
-JOIN projects p ON t.project_id = p.id
-GROUP BY p.title, t.status
-ORDER BY p.title, t.status;`,
-                                'query2'
-                              )}
-                              className="text-zinc-400 hover:text-white transition-colors"
-                            >
-                              {copied === 'query2' ? (
-                                <Check className="w-4 h-4 text-green-400" />
-                              ) : (
-                                <Copy className="w-4 h-4" />
-                              )}
-                            </button>
-                          </div>
-                          <pre className="text-xs text-zinc-400 font-mono overflow-x-auto">
-{`SELECT p.title as project, t.status, COUNT(*) as count
-FROM tasks t
-JOIN projects p ON t.project_id = p.id
-GROUP BY p.title, t.status
-ORDER BY p.title, t.status;`}
-                          </pre>
-                        </div>
-
-                        <div className="p-4 bg-zinc-800/50 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm font-medium text-white">Find tasks with high AI potential</p>
-                            <button
-                              onClick={() => copyToClipboard(
-                                `SELECT t.title, t.ai_potential, p.title as project
-FROM tasks t
-JOIN projects p ON t.project_id = p.id
-WHERE t.ai_potential IN ('high', 'full')
-ORDER BY t.ai_potential DESC, t.created_at DESC;`,
-                                'query3'
-                              )}
-                              className="text-zinc-400 hover:text-white transition-colors"
-                            >
-                              {copied === 'query3' ? (
-                                <Check className="w-4 h-4 text-green-400" />
-                              ) : (
-                                <Copy className="w-4 h-4" />
-                              )}
-                            </button>
-                          </div>
-                          <pre className="text-xs text-zinc-400 font-mono overflow-x-auto">
-{`SELECT t.title, t.ai_potential, p.title as project
-FROM tasks t
-JOIN projects p ON t.project_id = p.id
-WHERE t.ai_potential IN ('high', 'full')
-ORDER BY t.ai_potential DESC, t.created_at DESC;`}
-                          </pre>
-                        </div>
-
-                        <div className="p-4 bg-zinc-800/50 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm font-medium text-white">Get recent comments with context</p>
-                            <button
-                              onClick={() => copyToClipboard(
-                                `SELECT c.content, c.created_at, u.name as author,
-       p.title as project, t.title as task
-FROM comments c
-JOIN users u ON c.user_id = u.id
-LEFT JOIN projects p ON c.project_id = p.id
-LEFT JOIN tasks t ON c.task_id = t.id
-ORDER BY c.created_at DESC
-LIMIT 20;`,
-                                'query4'
-                              )}
-                              className="text-zinc-400 hover:text-white transition-colors"
-                            >
-                              {copied === 'query4' ? (
-                                <Check className="w-4 h-4 text-green-400" />
-                              ) : (
-                                <Copy className="w-4 h-4" />
-                              )}
-                            </button>
-                          </div>
-                          <pre className="text-xs text-zinc-400 font-mono overflow-x-auto">
-{`SELECT c.content, c.created_at, u.name as author,
-       p.title as project, t.title as task
-FROM comments c
-JOIN users u ON c.user_id = u.id
-LEFT JOIN projects p ON c.project_id = p.id
-LEFT JOIN tasks t ON c.task_id = t.id
-ORDER BY c.created_at DESC
-LIMIT 20;`}
-                          </pre>
+                          <p className="text-white font-mono text-sm truncate">{healthData?.supabaseAnonKey || 'Not available'}</p>
                         </div>
                       </div>
                     </div>
 
                     {/* API Endpoints Reference */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                      <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-                        <Code className="w-5 h-5 text-blue-400" />
-                        API Endpoints Reference
-                      </h3>
-                      <p className="text-sm text-zinc-400 mb-4">
-                        Available internal API endpoints for development
-                      </p>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                          <Terminal className="w-5 h-5 text-violet-400" />
+                          Internal API Endpoints
+                        </h3>
+                        <a
+                          href={healthData?.developerLinks?.apiDocsApp || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                        >
+                          Full API Docs <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
 
                       <div className="space-y-2">
                         {[
                           { method: 'GET', path: '/api/projects', desc: 'List all projects with review status' },
-                          { method: 'GET', path: '/api/tasks', desc: 'List tasks (supports filtering)' },
+                          { method: 'POST', path: '/api/projects', desc: 'Create a new project' },
+                          { method: 'PATCH', path: '/api/projects', desc: 'Update a project (requires id in body)' },
+                          { method: 'DELETE', path: '/api/projects?id=<uuid>', desc: 'Delete a project' },
+                          { method: 'GET', path: '/api/projects/[slug]', desc: 'Get single project with tasks' },
+                          { method: 'GET', path: '/api/tasks', desc: 'List tasks (supports ?status=, ?project_id=, etc.)' },
+                          { method: 'POST', path: '/api/tasks', desc: 'Create task(s) - supports bulk creation' },
+                          { method: 'PATCH', path: '/api/tasks', desc: 'Update a task (requires id in body)' },
+                          { method: 'DELETE', path: '/api/tasks?id=<uuid>', desc: 'Delete a task' },
                           { method: 'GET', path: '/api/teams', desc: 'List all teams' },
-                          { method: 'GET', path: '/api/pillars', desc: 'List all pillars' },
-                          { method: 'GET', path: '/api/comments', desc: 'List comments' },
-                          { method: 'GET', path: '/api/health', desc: 'System health check' },
+                          { method: 'GET', path: '/api/pillars', desc: 'List all strategic pillars' },
+                          { method: 'GET', path: '/api/reviews', desc: 'List review sessions' },
+                          { method: 'POST', path: '/api/reviews', desc: 'Submit review feedback' },
+                          { method: 'GET', path: '/api/health', desc: 'System health & developer info' },
                           { method: 'GET', path: '/api/settings', desc: 'App settings and stats' },
-                        ].map((endpoint) => (
-                          <div key={endpoint.path} className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                        ].map((endpoint, i) => (
+                          <div key={i} className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors">
                             <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                              endpoint.method === 'GET' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                              endpoint.method === 'GET' ? 'bg-green-500/20 text-green-400' :
+                              endpoint.method === 'POST' ? 'bg-blue-500/20 text-blue-400' :
+                              endpoint.method === 'PATCH' ? 'bg-yellow-500/20 text-yellow-400' :
+                              'bg-red-500/20 text-red-400'
                             }`}>
                               {endpoint.method}
                             </span>
-                            <code className="text-sm text-white font-mono">{endpoint.path}</code>
-                            <span className="text-sm text-zinc-500 ml-auto">{endpoint.desc}</span>
+                            <code className="text-sm text-white font-mono flex-1">{endpoint.path}</code>
+                            <span className="text-xs text-zinc-500 hidden md:block">{endpoint.desc}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Quick SQL Queries */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-cyan-400" />
+                        SQL Queries for Claude / Supabase
+                      </h3>
+                      <p className="text-sm text-zinc-400 mb-4">
+                        Copy and paste these into Supabase SQL Editor or share with Claude for data operations
+                      </p>
+
+                      <div className="space-y-4">
+                        {[
+                          {
+                            title: 'Get all projects with review status',
+                            id: 'query1',
+                            sql: `SELECT p.*, prs.management_reviewed, prs.operations_sales_reviewed,
+       prs.product_tech_reviewed, prs.all_reviewed
+FROM projects p
+LEFT JOIN project_review_status prs ON p.id = prs.project_id
+ORDER BY p.created_at DESC;`
+                          },
+                          {
+                            title: 'Task counts by status per project',
+                            id: 'query2',
+                            sql: `SELECT p.title as project, t.status, COUNT(*) as count
+FROM tasks t
+JOIN projects p ON t.project_id = p.id
+GROUP BY p.title, t.status
+ORDER BY p.title, t.status;`
+                          },
+                          {
+                            title: 'Team workload summary',
+                            id: 'query3',
+                            sql: `SELECT t.name as team,
+       COUNT(DISTINCT p.id) as projects,
+       COUNT(DISTINCT tk.id) as tasks,
+       SUM(CASE WHEN tk.status = 'completed' THEN 1 ELSE 0 END) as completed
+FROM teams t
+LEFT JOIN projects p ON p.owner_team_id = t.id
+LEFT JOIN tasks tk ON tk.owner_team_id = t.id
+GROUP BY t.id, t.name
+ORDER BY projects DESC;`
+                          },
+                          {
+                            title: 'Find high AI-potential tasks',
+                            id: 'query4',
+                            sql: `SELECT t.title, t.ai_potential, t.status, p.title as project
+FROM tasks t
+JOIN projects p ON t.project_id = p.id
+WHERE t.ai_potential IN ('high', 'medium')
+ORDER BY t.ai_potential DESC, t.created_at DESC;`
+                          },
+                          {
+                            title: 'Recent review feedback',
+                            id: 'query5',
+                            sql: `SELECT rf.*, p.title as project, u.name as reviewer
+FROM review_feedback rf
+JOIN project_review_sessions prs ON rf.review_session_id = prs.id
+JOIN projects p ON prs.project_id = p.id
+JOIN users u ON prs.reviewer_id = u.id
+ORDER BY rf.created_at DESC
+LIMIT 50;`
+                          }
+                        ].map((query) => (
+                          <div key={query.id} className="p-4 bg-zinc-800/50 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-sm font-medium text-white">{query.title}</p>
+                              <button
+                                onClick={() => copyToClipboard(query.sql, query.id)}
+                                className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors"
+                              >
+                                {copied === query.id ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-green-400" />
+                                    <span className="text-green-400">Copied!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" />
+                                    <span>Copy</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            <pre className="text-xs text-zinc-400 font-mono overflow-x-auto whitespace-pre-wrap">{query.sql}</pre>
                           </div>
                         ))}
                       </div>

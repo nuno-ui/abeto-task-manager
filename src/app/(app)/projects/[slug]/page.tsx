@@ -479,11 +479,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 <Edit2 className="w-4 h-4" />
                 Edit
               </Button>
-              {project.prototype_url && (
+              {project.demo_link && (
+                <a href={project.demo_link} target="_blank" rel="noopener noreferrer">
+                  <Button variant="ghost" size="sm">
+                    <ExternalLink className="w-4 h-4" />
+                    Demo/Doc
+                  </Button>
+                </a>
+              )}
+              {project.prototype_url && !project.demo_link && (
                 <a href={project.prototype_url} target="_blank" rel="noopener noreferrer">
                   <Button variant="ghost" size="sm">
                     <ExternalLink className="w-4 h-4" />
-                    Demo
+                    Prototype
                   </Button>
                 </a>
               )}
@@ -1010,6 +1018,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               due_date: editingTask.due_date || undefined,
               problem_statement: editingTask.problem_statement || undefined,
               deliverables: editingTask.deliverables || [],
+              demo_link: editingTask.demo_link || undefined,
             }}
             teams={teams}
             users={users}
@@ -1071,6 +1080,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             next_milestone: project.next_milestone ?? undefined,
             problem_statement: project.problem_statement ?? undefined,
             deliverables: project.deliverables,
+            demo_link: project.demo_link ?? undefined,
           }}
           teams={teams}
           pillars={pillars}

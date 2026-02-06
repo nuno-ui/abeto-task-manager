@@ -75,6 +75,7 @@ export function TaskForm({
     risks: [],
     blocked_by: [],
     due_date: '',
+    demo_link: '',
     is_foundational: false,
     is_critical_path: false,
     ...initialData,
@@ -265,6 +266,18 @@ export function TaskForm({
             onChange={(e) => handleChange('due_date', e.target.value)}
           />
         </div>
+      </div>
+
+      {/* Links */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Links</h3>
+        <Input
+          label="Demo / Document Link"
+          type="url"
+          value={formData.demo_link || ''}
+          onChange={(e) => handleChange('demo_link', e.target.value)}
+          placeholder="https://... (Notion, Google Docs, demo URL, etc.)"
+        />
       </div>
 
       {/* AI Assessment */}

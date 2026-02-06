@@ -120,6 +120,21 @@ export interface Project {
   problem_statement: string | null;
   deliverables: string[];
 
+  // Review Assessment Fields (pre-set values that reviewers vote on)
+  pain_point_level: string | null;
+  adoption_risk: string | null;
+  roi_confidence: string | null;
+  time_horizon: string | null;
+  task_list_quality: string | null;
+  strategic_alignment: string | null;
+  resource_justified: string | null;
+  timeline_realistic: string | null;
+  tech_debt_risk: string | null;
+  data_readiness: string | null;
+
+  // Demo/Document Link
+  demo_link: string | null;
+
   // Joined
   pillar?: Pillar;
   owner_team?: Team;
@@ -161,6 +176,10 @@ export interface Task {
   // Problem & Deliverables
   problem_statement: string | null;
   deliverables: string[];
+
+  // Demo/Document Link
+  demo_link: string | null;
+
   created_at: string;
   updated_at: string;
   // Joined
@@ -296,6 +315,21 @@ export interface CreateProjectInput {
   next_milestone?: string;
   problem_statement?: string;
   deliverables?: string[];
+
+  // Review Assessment Fields
+  pain_point_level?: string;
+  adoption_risk?: string;
+  roi_confidence?: string;
+  time_horizon?: string;
+  task_list_quality?: string;
+  strategic_alignment?: string;
+  resource_justified?: string;
+  timeline_realistic?: string;
+  tech_debt_risk?: string;
+  data_readiness?: string;
+
+  // Demo/Document Link
+  demo_link?: string;
 }
 
 export interface UpdateProjectInput extends Partial<CreateProjectInput> {
@@ -330,6 +364,7 @@ export interface CreateTaskInput {
   is_critical_path?: boolean;
   problem_statement?: string;
   deliverables?: string[];
+  demo_link?: string;
 }
 
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {

@@ -9,8 +9,17 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, serviceRoleKey);
 }
 
+// Extract project ref from Supabase URL
+function getSupabaseProjectRef(url: string): string | null {
+  const match = url?.match(/https:\/\/([^.]+)\.supabase\.co/);
+  return match ? match[1] : null;
+}
+
 export async function GET() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const projectRef = getSupabaseProjectRef(supabaseUrl);
 
   if (!serviceRoleKey) {
     return NextResponse.json({
@@ -90,7 +99,29 @@ export async function GET() {
         projectsWithoutTeamList: projectsWithoutTeam?.slice(0, 5) || [],
       },
       reviewStats,
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      // Developer Resources
+      supabaseUrl,
+      supabaseAnonKey: supabaseAnonKey ? `${supabaseAnonKey.slice(0, 20)}...` : null,
+      supabaseProjectRef: projectRef,
+      developerLinks: {
+        supabaseDashboard: projectRef ? `https://supabase.com/dashboard/project/${projectRef}` : null,
+        supabaseTableEditor: projectRef ? `https://supabase.com/dashboard/project/${projectRef}/editor` : null,
+        supabaseSqlEditor: projectRef ? `https://supabase.com/dashboard/project/${projectRef}/sql/new` : null,
+        supabaseApiDocs: projectRef ? `https://supabase.com/dashboard/project/${projectRef}/api` : null,
+        supabaseLogs: projectRef ? `https://supabase.com/dashboard/project/${projectRef}/logs/explorer` : null,
+        supabaseAuth: projectRef ? `https://supabase.com/dashboard/project/${projectRef}/auth/users` : null,
+        supabaseStorage: projectRef ? `https://supabase.com/dashboard/project/${projectRef}/storage/buckets` : null,
+        // App links
+        apiDocsApp: 'https://abeto-api-dashboard.vercel.app',
+        vercelDashboard: 'https://vercel.com/nunos-projects-5ee1e4b6/abeto-task-manager',
+        githubRepo: 'https://github.com/nunomfelix/abeto-task-manager',
+      },
+      // Environment info
+      environment: {
+        nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV || 'local',
+        region: process.env.VERCEL_REGION || 'local',
+      },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

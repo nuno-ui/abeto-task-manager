@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Send,
   X,
+  ExternalLink,
 } from 'lucide-react';
 import { Badge, Avatar, ProgressBar } from '@/components/ui';
 import type { Task } from '@/types/database';
@@ -117,6 +118,19 @@ export function TaskCard({ task, onClick, onDelete, onComment, deleting = false,
                 <Zap className="w-3 h-3" />
                 Foundational
               </span>
+            )}
+            {/* Demo/Doc Link Button */}
+            {task.demo_link && (
+              <a
+                href={task.demo_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="p-1 text-zinc-500 hover:text-violet-400 hover:bg-violet-900/20 rounded transition-colors"
+                title="Open Demo/Document"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
             )}
             {/* Quick Comment Button */}
             <button
