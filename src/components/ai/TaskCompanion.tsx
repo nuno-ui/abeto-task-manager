@@ -599,8 +599,8 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <div className="p-4 bg-zinc-800/50 rounded-lg">
-                <h4 className="text-sm font-medium text-white mb-3">Create a Slack Webhook:</h4>
-                <ol className="space-y-3 text-sm text-zinc-400">
+                <h4 className="text-sm font-medium text-white mb-3">Step 1: Create Incoming Webhook</h4>
+                <ol className="space-y-2 text-sm text-zinc-400">
                   <li className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">1</span>
                     <span>Go to <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline">api.slack.com/apps</a> and create a new app</span>
@@ -620,6 +620,33 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
                   <li className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">5</span>
                     <span>Choose a channel and copy the webhook URL</span>
+                  </li>
+                </ol>
+              </div>
+
+              <div className="p-4 bg-zinc-800/50 rounded-lg">
+                <h4 className="text-sm font-medium text-white mb-3">Step 2: Enable Two-Way Communication (Optional)</h4>
+                <p className="text-xs text-zinc-500 mb-2">To let Task Companion respond when @mentioned in Slack:</p>
+                <ol className="space-y-2 text-sm text-zinc-400">
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0">1</span>
+                    <span>In your app settings, go to <strong className="text-zinc-300">"Event Subscriptions"</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0">2</span>
+                    <span>Turn <strong className="text-zinc-300">"Enable Events"</strong> ON</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0">3</span>
+                    <span>Set Request URL: <code className="bg-zinc-700 px-1 rounded text-xs">https://abeto-task-manager.vercel.app/api/slack/webhook</code></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0">4</span>
+                    <span>Under <strong className="text-zinc-300">"Subscribe to bot events"</strong>, add: <code className="bg-zinc-700 px-1 rounded text-xs">app_mention</code> and <code className="bg-zinc-700 px-1 rounded text-xs">message.im</code></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0">5</span>
+                    <span>Click <strong className="text-zinc-300">"Save Changes"</strong> then <strong className="text-zinc-300">"reinstall your app"</strong></span>
                   </li>
                 </ol>
               </div>
@@ -681,10 +708,10 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
               <div className="p-4 bg-green-900/20 border border-green-800/30 rounded-lg">
                 <h4 className="text-sm font-medium text-green-300 mb-2 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
-                  Setup Complete
+                  Webhook Connected!
                 </h4>
                 <p className="text-sm text-green-200/80">
-                  Your webhook has been saved automatically. Task Companion is now ready to use in Slack!
+                  Your webhook has been saved. If you also set up Event Subscriptions, you can now @mention Task Companion in Slack and it will respond!
                 </p>
               </div>
 

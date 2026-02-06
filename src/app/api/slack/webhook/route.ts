@@ -208,17 +208,41 @@ ${projects.slice(0, 20).map(p => `
   return textContent?.type === 'text' ? textContent.text : 'Sorry, I could not generate a response.';
 }
 
-// Send response back to Slack
-async function sendSlackResponse(webhookUrl: string, text: string, channel?: string) {
+// Send response back to Slack using the Web API (chat.postMessage)
+async function sendSlackResponse(channel: string, text: string) {
   try {
-    const payload: { text: string; channel?: string } = { text };
-    if (channel) payload.channel = channel;
+    // Get the Bot Token from environment or database
+    let botToken = process.env.SLACK_BOT_TOKEN;
+    if (!botToken) {
+      const { data: settings } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'slack_bot_token')
+        .single();
+      botToken = settings?.value;
+    }
 
-    await fetch(webhookUrl, {
+    if (!botToken) {
+      console.error('No Slack Bot Token found');
+      return;
+    }
+
+    const response = await fetch('https://slack.com/api/chat.postMessage', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${botToken}`,
+      },
+      body: JSON.stringify({
+        channel,
+        text,
+      }),
     });
+
+    const result = await response.json();
+    if (!result.ok) {
+      console.error('Slack API error:', result.error);
+    }
   } catch (error) {
     console.error('Error sending Slack response:', error);
   }
@@ -244,32 +268,17 @@ export async function POST(request: Request) {
         // Remove bot mention from message
         const cleanMessage = message.replace(/<@[A-Z0-9]+>/g, '').trim();
 
-        if (cleanMessage) {
+        if (cleanMessage && event.channel) {
           // Fetch current tasks and projects
           const { tasks, projects } = await fetchTasksAndProjects();
 
           // Generate AI response
           const aiResponse = await generateAIResponse(cleanMessage, tasks, projects);
 
-          // Get webhook URL from database or env
-          let webhookUrl = process.env.SLACK_WEBHOOK_URL;
-          if (!webhookUrl) {
-            const { data: settings } = await supabase
-              .from('app_settings')
-              .select('value')
-              .eq('key', 'slack_webhook_url')
-              .single();
-            webhookUrl = settings?.value;
-          }
+          // Send response using Slack Web API
+          await sendSlackResponse(event.channel, aiResponse);
 
-          if (webhookUrl && event.channel) {
-            await sendSlackResponse(webhookUrl, aiResponse, event.channel);
-          }
-
-          return NextResponse.json({
-            response_type: 'in_channel',
-            text: aiResponse,
-          });
+          return NextResponse.json({ ok: true });
         }
       }
     }

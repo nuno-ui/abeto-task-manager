@@ -6,23 +6,28 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// GET - Retrieve Slack webhook URL
+// GET - Retrieve Slack settings
 export async function GET() {
   try {
     const { data, error } = await supabase
       .from('app_settings')
-      .select('value')
-      .eq('key', 'slack_webhook_url')
-      .single();
+      .select('key, value')
+      .in('key', ['slack_webhook_url', 'slack_bot_token']);
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Error fetching Slack settings:', error);
       return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
     }
 
+    const settings: Record<string, string> = {};
+    data?.forEach(row => {
+      settings[row.key] = row.value;
+    });
+
     return NextResponse.json({
-      webhookUrl: data?.value || '',
-      isConfigured: !!(data?.value && data.value.length > 0),
+      webhookUrl: settings.slack_webhook_url || '',
+      botToken: settings.slack_bot_token ? '***configured***' : '', // Don't expose token
+      isConfigured: !!(settings.slack_webhook_url || settings.slack_bot_token),
     });
   } catch (error) {
     console.error('Slack settings error:', error);
@@ -30,12 +35,12 @@ export async function GET() {
   }
 }
 
-// POST - Save Slack webhook URL
+// POST - Save Slack settings (webhookUrl and/or botToken)
 export async function POST(request: Request) {
   try {
-    const { webhookUrl } = await request.json();
+    const { webhookUrl, botToken } = await request.json();
 
-    // Validate webhook URL format
+    // Validate webhook URL format if provided
     if (webhookUrl && !webhookUrl.startsWith('https://hooks.slack.com/')) {
       return NextResponse.json(
         { error: 'Invalid webhook URL - must start with https://hooks.slack.com/' },
@@ -43,21 +48,41 @@ export async function POST(request: Request) {
       );
     }
 
-    // Upsert the setting
-    const { error } = await supabase
-      .from('app_settings')
-      .upsert(
-        {
-          key: 'slack_webhook_url',
-          value: webhookUrl || '',
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'key' }
+    // Validate bot token format if provided
+    if (botToken && !botToken.startsWith('xoxb-')) {
+      return NextResponse.json(
+        { error: 'Invalid bot token - must start with xoxb-' },
+        { status: 400 }
       );
+    }
 
-    if (error) {
-      console.error('Error saving Slack settings:', error);
-      return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
+    const upserts = [];
+
+    if (webhookUrl !== undefined) {
+      upserts.push({
+        key: 'slack_webhook_url',
+        value: webhookUrl || '',
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    if (botToken !== undefined) {
+      upserts.push({
+        key: 'slack_bot_token',
+        value: botToken || '',
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    if (upserts.length > 0) {
+      const { error } = await supabase
+        .from('app_settings')
+        .upsert(upserts, { onConflict: 'key' });
+
+      if (error) {
+        console.error('Error saving Slack settings:', error);
+        return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true });
