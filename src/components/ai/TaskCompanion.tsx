@@ -110,6 +110,7 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
       // February
       '02-04': { fact: "On this day in 2004, Mark Zuckerberg launched Facebook from his Harvard dorm", ending: "Side projects can change the world. What's yours? 👍" },
       '02-06': { fact: "On this day in 1959, Jack Kilby filed the first patent for an integrated circuit", ending: "One invention sparked the entire digital age. Your work matters! 💡" },
+      '02-07': { fact: "On this day in 1984, astronauts Bruce McCandless and Robert Stewart made the first untethered spacewalk", ending: "Sometimes you have to let go of the safety line to reach new heights! 🚀" },
       '02-14': { fact: "On this day in 1946, ENIAC, the first electronic computer, was unveiled", ending: "From room-sized machines to pocket phones — progress never stops! 💻" },
       '02-18': { fact: "On this day in 1930, Pluto was discovered by Clyde Tombaugh", ending: "Persistence reveals what others miss. Keep looking! 🔭" },
       '02-21': { fact: "On this day in 1878, the first telephone directory was published (50 names)", ending: "Every network starts small. Grow yours! 📞" },
