@@ -363,6 +363,20 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
                   : alert.project
                     ? `/projects/${alert.project.slug}`
                     : '#';
+              // Get a short label for the alert (truncate task/project titles)
+              const getAlertLabel = () => {
+                if (alert.type === 'review') return 'Reviews';
+                if (alert.task?.title) {
+                  // Truncate to ~15 chars
+                  const title = alert.task.title;
+                  return title.length > 15 ? title.slice(0, 14) + '…' : title;
+                }
+                if (alert.project?.title) {
+                  const title = alert.project.title;
+                  return title.length > 15 ? title.slice(0, 14) + '…' : title;
+                }
+                return alert.type;
+              };
               return (
                 <Link
                   key={idx}
@@ -371,7 +385,7 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
                   title={alert.task?.title || alert.project?.title || alert.message}
                 >
                   {getAlertIcon(alert.type)}
-                  <span className="hidden sm:inline">{alert.type === 'review' ? 'Reviews' : alert.type}</span>
+                  <span className="hidden sm:inline">{getAlertLabel()}</span>
                 </Link>
               );
             })}
@@ -537,7 +551,7 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
             </h3>
             <div className="p-4 bg-violet-900/20 border border-violet-800/30 rounded-lg">
               <p className="text-sm text-violet-200 mb-2">
-                Just mention <code className="px-1.5 py-0.5 bg-zinc-800 rounded text-violet-300 font-mono">@Abeto</code> in any channel and ask anything!
+                Just mention <code className="px-1.5 py-0.5 bg-zinc-800 rounded text-violet-300 font-mono">@Task-Companion</code> in any channel and ask anything!
               </p>
               <p className="text-xs text-zinc-400">
                 The AI knows about your projects, tasks, and can help you prioritize work.
@@ -550,23 +564,23 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
             <h3 className="text-sm font-medium text-zinc-300 mb-3">Available Commands</h3>
             <div className="space-y-2">
               <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Abeto help</code>
+                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Task-Companion help</code>
                 <span className="text-sm text-zinc-400">Show all available commands</span>
               </div>
               <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Abeto my tasks</code>
+                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Task-Companion my tasks</code>
                 <span className="text-sm text-zinc-400">See your assigned tasks and status</span>
               </div>
               <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Abeto projects</code>
+                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Task-Companion projects</code>
                 <span className="text-sm text-zinc-400">List active projects and progress</span>
               </div>
               <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Abeto summary</code>
+                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Task-Companion summary</code>
                 <span className="text-sm text-zinc-400">Quick overview of what needs attention</span>
               </div>
               <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Abeto blocked</code>
+                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Task-Companion blocked</code>
                 <span className="text-sm text-zinc-400">Show blocked tasks that need help</span>
               </div>
             </div>

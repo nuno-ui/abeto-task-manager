@@ -401,18 +401,18 @@ async function handleKnownCommand(
     return `👋 *Hi ${userName}!* Here's what I can help you with:
 
 *📋 Task Commands*
-• \`@Abeto my tasks\` - See your assigned tasks
-• \`@Abeto blocked\` - Show blocked tasks needing attention
-• \`@Abeto overdue\` - Show overdue tasks
+• \`@Task-Companion my tasks\` - See your assigned tasks
+• \`@Task-Companion blocked\` - Show blocked tasks needing attention
+• \`@Task-Companion overdue\` - Show overdue tasks
 
 *📊 Project Commands*
-• \`@Abeto projects\` - List all active projects
-• \`@Abeto summary\` - Get a quick overview of everything
+• \`@Task-Companion projects\` - List all active projects
+• \`@Task-Companion summary\` - Get a quick overview of everything
 
 *💬 Ask Me Anything*
-• \`@Abeto what should I work on?\`
-• \`@Abeto status of [project name]\`
-• \`@Abeto how many tasks are in progress?\`
+• \`@Task-Companion what should I work on?\`
+• \`@Task-Companion status of [project name]\`
+• \`@Task-Companion how many tasks are in progress?\`
 
 Just mention me and ask! 🤖`;
   }
@@ -629,7 +629,7 @@ Just mention me and ask! 🤖`;
       }
     }
 
-    response += `\n_Need details? Try \`@Abeto my tasks\` or \`@Abeto projects\`_`;
+    response += `\n_Need details? Try \`@Task-Companion my tasks\` or \`@Task-Companion projects\`_`;
 
     return response;
   }

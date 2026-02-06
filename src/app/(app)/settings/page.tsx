@@ -696,19 +696,19 @@ function SettingsPageContent() {
                           <h4 className="text-sm font-medium text-zinc-300 mb-3">Available Commands</h4>
                           <div className="grid gap-3">
                             <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Abeto help</code>
+                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Task-Companion help</code>
                               <span className="text-sm text-zinc-400">Show all available commands</span>
                             </div>
                             <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Abeto my tasks</code>
+                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Task-Companion my tasks</code>
                               <span className="text-sm text-zinc-400">See your assigned tasks and their status</span>
                             </div>
                             <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Abeto projects</code>
+                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Task-Companion projects</code>
                               <span className="text-sm text-zinc-400">List active projects and their progress</span>
                             </div>
                             <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Abeto summary</code>
+                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Task-Companion summary</code>
                               <span className="text-sm text-zinc-400">Get a quick summary of what needs attention</span>
                             </div>
                           </div>
@@ -756,7 +756,7 @@ function SettingsPageContent() {
 
                       <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                         <p className="text-sm text-zinc-300 mb-3">
-                          Just mention <code className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-400">@Abeto</code> in any channel and ask anything:
+                          Just mention <code className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-400">@Task-Companion</code> in any channel and ask anything:
                         </p>
                         <div className="space-y-2 text-sm text-zinc-400">
                           <p>• &quot;What should I work on today?&quot;</p>
@@ -1347,7 +1347,7 @@ function SettingsPageContent() {
                           <h4 className="text-sm font-medium text-zinc-300 mb-2">1. Slack App Configuration</h4>
                           <p className="text-sm text-zinc-400 mb-2">Create app at <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">api.slack.com/apps</a></p>
                           <div className="text-xs text-zinc-500 space-y-1">
-                            <p>• App Manifest: Use <code className="px-1 py-0.5 bg-zinc-700 rounded">@Abeto</code> as bot name</p>
+                            <p>• App Manifest: Use <code className="px-1 py-0.5 bg-zinc-700 rounded">@Task-Companion</code> as bot name</p>
                             <p>• Scopes: <code className="px-1 py-0.5 bg-zinc-700 rounded">app_mentions:read</code>, <code className="px-1 py-0.5 bg-zinc-700 rounded">chat:write</code>, <code className="px-1 py-0.5 bg-zinc-700 rounded">users:read</code></p>
                           </div>
                         </div>
