@@ -22,6 +22,7 @@ import {
   ChevronUp,
   ExternalLink,
   Zap,
+  Star,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Task, Project } from '@/types/database';
@@ -43,9 +44,11 @@ interface ActionItem {
 }
 
 interface TaskAlert {
-  type: 'overdue' | 'due_soon' | 'blocked' | 'critical';
-  task: Task;
+  type: 'overdue' | 'due_soon' | 'blocked' | 'critical' | 'review';
+  task?: Task;
+  project?: Project;
   message: string;
+  href?: string;
 }
 
 interface TaskRecommendation {
@@ -111,6 +114,19 @@ What would you like to know?`,
     const now = new Date();
     const newAlerts: TaskAlert[] = [];
 
+    // Check for projects needing review
+    const projectsNeedingReview = projects.filter(p =>
+      (p.status === 'planning' || p.status === 'in_progress') && !p.pain_point_level
+    );
+    if (projectsNeedingReview.length > 0) {
+      newAlerts.push({
+        type: 'review',
+        project: projectsNeedingReview[0],
+        message: `${projectsNeedingReview.length} project${projectsNeedingReview.length > 1 ? 's' : ''} need${projectsNeedingReview.length === 1 ? 's' : ''} review`,
+        href: '/reviews',
+      });
+    }
+
     tasks.forEach((task) => {
       // Skip completed tasks
       if (task.status === 'completed' || task.status === 'cancelled') return;
@@ -156,11 +172,11 @@ What would you like to know?`,
 
     // Sort by severity
     newAlerts.sort((a, b) => {
-      const severityOrder = { overdue: 0, critical: 1, blocked: 2, due_soon: 3 };
-      return severityOrder[a.type] - severityOrder[b.type];
+      const severityOrder: Record<string, number> = { overdue: 0, critical: 1, blocked: 2, review: 3, due_soon: 4 };
+      return (severityOrder[a.type] ?? 5) - (severityOrder[b.type] ?? 5);
     });
 
-    setAlerts(newAlerts.slice(0, 5)); // Show top 5 alerts
+    setAlerts(newAlerts.slice(0, 6)); // Show top 6 alerts
   };
 
   const calculateRecommendations = () => {
@@ -274,6 +290,7 @@ What would you like to know?`,
             progress_percentage: p.progress_percentage,
             total_tasks: p.total_tasks,
             completed_tasks: p.completed_tasks,
+            pain_point_level: p.pain_point_level,
           })),
           userArea,
           conversationHistory: messages.slice(-10).map((m) => ({
@@ -331,6 +348,8 @@ What would you like to know?`,
         return 'text-orange-400 bg-orange-900/20 border-orange-900/30';
       case 'blocked':
         return 'text-yellow-400 bg-yellow-900/20 border-yellow-900/30';
+      case 'review':
+        return 'text-purple-400 bg-purple-900/20 border-purple-900/30';
       case 'due_soon':
         return 'text-blue-400 bg-blue-900/20 border-blue-900/30';
       default:
@@ -346,6 +365,8 @@ What would you like to know?`,
         return <Zap className="w-4 h-4" />;
       case 'blocked':
         return <AlertTriangle className="w-4 h-4" />;
+      case 'review':
+        return <Star className="w-4 h-4" />;
       case 'due_soon':
         return <Calendar className="w-4 h-4" />;
       default:
@@ -403,20 +424,33 @@ What would you like to know?`,
 
           {showAlerts && (
             <div className="px-4 pb-3 space-y-2">
-              {alerts.map((alert, idx) => (
-                <Link
-                  key={idx}
-                  href={alert.task.project ? `/projects/${alert.task.project.slug}` : '#'}
-                  className={`flex items-start gap-3 p-2 rounded-lg border ${getAlertColor(alert.type)} hover:opacity-90 transition-opacity`}
-                >
-                  <div className="mt-0.5">{getAlertIcon(alert.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{alert.task.title}</p>
-                    <p className="text-xs opacity-80">{alert.message}</p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 mt-1 opacity-50" />
-                </Link>
-              ))}
+              {alerts.map((alert, idx) => {
+                // Determine the link href
+                const href = alert.href
+                  ? alert.href
+                  : alert.task?.project
+                    ? `/projects/${alert.task.project.slug}`
+                    : alert.project
+                      ? `/projects/${alert.project.slug}`
+                      : '#';
+                // Determine the title to show
+                const title = alert.task?.title || alert.project?.title || 'Alert';
+
+                return (
+                  <Link
+                    key={idx}
+                    href={href}
+                    className={`flex items-start gap-3 p-2 rounded-lg border ${getAlertColor(alert.type)} hover:opacity-90 transition-opacity`}
+                  >
+                    <div className="mt-0.5">{getAlertIcon(alert.type)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{title}</p>
+                      <p className="text-xs opacity-80">{alert.message}</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 mt-1 opacity-50" />
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
