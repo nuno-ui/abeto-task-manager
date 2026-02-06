@@ -135,6 +135,9 @@ export interface Project {
   // Demo/Document Link
   demo_link: string | null;
 
+  // AI Predicted Project Flag
+  is_predicted: boolean;
+
   // Joined
   pillar?: Pillar;
   owner_team?: Team;
@@ -330,6 +333,9 @@ export interface CreateProjectInput {
 
   // Demo/Document Link
   demo_link?: string;
+
+  // AI Predicted Project Flag
+  is_predicted?: boolean;
 }
 
 export interface UpdateProjectInput extends Partial<CreateProjectInput> {

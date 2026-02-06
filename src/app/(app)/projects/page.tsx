@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, LayoutGrid, List, Sparkles } from 'lucide-react';
+import { Plus, Search, Filter, LayoutGrid, List, Sparkles, RefreshCw, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ProjectForm } from '@/components/projects/ProjectForm';
@@ -24,6 +24,8 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [pillarFilter, setPillarFilter] = useState('all');
+  const [showPredicted, setShowPredicted] = useState(true);
+  const [refreshingPredicted, setRefreshingPredicted] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -87,8 +89,8 @@ export default function ProjectsPage() {
     }
   };
 
-  // Filter projects
-  const filteredProjects = projects.filter((project) => {
+  // Filter projects - separate regular and predicted
+  const allFilteredProjects = projects.filter((project) => {
     if (searchQuery && !project.title.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
@@ -103,6 +105,19 @@ export default function ProjectsPage() {
     }
     return true;
   });
+
+  // Separate regular projects from predicted projects
+  const filteredProjects = allFilteredProjects.filter(p => !p.is_predicted);
+  const predictedProjects = allFilteredProjects.filter(p => p.is_predicted);
+
+  // Handle refresh predicted projects (placeholder for AI regeneration)
+  const handleRefreshPredicted = async () => {
+    setRefreshingPredicted(true);
+    // In the future, this could call an AI endpoint to regenerate predicted projects
+    // For now, just refresh the data
+    await fetchData();
+    setRefreshingPredicted(false);
+  };
 
   const statusOptions = [
     { value: 'all', label: 'All Statuses' },
@@ -222,6 +237,7 @@ export default function ProjectsPage() {
         {/* Results count */}
         <p className="text-sm text-zinc-500">
           {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''}
+          {predictedProjects.length > 0 && ` + ${predictedProjects.length} AI suggested`}
         </p>
 
         {/* Projects Grid/List */}
@@ -231,7 +247,7 @@ export default function ProjectsPage() {
               <div key={i} className="h-48 bg-zinc-900 rounded-xl animate-pulse" />
             ))}
           </div>
-        ) : filteredProjects.length === 0 ? (
+        ) : filteredProjects.length === 0 && predictedProjects.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-zinc-500 mb-4">No projects found</p>
             <Button onClick={() => setShowCreateModal(true)}>
@@ -240,16 +256,85 @@ export default function ProjectsPage() {
             </Button>
           </div>
         ) : (
-          <div
-            className={
-              viewMode === 'grid'
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-                : 'space-y-3'
-            }
-          >
-            {filteredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
+          <div className="space-y-8">
+            {/* Regular Projects */}
+            {filteredProjects.length > 0 && (
+              <div
+                className={
+                  viewMode === 'grid'
+                    ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+                    : 'space-y-3'
+                }
+              >
+                {filteredProjects.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            )}
+
+            {/* AI Predicted Projects Section */}
+            {predictedProjects.length > 0 && (
+              <div className="border-t border-zinc-800 pt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={() => setShowPredicted(!showPredicted)}
+                    className="flex items-center gap-3 text-left group"
+                  >
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-900/30 rounded-lg">
+                      <Lightbulb className="w-4 h-4 text-violet-400" />
+                      <span className="text-sm font-medium text-violet-300">
+                        AI Suggested Projects
+                      </span>
+                      <span className="text-xs text-violet-400 bg-violet-900/50 px-2 py-0.5 rounded-full">
+                        {predictedProjects.length}
+                      </span>
+                    </div>
+                    {showPredicted ? (
+                      <ChevronUp className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
+                    )}
+                  </button>
+                  <button
+                    onClick={handleRefreshPredicted}
+                    disabled={refreshingPredicted}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
+                    title="Refresh AI suggestions"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${refreshingPredicted ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">Refresh Suggestions</span>
+                  </button>
+                </div>
+
+                {showPredicted && (
+                  <>
+                    <p className="text-sm text-zinc-500 mb-4">
+                      These projects are AI-predicted based on your business context and industry trends.
+                      Review and promote them to active projects when ready.
+                    </p>
+                    <div
+                      className={
+                        viewMode === 'grid'
+                          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+                          : 'space-y-3'
+                      }
+                    >
+                      {predictedProjects.map((project) => (
+                        <div key={project.id} className="relative">
+                          <div className="absolute -top-2 -right-2 z-10">
+                            <span className="flex items-center gap-1 px-2 py-0.5 bg-violet-600 text-white text-xs rounded-full shadow-lg">
+                              <Sparkles className="w-3 h-3" />
+                              AI
+                            </span>
+                          </div>
+                          <ProjectCard project={project} />
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
