@@ -672,31 +672,37 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
                 <div className="w-16 h-16 rounded-full bg-green-900/30 flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-8 h-8 text-green-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Test Message Sent!</h3>
+                <h3 className="text-xl font-semibold text-white mb-2">Slack Connected! 🎉</h3>
                 <p className="text-zinc-400">
                   Check your Slack channel for the confirmation message.
                 </p>
               </div>
 
-              <div className="p-4 bg-amber-900/20 border border-amber-800/30 rounded-lg">
-                <h4 className="text-sm font-medium text-amber-300 mb-2 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  Final Step (Admin Required)
+              <div className="p-4 bg-green-900/20 border border-green-800/30 rounded-lg">
+                <h4 className="text-sm font-medium text-green-300 mb-2 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Setup Complete
                 </h4>
-                <p className="text-sm text-amber-200/80 mb-3">
-                  To enable full Slack integration, add this webhook URL as an environment variable in Vercel:
+                <p className="text-sm text-green-200/80">
+                  Your webhook has been saved automatically. Task Companion is now ready to use in Slack!
                 </p>
-                <div className="bg-zinc-900 rounded p-2 font-mono text-xs text-zinc-300 break-all">
-                  SLACK_WEBHOOK_URL={webhookUrl}
-                </div>
               </div>
 
               <div className="p-4 bg-zinc-800/50 rounded-lg">
-                <p className="text-sm text-zinc-300 mb-2">Once configured, try in Slack:</p>
-                <ul className="space-y-1 text-sm text-zinc-400 font-mono">
-                  <li>@task-companion what should I work on?</li>
-                  <li>@task-companion show blocked tasks</li>
-                  <li>@task-companion project status</li>
+                <p className="text-sm text-zinc-300 mb-2">Try these commands in Slack:</p>
+                <ul className="space-y-1.5 text-sm text-zinc-400">
+                  <li className="flex items-center gap-2">
+                    <span className="text-violet-400">→</span>
+                    <code className="bg-zinc-700 px-1.5 py-0.5 rounded">@Task Companion what should I work on?</code>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-violet-400">→</span>
+                    <code className="bg-zinc-700 px-1.5 py-0.5 rounded">@Task Companion show blocked tasks</code>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-violet-400">→</span>
+                    <code className="bg-zinc-700 px-1.5 py-0.5 rounded">@Task Companion project status</code>
+                  </li>
                 </ul>
               </div>
 

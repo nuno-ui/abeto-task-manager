@@ -251,8 +251,17 @@ export async function POST(request: Request) {
           // Generate AI response
           const aiResponse = await generateAIResponse(cleanMessage, tasks, projects);
 
-          // If we have a webhook URL in env, send the response
-          const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+          // Get webhook URL from database or env
+          let webhookUrl = process.env.SLACK_WEBHOOK_URL;
+          if (!webhookUrl) {
+            const { data: settings } = await supabase
+              .from('app_settings')
+              .select('value')
+              .eq('key', 'slack_webhook_url')
+              .single();
+            webhookUrl = settings?.value;
+          }
+
           if (webhookUrl && event.channel) {
             await sendSlackResponse(webhookUrl, aiResponse, event.channel);
           }

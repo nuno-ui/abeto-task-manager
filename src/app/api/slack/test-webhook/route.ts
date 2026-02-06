@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { webhookUrl } = body;
+    const { webhookUrl, saveAfterTest = true } = body;
 
     console.log('Testing webhook URL:', webhookUrl ? `${webhookUrl.substring(0, 50)}...` : 'missing');
 
@@ -27,14 +33,33 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        text: '🤖 *Task Companion Connected!*\n\nYour Abeto Task Manager is now linked to this channel.\n\nTo complete setup, add this webhook URL to your Vercel environment variables:\n`SLACK_WEBHOOK_URL`\n\nThen you can mention @task-companion to ask questions!',
+        text: '🤖 *Task Companion Connected!*\n\nYour Abeto Task Manager is now linked to this Slack channel.\n\nYou can now use the Task Companion to get updates about your tasks and projects!',
       }),
     });
 
     console.log('Slack response status:', response.status);
 
     if (response.ok) {
-      return NextResponse.json({ success: true });
+      // Save the webhook URL to database if test was successful
+      if (saveAfterTest) {
+        const { error: saveError } = await supabase
+          .from('app_settings')
+          .upsert(
+            {
+              key: 'slack_webhook_url',
+              value: webhookUrl,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          );
+
+        if (saveError) {
+          console.error('Error saving webhook URL:', saveError);
+          // Don't fail the request, just log it - the test was successful
+        }
+      }
+
+      return NextResponse.json({ success: true, saved: saveAfterTest });
     } else {
       const errorText = await response.text();
       console.error('Slack webhook error:', response.status, errorText);
