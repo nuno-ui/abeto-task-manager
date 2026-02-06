@@ -1,0 +1,1323 @@
+ TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping programmatic-seo-pages - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+    -- =========================================================================
+    -- PVPC SAVINGS WIDGET
+    -- =========================================================================
+    SELECT id INTO project_record FROM projects WHERE slug = 'pvpc-savings-widget';
+    IF project_record.id IS NOT NULL THEN
+        -- Check if project already has tasks
+        SELECT COUNT(*) INTO existing_task_count FROM tasks WHERE project_id = project_record.id;
+        IF existing_task_count = 0 THEN
+            task_order := 0;
+
+        -- Task: Widget Requirements
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Widget Requirements',
+            'Define widget features, embed requirements, and target pages.',
+            'discovery',
+            'not_started',
+            'easy',
+            '4-6h',
+            'medium',
+            '',
+            ARRAY['Documentation'],
+            ARRAY['Business Logic', 'UX Design'],
+            ARRAY['Features defined', 'Embed specs documented', 'Target pages identified'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: ESIOS API Integration
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'ESIOS API Integration',
+            'Integrate ESIOS API for real-time electricity prices.',
+            'development',
+            'not_started',
+            'medium',
+            '8-12h',
+            'high',
+            '',
+            ARRAY['ESIOS API', 'Node.js'],
+            ARRAY['API Integration', 'External APIs'],
+            ARRAY['API integrated', 'Data caching working', 'Error handling robust'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            TRUE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Widget Component Build
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Widget Component Build',
+            'Build embeddable React widget with savings calculator.',
+            'development',
+            'not_started',
+            'medium',
+            '12-16h',
+            'high',
+            '',
+            ARRAY['React', 'Chart.js'],
+            ARRAY['Frontend/React', 'Business Logic'],
+            ARRAY['Widget functional', 'Calculations accurate', 'Design approved'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Embed Script Creation
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Embed Script Creation',
+            'Create lightweight embed script for third-party sites.',
+            'development',
+            'not_started',
+            'medium',
+            '6-8h',
+            'high',
+            '',
+            ARRAY['JavaScript'],
+            ARRAY['Frontend/React'],
+            ARRAY['Script working', 'Load time minimal', 'Cross-browser compatible'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Testing & Validation
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Testing & Validation',
+            'Test widget across browsers and validate calculations.',
+            'testing',
+            'not_started',
+            'easy',
+            '6-8h',
+            'medium',
+            '',
+            ARRAY['Testing tools'],
+            ARRAY['Business Logic'],
+            ARRAY['Cross-browser tested', 'Calculations validated', 'Performance optimized'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Launch & Embed
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Launch & Embed',
+            'Launch widget and embed on target pages.',
+            'rollout',
+            'not_started',
+            'easy',
+            '4-6h',
+            'low',
+            '',
+            ARRAY['CMS access'],
+            ARRAY['Business Logic'],
+            ARRAY['Widget live', 'Embedded on all target pages', 'Tracking active'],
+            ARRAY['10% conversion on widget users', '5000+ monthly interactions'],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping pvpc-savings-widget - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+    -- =========================================================================
+    -- IRPF CALCULATOR
+    -- =========================================================================
+    SELECT id INTO project_record FROM projects WHERE slug = 'irpf-calculator';
+    IF project_record.id IS NOT NULL THEN
+        -- Check if project already has tasks
+        SELECT COUNT(*) INTO existing_task_count FROM tasks WHERE project_id = project_record.id;
+        IF existing_task_count = 0 THEN
+            task_order := 0;
+
+        -- Task: Tax Rules Research
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Tax Rules Research',
+            'Research current IRPF deduction rules for solar installations.',
+            'discovery',
+            'not_started',
+            'medium',
+            '6-8h',
+            'medium',
+            '',
+            ARRAY['Tax documentation'],
+            ARRAY['Compliance/Legal', 'Business Logic'],
+            ARRAY['Rules documented', 'Edge cases identified', 'Calculation formulas defined'],
+            ARRAY[]::TEXT[],
+            ARRAY['Tax law changes'],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Calculator UI Design
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Calculator UI Design',
+            'Design simple, user-friendly calculator interface.',
+            'planning',
+            'not_started',
+            'easy',
+            '4-6h',
+            'high',
+            '',
+            ARRAY['Design tools'],
+            ARRAY['UX Design'],
+            ARRAY['Design approved', 'Mobile-friendly', 'Clear input/output'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Calculator Implementation
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Calculator Implementation',
+            'Build IRPF calculator with all deduction scenarios.',
+            'development',
+            'not_started',
+            'medium',
+            '10-14h',
+            'high',
+            '',
+            ARRAY['React', 'Node.js'],
+            ARRAY['Frontend/React', 'Business Logic'],
+            ARRAY['Calculator working', 'All scenarios covered', 'Calculations accurate'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Validation with Examples
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Validation with Examples',
+            'Validate calculator against known tax examples.',
+            'testing',
+            'not_started',
+            'easy',
+            '4-6h',
+            'medium',
+            '',
+            ARRAY['Test cases'],
+            ARRAY['Business Logic'],
+            ARRAY['All test cases passing', 'Edge cases validated'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Launch
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Launch',
+            'Launch calculator and promote.',
+            'rollout',
+            'not_started',
+            'easy',
+            '3-4h',
+            'low',
+            '',
+            ARRAY['CMS'],
+            ARRAY['Business Logic'],
+            ARRAY['Calculator live', 'Tracking active'],
+            ARRAY['1000+ monthly calculations', '5% lead conversion'],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping irpf-calculator - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+    -- =========================================================================
+    -- GMB AUTOMATION
+    -- =========================================================================
+    SELECT id INTO project_record FROM projects WHERE slug = 'gmb-automation';
+    IF project_record.id IS NOT NULL THEN
+        -- Check if project already has tasks
+        SELECT COUNT(*) INTO existing_task_count FROM tasks WHERE project_id = project_record.id;
+        IF existing_task_count = 0 THEN
+            task_order := 0;
+
+        -- Task: GMB Profile Audit
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'GMB Profile Audit',
+            'Audit existing GMB profiles and identify optimization opportunities.',
+            'discovery',
+            'not_started',
+            'easy',
+            '8-12h',
+            'medium',
+            '',
+            ARRAY['GMB access', 'Documentation'],
+            ARRAY['Business Logic'],
+            ARRAY['All profiles audited', 'Issues documented', 'Priorities set'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Automation Strategy
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Automation Strategy',
+            'Design automation strategy for posts, responses, and updates.',
+            'planning',
+            'not_started',
+            'easy',
+            '6-8h',
+            'medium',
+            '',
+            ARRAY['Documentation'],
+            ARRAY['Business Logic', 'Process Design'],
+            ARRAY['Strategy approved', 'Content calendar created', 'Response templates defined'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: GMB API Integration
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'GMB API Integration',
+            'Integrate Google Business Profile API for automated management.',
+            'development',
+            'not_started',
+            'hard',
+            '16-20h',
+            'medium',
+            '',
+            ARRAY['Google Business API', 'Node.js'],
+            ARRAY['API Integration', 'External APIs'],
+            ARRAY['API connected', 'Read/write working', 'Rate limits handled'],
+            ARRAY[]::TEXT[],
+            ARRAY['API access approval delays'],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Post Scheduler
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Post Scheduler',
+            'Build automated post scheduling system.',
+            'development',
+            'not_started',
+            'medium',
+            '10-14h',
+            'high',
+            '',
+            ARRAY['Node.js', 'Cron'],
+            ARRAY['API Integration', 'Business Logic'],
+            ARRAY['Scheduler working', 'Posts publishing correctly', 'Calendar integration active'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: AI Response Generator
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'AI Response Generator',
+            'Build AI-powered response generator for reviews and questions.',
+            'development',
+            'not_started',
+            'medium',
+            '12-16h',
+            'high',
+            '',
+            ARRAY['LLM API', 'Node.js'],
+            ARRAY['LLM/Prompt Engineering'],
+            ARRAY['Responses generating', 'Quality validated', 'Human review workflow working'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Management Dashboard
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Management Dashboard',
+            'Build dashboard to manage all GMB profiles centrally.',
+            'development',
+            'not_started',
+            'medium',
+            '10-14h',
+            'high',
+            '',
+            ARRAY['React'],
+            ARRAY['Frontend/React'],
+            ARRAY['Dashboard deployed', 'All profiles visible', 'Actions working'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Launch & Monitor
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Launch & Monitor',
+            'Launch automation and monitor performance.',
+            'rollout',
+            'not_started',
+            'easy',
+            '6-8h',
+            'low',
+            '',
+            ARRAY['Analytics'],
+            ARRAY['Data Analytics'],
+            ARRAY['Automation live', 'Metrics tracked', 'Weekly reviews scheduled'],
+            ARRAY['50% faster response time', '20% more profile engagement'],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping gmb-automation - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+    -- =========================================================================
+    -- REVIEW GENERATION SYSTEM
+    -- =========================================================================
+    SELECT id INTO project_record FROM projects WHERE slug = 'review-generation-system';
+    IF project_record.id IS NOT NULL THEN
+        -- Check if project already has tasks
+        SELECT COUNT(*) INTO existing_task_count FROM tasks WHERE project_id = project_record.id;
+        IF existing_task_count = 0 THEN
+            task_order := 0;
+
+        -- Task: Review Strategy Design
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Review Strategy Design',
+            'Design review generation strategy including timing and channels.',
+            'discovery',
+            'not_started',
+            'easy',
+            '6-8h',
+            'medium',
+            '',
+            ARRAY['Documentation'],
+            ARRAY['Business Logic', 'Process Design'],
+            ARRAY['Strategy documented', 'Timing rules defined', 'Channel priorities set'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Trigger System Design
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Trigger System Design',
+            'Design triggers for review request automation.',
+            'planning',
+            'not_started',
+            'easy',
+            '4-6h',
+            'high',
+            '',
+            ARRAY['Documentation'],
+            ARRAY['Business Logic'],
+            ARRAY['Triggers defined', 'Rules documented', 'Edge cases covered'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Automated Request System
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Automated Request System',
+            'Build automated review request via email/SMS/WhatsApp.',
+            'development',
+            'not_started',
+            'medium',
+            '14-18h',
+            'high',
+            '',
+            ARRAY['Node.js', 'SendGrid', 'WhatsApp API'],
+            ARRAY['API Integration', 'Business Logic'],
+            ARRAY['Requests sending correctly', 'Timing accurate', 'Opt-out working'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Landing Page Builder
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Landing Page Builder',
+            'Build personalized landing pages for easy review submission.',
+            'development',
+            'not_started',
+            'medium',
+            '8-12h',
+            'high',
+            '',
+            ARRAY['React'],
+            ARRAY['Frontend/React', 'UX Design'],
+            ARRAY['Pages generating', 'Platform links working', 'Mobile-optimized'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: AI Response Suggestions
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'AI Response Suggestions',
+            'Build AI to suggest responses to reviews.',
+            'development',
+            'not_started',
+            'medium',
+            '8-12h',
+            'high',
+            '',
+            ARRAY['LLM API'],
+            ARRAY['LLM/Prompt Engineering'],
+            ARRAY['Suggestions generating', 'Quality validated', 'Approval workflow working'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Review Dashboard
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Review Dashboard',
+            'Build dashboard to track review metrics and sentiment.',
+            'development',
+            'not_started',
+            'medium',
+            '8-10h',
+            'high',
+            '',
+            ARRAY['React', 'Chart.js'],
+            ARRAY['Frontend/React', 'Data Analytics'],
+            ARRAY['Dashboard deployed', 'Metrics visible', 'Sentiment tracked'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Launch & Optimize
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Launch & Optimize',
+            'Launch review system and optimize based on results.',
+            'rollout',
+            'not_started',
+            'easy',
+            '6-8h',
+            'low',
+            '',
+            ARRAY['Analytics'],
+            ARRAY['Data Analytics'],
+            ARRAY['System live', 'Metrics improving', 'A/B testing active'],
+            ARRAY['30% response rate', '4.5+ average rating maintained'],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping review-generation-system - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+    -- =========================================================================
+    -- COMPETITOR INTEL AGENT
+    -- =========================================================================
+    SELECT id INTO project_record FROM projects WHERE slug = 'competitor-intel-agent';
+    IF project_record.id IS NOT NULL THEN
+        -- Check if project already has tasks
+        SELECT COUNT(*) INTO existing_task_count FROM tasks WHERE project_id = project_record.id;
+        IF existing_task_count = 0 THEN
+            task_order := 0;
+
+        -- Task: Competitor Mapping
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Competitor Mapping',
+            'Identify key competitors and intel priorities.',
+            'discovery',
+            'not_started',
+            'easy',
+            '8-12h',
+            'medium',
+            '',
+            ARRAY['Research tools'],
+            ARRAY['Business Logic'],
+            ARRAY['Competitors listed', 'Intel priorities ranked', 'Data sources identified'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Data Collection Strategy
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Data Collection Strategy',
+            'Design ethical data collection approach.',
+            'planning',
+            'not_started',
+            'medium',
+            '6-8h',
+            'medium',
+            '',
+            ARRAY['Documentation'],
+            ARRAY['Business Logic', 'Compliance/Legal'],
+            ARRAY['Strategy approved', 'Legal review complete', 'Sources documented'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Ad Library Scrapers
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Ad Library Scrapers',
+            'Build scrapers for Meta/Google ad libraries.',
+            'development',
+            'not_started',
+            'hard',
+            '14-18h',
+            'medium',
+            '',
+            ARRAY['Node.js', 'Puppeteer'],
+            ARRAY['External APIs', 'Database/SQL'],
+            ARRAY['Scrapers working', 'Data storing correctly', 'Rate limits respected'],
+            ARRAY[]::TEXT[],
+            ARRAY['Platform blocking'],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Pricing Monitor
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Pricing Monitor',
+            'Build system to track competitor pricing changes.',
+            'development',
+            'not_started',
+            'medium',
+            '10-14h',
+            'medium',
+            '',
+            ARRAY['Node.js', 'Puppeteer'],
+            ARRAY['External APIs', 'Business Logic'],
+            ARRAY['Prices tracking', 'Change alerts working', 'Historical data stored'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: AI Analysis Engine
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'AI Analysis Engine',
+            'Build AI to analyze competitor data and surface insights.',
+            'development',
+            'not_started',
+            'hard',
+            '12-16h',
+            'high',
+            '',
+            ARRAY['LLM API', 'Node.js'],
+            ARRAY['LLM/Prompt Engineering', 'Data Analytics'],
+            ARRAY['Analysis generating', 'Insights actionable', 'Weekly reports automated'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Intel Dashboard
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Intel Dashboard',
+            'Build dashboard to view competitor intelligence.',
+            'development',
+            'not_started',
+            'medium',
+            '10-14h',
+            'high',
+            '',
+            ARRAY['React'],
+            ARRAY['Frontend/React', 'Data Analytics'],
+            ARRAY['Dashboard deployed', 'All intel visible', 'Filtering working'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Launch & Monitor
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Launch & Monitor',
+            'Launch intel system and establish review process.',
+            'rollout',
+            'not_started',
+            'easy',
+            '4-6h',
+            'low',
+            '',
+            ARRAY['Dashboards'],
+            ARRAY['Business Logic'],
+            ARRAY['System live', 'Weekly intel reviews', 'Action tracking active'],
+            ARRAY['Weekly actionable insights', 'Competitive response time under 1 week'],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping competitor-intel-agent - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+    -- =========================================================================
+    -- ROBINSON SUPPRESSOR
+    -- =========================================================================
+    SELECT id INTO project_record FROM projects WHERE slug = 'robinson-suppressor';
+    IF project_record.id IS NOT NULL THEN
+        -- Check if project already has tasks
+        SELECT COUNT(*) INTO existing_task_count FROM tasks WHERE project_id = project_record.id;
+        IF existing_task_count = 0 THEN
+            task_order := 0;
+
+        -- Task: Robinson List Research
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Robinson List Research',
+            'Research Robinson List requirements and integration options.',
+            'discovery',
+            'not_started',
+            'medium',
+            '6-8h',
+            'medium',
+            '',
+            ARRAY['Documentation'],
+            ARRAY['Compliance/Legal', 'Business Logic'],
+            ARRAY['Requirements documented', 'API/data options identified', 'Compliance rules clear'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Suppression Process Design
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Suppression Process Design',
+            'Design suppression workflow for all contact channels.',
+            'planning',
+            'not_started',
+            'easy',
+            '4-6h',
+            'medium',
+            '',
+            ARRAY['Documentation'],
+            ARRAY['Process Design', 'Compliance/Legal'],
+            ARRAY['Process documented', 'All channels covered', 'Audit trail designed'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Robinson List Integration
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Robinson List Integration',
+            'Build integration with Robinson List data source.',
+            'development',
+            'not_started',
+            'medium',
+            '10-14h',
+            'medium',
+            '',
+            ARRAY['Node.js', 'PostgreSQL'],
+            ARRAY['API Integration', 'Database/SQL'],
+            ARRAY['Integration working', 'Data syncing', 'Refresh schedule set'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Suppression Engine
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Suppression Engine',
+            'Build real-time suppression engine for all outbound.',
+            'development',
+            'not_started',
+            'hard',
+            '12-16h',
+            'high',
+            '',
+            ARRAY['Node.js', 'Redis'],
+            ARRAY['API Integration', 'Business Logic'],
+            ARRAY['Suppression working', 'Real-time check active', 'Audit logging complete'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Compliance Verification
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Compliance Verification',
+            'Verify suppression system meets all legal requirements.',
+            'testing',
+            'not_started',
+            'medium',
+            '6-8h',
+            'low',
+            '',
+            ARRAY['Test cases'],
+            ARRAY['Compliance/Legal'],
+            ARRAY['All scenarios tested', 'Legal sign-off obtained', 'Documentation complete'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Launch
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Launch',
+            'Launch suppression system and deprecate manual checks.',
+            'rollout',
+            'not_started',
+            'easy',
+            '4-6h',
+            'low',
+            '',
+            ARRAY['Communication tools'],
+            ARRAY['Change Management'],
+            ARRAY['System live', 'Manual checks deprecated', 'Monitoring active'],
+            ARRAY['100% suppression compliance', 'Zero legal incidents'],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping robinson-suppressor - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+    -- =========================================================================
+    -- UNIFIED QUOTE API
+    -- =========================================================================
+    SELECT id INTO project_record FROM projects WHERE slug = 'unified-quote-api';
+    IF project_record.id IS NOT NULL THEN
+        -- Check if project already has tasks
+        SELECT COUNT(*) INTO existing_task_count FROM tasks WHERE project_id = project_record.id;
+        IF existing_task_count = 0 THEN
+            task_order := 0;
+
+        -- Task: Quote Flow Analysis
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Quote Flow Analysis',
+            'Map all quote flows and identify standardization opportunities.',
+            'discovery',
+            'not_started',
+            'medium',
+            '10-14h',
+            'medium',
+            '',
+            ARRAY['Documentation', 'Process mapping'],
+            ARRAY['Process Design', 'Business Logic'],
+            ARRAY['All flows mapped', 'Variations documented', 'Standardization plan created'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: API Specification
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'API Specification',
+            'Design unified quote API specification.',
+            'planning',
+            'not_started',
+            'hard',
+            '12-16h',
+            'high',
+            '',
+            ARRAY['OpenAPI', 'Documentation'],
+            ARRAY['API Integration', 'Business Logic'],
+            ARRAY['OpenAPI spec complete', 'All scenarios covered', 'Validation rules defined'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Core Quote Engine
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Core Quote Engine',
+            'Build unified quote calculation and storage engine.',
+            'development',
+            'not_started',
+            'hard',
+            '24-32h',
+            'high',
+            '',
+            ARRAY['Node.js', 'PostgreSQL'],
+            ARRAY['Database/SQL', 'Business Logic', 'API Integration'],
+            ARRAY['Engine deployed', 'Calculations correct', 'All scenarios supported'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Multi-source Integration
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Multi-source Integration',
+            'Integrate quotes from all sources (portal, API, manual).',
+            'development',
+            'not_started',
+            'hard',
+            '16-20h',
+            'medium',
+            '',
+            ARRAY['Node.js', 'Various APIs'],
+            ARRAY['API Integration'],
+            ARRAY['All sources integrated', 'Data normalizing correctly', 'Sync working'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Quote Comparison Tools
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Quote Comparison Tools',
+            'Build tools for customers to compare quotes.',
+            'development',
+            'not_started',
+            'medium',
+            '12-16h',
+            'high',
+            '',
+            ARRAY['React'],
+            ARRAY['Frontend/React', 'UX Design'],
+            ARRAY['Comparison working', 'Clear presentation', 'Selection easy'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Analytics & Reporting
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Analytics & Reporting',
+            'Build quote analytics and conversion reporting.',
+            'development',
+            'not_started',
+            'medium',
+            '10-14h',
+            'high',
+            '',
+            ARRAY['React', 'Chart.js'],
+            ARRAY['Frontend/React', 'Data Analytics'],
+            ARRAY['Dashboard deployed', 'Conversion funnel visible', 'Comparison metrics active'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: End-to-End Testing
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'End-to-End Testing',
+            'Test unified quote flow with all installer types.',
+            'testing',
+            'not_started',
+            'medium',
+            '12-16h',
+            'low',
+            '',
+            ARRAY['Test cases'],
+            ARRAY['Business Logic'],
+            ARRAY['All flows tested', 'Edge cases covered', 'Performance validated'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CON

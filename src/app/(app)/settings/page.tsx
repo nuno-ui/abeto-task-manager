@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import {
   Settings,
@@ -20,6 +21,17 @@ import {
   FileText,
   BarChart3,
   Zap,
+  Activity,
+  Heart,
+  AlertCircle,
+  ExternalLink,
+  Copy,
+  Check,
+  Clock,
+  Server,
+  Code,
+  Terminal,
+  MessageSquare,
 } from 'lucide-react';
 
 interface Pillar {
@@ -39,11 +51,43 @@ interface Stats {
   tasks: number;
 }
 
+interface HealthData {
+  status: 'healthy' | 'error';
+  database: {
+    connected: boolean;
+    responseTimeMs: number;
+    error: string | null;
+  };
+  tableStats: Array<{ table: string; count: number }>;
+  totalRecords: number;
+  missingData: {
+    projectsWithoutPillar: number;
+    projectsWithoutPillarList: Array<{ id: string; title: string }>;
+    tasksWithoutOwner: number;
+    tasksWithoutOwnerList: Array<{ id: string; title: string }>;
+    projectsWithoutTeam: number;
+    projectsWithoutTeamList: Array<{ id: string; title: string }>;
+  };
+  reviewStats: {
+    totalProjects: number;
+    fullyReviewed: number;
+    partiallyReviewed: number;
+    notReviewed: number;
+  };
+  supabaseUrl: string;
+  timestamp: string;
+}
+
 export default function SettingsPage() {
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [stats, setStats] = useState<Stats>({ teams: 0, users: 0, projects: 0, tasks: 0 });
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'pillars' | 'database' | 'about'>('pillars');
+  const [activeSection, setActiveSection] = useState<'health' | 'pillars' | 'data-quality' | 'developer' | 'about'>('health');
+
+  // Health data
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [lastHealthCheck, setLastHealthCheck] = useState<Date | null>(null);
 
   // Pillar management
   const [showAddPillar, setShowAddPillar] = useState(false);
@@ -52,8 +96,12 @@ export default function SettingsPage() {
   const [editPillar, setEditPillar] = useState({ name: '', description: '', color: '' });
   const [saving, setSaving] = useState(false);
 
+  // Copy state for developer tools
+  const [copied, setCopied] = useState<string | null>(null);
+
   useEffect(() => {
     fetchSettings();
+    fetchHealth();
   }, []);
 
   const fetchSettings = async () => {
@@ -68,6 +116,22 @@ export default function SettingsPage() {
       console.error('Error fetching settings:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchHealth = async () => {
+    setHealthLoading(true);
+    try {
+      const response = await fetch('/api/health');
+      if (response.ok) {
+        const data = await response.json();
+        setHealthData(data);
+        setLastHealthCheck(new Date());
+      }
+    } catch (error) {
+      console.error('Error fetching health:', error);
+    } finally {
+      setHealthLoading(false);
     }
   };
 
@@ -133,15 +197,38 @@ export default function SettingsPage() {
     });
   };
 
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const getSupabaseDashboardUrl = () => {
+    if (!healthData?.supabaseUrl) return null;
+    // Extract project ref from URL: https://xxx.supabase.co -> xxx
+    const match = healthData.supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/);
+    if (match) {
+      return `https://supabase.com/dashboard/project/${match[1]}`;
+    }
+    return null;
+  };
+
   const sections = [
-    { id: 'pillars', label: 'Pillars', icon: Layers, description: 'Manage strategic pillars for organizing projects' },
-    { id: 'database', label: 'Database', icon: Database, description: 'View database statistics and health' },
-    { id: 'about', label: 'About', icon: FileText, description: 'Application information and version' },
+    { id: 'health', label: 'System Health', icon: Heart, description: 'API and database status' },
+    { id: 'pillars', label: 'Pillars', icon: Layers, description: 'Strategic pillars management' },
+    { id: 'data-quality', label: 'Data Quality', icon: AlertCircle, description: 'Missing data and issues' },
+    { id: 'developer', label: 'Developer Tools', icon: Code, description: 'Supabase access and queries' },
+    { id: 'about', label: 'About', icon: FileText, description: 'Application information' },
   ] as const;
+
+  const totalDataIssues = healthData ?
+    (healthData.missingData.projectsWithoutPillar +
+     healthData.missingData.tasksWithoutOwner +
+     healthData.missingData.projectsWithoutTeam) : 0;
 
   return (
     <div className="min-h-screen">
-      <Header title="Settings" />
+      <Header title="Health & Status" />
 
       <div className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -161,9 +248,14 @@ export default function SettingsPage() {
                     }`}
                   >
                     <section.icon className="w-4 h-4" />
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm font-medium">{section.label}</p>
                     </div>
+                    {section.id === 'data-quality' && totalDataIssues > 0 && (
+                      <span className="px-2 py-0.5 text-xs bg-yellow-500/20 text-yellow-400 rounded-full">
+                        {totalDataIssues}
+                      </span>
+                    )}
                   </button>
                 ))}
               </nav>
@@ -198,6 +290,16 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Last Health Check */}
+              {lastHealthCheck && (
+                <div className="mt-4 pt-4 border-t border-zinc-800">
+                  <p className="text-xs text-zinc-500 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Last check: {lastHealthCheck.toLocaleTimeString()}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -213,6 +315,122 @@ export default function SettingsPage() {
               </div>
             ) : (
               <>
+                {/* System Health Section */}
+                {activeSection === 'health' && (
+                  <div className="space-y-6">
+                    {/* Health Overview Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className={`bg-zinc-900 border rounded-xl p-4 ${
+                        healthData?.database.connected ? 'border-green-500/30' : 'border-red-500/30'
+                      }`}>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className={`p-2 rounded-lg ${
+                            healthData?.database.connected ? 'bg-green-500/20' : 'bg-red-500/20'
+                          }`}>
+                            <Database className={`w-5 h-5 ${
+                              healthData?.database.connected ? 'text-green-400' : 'text-red-400'
+                            }`} />
+                          </div>
+                          <span className="text-sm text-zinc-400">Database</span>
+                        </div>
+                        <p className={`text-lg font-semibold ${
+                          healthData?.database.connected ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {healthData?.database.connected ? 'Connected' : 'Error'}
+                        </p>
+                      </div>
+
+                      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="p-2 bg-blue-500/20 rounded-lg">
+                            <Clock className="w-5 h-5 text-blue-400" />
+                          </div>
+                          <span className="text-sm text-zinc-400">Response</span>
+                        </div>
+                        <p className="text-lg font-semibold text-white">
+                          {healthData?.database.responseTimeMs || 0}ms
+                        </p>
+                      </div>
+
+                      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="p-2 bg-purple-500/20 rounded-lg">
+                            <Server className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <span className="text-sm text-zinc-400">API</span>
+                        </div>
+                        <p className="text-lg font-semibold text-green-400">Online</p>
+                      </div>
+
+                      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="p-2 bg-orange-500/20 rounded-lg">
+                            <BarChart3 className="w-5 h-5 text-orange-400" />
+                          </div>
+                          <span className="text-sm text-zinc-400">Records</span>
+                        </div>
+                        <p className="text-lg font-semibold text-white">
+                          {healthData?.totalRecords?.toLocaleString() || 0}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Table Statistics */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <h2 className="text-xl font-semibold text-white">Table Statistics</h2>
+                          <p className="text-sm text-zinc-400 mt-1">
+                            Record counts by table
+                          </p>
+                        </div>
+                        <button
+                          onClick={fetchHealth}
+                          disabled={healthLoading}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${healthLoading ? 'animate-spin' : ''}`} />
+                          Refresh
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {healthData?.tableStats.map(({ table, count }) => (
+                          <div key={table} className="bg-zinc-800/50 rounded-lg p-4">
+                            <p className="text-sm text-zinc-400 capitalize">{table}</p>
+                            <p className="text-2xl font-bold text-white">{count.toLocaleString()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Review Status Overview */}
+                    {healthData?.reviewStats && (
+                      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                        <h3 className="text-lg font-semibold text-white mb-4">Review Status Overview</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="bg-zinc-800/50 rounded-lg p-4">
+                            <p className="text-sm text-zinc-400">Total Projects</p>
+                            <p className="text-2xl font-bold text-white">{healthData.reviewStats.totalProjects}</p>
+                          </div>
+                          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                            <p className="text-sm text-green-400">Fully Reviewed</p>
+                            <p className="text-2xl font-bold text-green-400">{healthData.reviewStats.fullyReviewed}</p>
+                          </div>
+                          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+                            <p className="text-sm text-yellow-400">Partially Reviewed</p>
+                            <p className="text-2xl font-bold text-yellow-400">{healthData.reviewStats.partiallyReviewed}</p>
+                          </div>
+                          <div className="bg-zinc-800/50 rounded-lg p-4">
+                            <p className="text-sm text-zinc-400">Not Reviewed</p>
+                            <p className="text-2xl font-bold text-zinc-400">{healthData.reviewStats.notReviewed}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Pillars Section */}
                 {activeSection === 'pillars' && (
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
@@ -392,82 +610,374 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {/* Database Section */}
-                {activeSection === 'database' && (
+                {/* Data Quality Section */}
+                {activeSection === 'data-quality' && (
                   <div className="space-y-6">
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                      <div className="flex items-center justify-between mb-6">
+                    {/* Summary Banner */}
+                    <div className={`p-4 rounded-xl border ${
+                      totalDataIssues === 0
+                        ? 'bg-green-500/10 border-green-500/30'
+                        : 'bg-yellow-500/10 border-yellow-500/30'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        {totalDataIssues === 0 ? (
+                          <Check className="w-6 h-6 text-green-400" />
+                        ) : (
+                          <AlertTriangle className="w-6 h-6 text-yellow-400" />
+                        )}
                         <div>
-                          <h2 className="text-xl font-semibold text-white">Database Statistics</h2>
-                          <p className="text-sm text-zinc-400 mt-1">
-                            Overview of your database records
+                          <p className={`font-medium ${totalDataIssues === 0 ? 'text-green-400' : 'text-yellow-400'}`}>
+                            {totalDataIssues === 0
+                              ? 'All data looks good!'
+                              : `${totalDataIssues} data issue${totalDataIssues !== 1 ? 's' : ''} found`}
                           </p>
-                        </div>
-                        <button
-                          onClick={fetchSettings}
-                          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                          Refresh
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-zinc-800/50 rounded-xl p-4">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-blue-500/20 rounded-lg">
-                              <Users className="w-5 h-5 text-blue-400" />
-                            </div>
-                            <span className="text-sm text-zinc-400">Teams</span>
-                          </div>
-                          <p className="text-3xl font-bold text-white">{stats.teams}</p>
-                        </div>
-                        <div className="bg-zinc-800/50 rounded-xl p-4">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-green-500/20 rounded-lg">
-                              <Users className="w-5 h-5 text-green-400" />
-                            </div>
-                            <span className="text-sm text-zinc-400">Users</span>
-                          </div>
-                          <p className="text-3xl font-bold text-white">{stats.users}</p>
-                        </div>
-                        <div className="bg-zinc-800/50 rounded-xl p-4">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-purple-500/20 rounded-lg">
-                              <FolderKanban className="w-5 h-5 text-purple-400" />
-                            </div>
-                            <span className="text-sm text-zinc-400">Projects</span>
-                          </div>
-                          <p className="text-3xl font-bold text-white">{stats.projects}</p>
-                        </div>
-                        <div className="bg-zinc-800/50 rounded-xl p-4">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-orange-500/20 rounded-lg">
-                              <CheckSquare className="w-5 h-5 text-orange-400" />
-                            </div>
-                            <span className="text-sm text-zinc-400">Tasks</span>
-                          </div>
-                          <p className="text-3xl font-bold text-white">{stats.tasks}</p>
+                          <p className="text-sm text-zinc-400">
+                            {totalDataIssues === 0
+                              ? 'No missing or orphaned data detected'
+                              : 'Review the issues below and fix them in your database'}
+                          </p>
                         </div>
                       </div>
                     </div>
 
+                    {/* Projects without Pillar */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                      <h3 className="text-lg font-semibold text-white mb-4">Database Connection</h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-                            <span className="text-white">Supabase Connection</span>
-                          </div>
-                          <span className="text-sm text-green-400">Connected</span>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`p-2 rounded-lg ${
+                          healthData?.missingData.projectsWithoutPillar === 0
+                            ? 'bg-green-500/20'
+                            : 'bg-yellow-500/20'
+                        }`}>
+                          <FolderKanban className={`w-5 h-5 ${
+                            healthData?.missingData.projectsWithoutPillar === 0
+                              ? 'text-green-400'
+                              : 'text-yellow-400'
+                          }`} />
                         </div>
-                        <div className="p-4 bg-zinc-800/50 rounded-lg">
-                          <p className="text-sm text-zinc-400">Database URL</p>
-                          <p className="text-white font-mono text-sm mt-1 truncate">
-                            {process.env.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'Not configured'}
+                        <div>
+                          <h3 className="font-medium text-white">Projects without Pillar</h3>
+                          <p className="text-sm text-zinc-400">
+                            {healthData?.missingData.projectsWithoutPillar || 0} project(s) missing pillar assignment
                           </p>
                         </div>
+                      </div>
+                      {healthData?.missingData.projectsWithoutPillarList &&
+                       healthData.missingData.projectsWithoutPillarList.length > 0 && (
+                        <div className="space-y-2">
+                          {healthData.missingData.projectsWithoutPillarList.map(p => (
+                            <div key={p.id} className="flex items-center gap-2 p-2 bg-zinc-800/50 rounded-lg text-sm">
+                              <span className="text-zinc-400 font-mono text-xs">{p.id.slice(0, 8)}...</span>
+                              <span className="text-white">{p.title}</span>
+                            </div>
+                          ))}
+                          {healthData.missingData.projectsWithoutPillar > 5 && (
+                            <p className="text-xs text-zinc-500">
+                              and {healthData.missingData.projectsWithoutPillar - 5} more...
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tasks without Owner */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`p-2 rounded-lg ${
+                          healthData?.missingData.tasksWithoutOwner === 0
+                            ? 'bg-green-500/20'
+                            : 'bg-yellow-500/20'
+                        }`}>
+                          <CheckSquare className={`w-5 h-5 ${
+                            healthData?.missingData.tasksWithoutOwner === 0
+                              ? 'text-green-400'
+                              : 'text-yellow-400'
+                          }`} />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-white">Tasks without Owner Team</h3>
+                          <p className="text-sm text-zinc-400">
+                            {healthData?.missingData.tasksWithoutOwner || 0} task(s) missing owner team assignment
+                          </p>
+                        </div>
+                      </div>
+                      {healthData?.missingData.tasksWithoutOwnerList &&
+                       healthData.missingData.tasksWithoutOwnerList.length > 0 && (
+                        <div className="space-y-2">
+                          {healthData.missingData.tasksWithoutOwnerList.map(t => (
+                            <div key={t.id} className="flex items-center gap-2 p-2 bg-zinc-800/50 rounded-lg text-sm">
+                              <span className="text-zinc-400 font-mono text-xs">{t.id.slice(0, 8)}...</span>
+                              <span className="text-white">{t.title}</span>
+                            </div>
+                          ))}
+                          {healthData.missingData.tasksWithoutOwner > 5 && (
+                            <p className="text-xs text-zinc-500">
+                              and {healthData.missingData.tasksWithoutOwner - 5} more...
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Projects without Team */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`p-2 rounded-lg ${
+                          healthData?.missingData.projectsWithoutTeam === 0
+                            ? 'bg-green-500/20'
+                            : 'bg-yellow-500/20'
+                        }`}>
+                          <Users className={`w-5 h-5 ${
+                            healthData?.missingData.projectsWithoutTeam === 0
+                              ? 'text-green-400'
+                              : 'text-yellow-400'
+                          }`} />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-white">Projects without Owner Team</h3>
+                          <p className="text-sm text-zinc-400">
+                            {healthData?.missingData.projectsWithoutTeam || 0} project(s) missing owner team assignment
+                          </p>
+                        </div>
+                      </div>
+                      {healthData?.missingData.projectsWithoutTeamList &&
+                       healthData.missingData.projectsWithoutTeamList.length > 0 && (
+                        <div className="space-y-2">
+                          {healthData.missingData.projectsWithoutTeamList.map(p => (
+                            <div key={p.id} className="flex items-center gap-2 p-2 bg-zinc-800/50 rounded-lg text-sm">
+                              <span className="text-zinc-400 font-mono text-xs">{p.id.slice(0, 8)}...</span>
+                              <span className="text-white">{p.title}</span>
+                            </div>
+                          ))}
+                          {healthData.missingData.projectsWithoutTeam > 5 && (
+                            <p className="text-xs text-zinc-500">
+                              and {healthData.missingData.projectsWithoutTeam - 5} more...
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Developer Tools Section */}
+                {activeSection === 'developer' && (
+                  <div className="space-y-6">
+                    {/* Supabase Dashboard Link */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <Database className="w-5 h-5 text-emerald-400" />
+                        Supabase Access
+                      </h3>
+                      <div className="space-y-4">
+                        {getSupabaseDashboardUrl() && (
+                          <a
+                            href={getSupabaseDashboardUrl()!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/20 transition-colors group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-emerald-500/20 rounded-lg">
+                                <ExternalLink className="w-5 h-5 text-emerald-400" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-white">Open Supabase Dashboard</p>
+                                <p className="text-sm text-zinc-400">Manage tables, run SQL, view logs</p>
+                              </div>
+                            </div>
+                            <ExternalLink className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition-colors" />
+                          </a>
+                        )}
+
+                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm text-zinc-400">Supabase URL</p>
+                            <button
+                              onClick={() => copyToClipboard(healthData?.supabaseUrl || '', 'url')}
+                              className="text-zinc-400 hover:text-white transition-colors"
+                            >
+                              {copied === 'url' ? (
+                                <Check className="w-4 h-4 text-green-400" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                          <p className="text-white font-mono text-sm truncate">
+                            {healthData?.supabaseUrl || 'Not configured'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Queries for Claude */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                        <Terminal className="w-5 h-5 text-violet-400" />
+                        Quick SQL Queries
+                      </h3>
+                      <p className="text-sm text-zinc-400 mb-4">
+                        Copy these queries to use in Supabase SQL Editor or with Claude
+                      </p>
+
+                      <div className="space-y-4">
+                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-medium text-white">Get all projects with review status</p>
+                            <button
+                              onClick={() => copyToClipboard(
+                                `SELECT p.*, prs.management_reviewed, prs.operations_sales_reviewed, prs.product_tech_reviewed, prs.all_reviewed
+FROM projects p
+LEFT JOIN project_review_status prs ON p.id = prs.project_id
+ORDER BY p.created_at DESC;`,
+                                'query1'
+                              )}
+                              className="text-zinc-400 hover:text-white transition-colors"
+                            >
+                              {copied === 'query1' ? (
+                                <Check className="w-4 h-4 text-green-400" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                          <pre className="text-xs text-zinc-400 font-mono overflow-x-auto">
+{`SELECT p.*, prs.management_reviewed, prs.operations_sales_reviewed,
+       prs.product_tech_reviewed, prs.all_reviewed
+FROM projects p
+LEFT JOIN project_review_status prs ON p.id = prs.project_id
+ORDER BY p.created_at DESC;`}
+                          </pre>
+                        </div>
+
+                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-medium text-white">Get task counts by status per project</p>
+                            <button
+                              onClick={() => copyToClipboard(
+                                `SELECT p.title as project, t.status, COUNT(*) as count
+FROM tasks t
+JOIN projects p ON t.project_id = p.id
+GROUP BY p.title, t.status
+ORDER BY p.title, t.status;`,
+                                'query2'
+                              )}
+                              className="text-zinc-400 hover:text-white transition-colors"
+                            >
+                              {copied === 'query2' ? (
+                                <Check className="w-4 h-4 text-green-400" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                          <pre className="text-xs text-zinc-400 font-mono overflow-x-auto">
+{`SELECT p.title as project, t.status, COUNT(*) as count
+FROM tasks t
+JOIN projects p ON t.project_id = p.id
+GROUP BY p.title, t.status
+ORDER BY p.title, t.status;`}
+                          </pre>
+                        </div>
+
+                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-medium text-white">Find tasks with high AI potential</p>
+                            <button
+                              onClick={() => copyToClipboard(
+                                `SELECT t.title, t.ai_potential, p.title as project
+FROM tasks t
+JOIN projects p ON t.project_id = p.id
+WHERE t.ai_potential IN ('high', 'full')
+ORDER BY t.ai_potential DESC, t.created_at DESC;`,
+                                'query3'
+                              )}
+                              className="text-zinc-400 hover:text-white transition-colors"
+                            >
+                              {copied === 'query3' ? (
+                                <Check className="w-4 h-4 text-green-400" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                          <pre className="text-xs text-zinc-400 font-mono overflow-x-auto">
+{`SELECT t.title, t.ai_potential, p.title as project
+FROM tasks t
+JOIN projects p ON t.project_id = p.id
+WHERE t.ai_potential IN ('high', 'full')
+ORDER BY t.ai_potential DESC, t.created_at DESC;`}
+                          </pre>
+                        </div>
+
+                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-medium text-white">Get recent comments with context</p>
+                            <button
+                              onClick={() => copyToClipboard(
+                                `SELECT c.content, c.created_at, u.name as author,
+       p.title as project, t.title as task
+FROM comments c
+JOIN users u ON c.user_id = u.id
+LEFT JOIN projects p ON c.project_id = p.id
+LEFT JOIN tasks t ON c.task_id = t.id
+ORDER BY c.created_at DESC
+LIMIT 20;`,
+                                'query4'
+                              )}
+                              className="text-zinc-400 hover:text-white transition-colors"
+                            >
+                              {copied === 'query4' ? (
+                                <Check className="w-4 h-4 text-green-400" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                          <pre className="text-xs text-zinc-400 font-mono overflow-x-auto">
+{`SELECT c.content, c.created_at, u.name as author,
+       p.title as project, t.title as task
+FROM comments c
+JOIN users u ON c.user_id = u.id
+LEFT JOIN projects p ON c.project_id = p.id
+LEFT JOIN tasks t ON c.task_id = t.id
+ORDER BY c.created_at DESC
+LIMIT 20;`}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* API Endpoints Reference */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                        <Code className="w-5 h-5 text-blue-400" />
+                        API Endpoints Reference
+                      </h3>
+                      <p className="text-sm text-zinc-400 mb-4">
+                        Available internal API endpoints for development
+                      </p>
+
+                      <div className="space-y-2">
+                        {[
+                          { method: 'GET', path: '/api/projects', desc: 'List all projects with review status' },
+                          { method: 'GET', path: '/api/tasks', desc: 'List tasks (supports filtering)' },
+                          { method: 'GET', path: '/api/teams', desc: 'List all teams' },
+                          { method: 'GET', path: '/api/pillars', desc: 'List all pillars' },
+                          { method: 'GET', path: '/api/comments', desc: 'List comments' },
+                          { method: 'GET', path: '/api/health', desc: 'System health check' },
+                          { method: 'GET', path: '/api/settings', desc: 'App settings and stats' },
+                        ].map((endpoint) => (
+                          <div key={endpoint.path} className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                              endpoint.method === 'GET' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                            }`}>
+                              {endpoint.method}
+                            </span>
+                            <code className="text-sm text-white font-mono">{endpoint.path}</code>
+                            <span className="text-sm text-zinc-500 ml-auto">{endpoint.desc}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -477,8 +987,14 @@ export default function SettingsPage() {
                 {activeSection === 'about' && (
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                     <div className="text-center py-8">
-                      <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <Zap className="w-10 h-10 text-white" />
+                      <div className="w-24 h-20 mx-auto mb-6">
+                        <Image
+                          src="/abeto-logo.svg"
+                          alt="Abeto"
+                          width={96}
+                          height={80}
+                          className="w-full h-full"
+                        />
                       </div>
                       <h2 className="text-2xl font-bold text-white mb-2">Abeto Task Manager</h2>
                       <p className="text-zinc-400 mb-6">AI-Powered Project & Task Management</p>
@@ -486,7 +1002,7 @@ export default function SettingsPage() {
                       <div className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 rounded-full text-sm text-zinc-300 mb-8">
                         <span>Version 1.0.0</span>
                         <span className="text-zinc-600">|</span>
-                        <span>Next.js 16</span>
+                        <span>Next.js 15</span>
                         <span className="text-zinc-600">|</span>
                         <span>Supabase</span>
                       </div>

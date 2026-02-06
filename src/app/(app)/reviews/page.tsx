@@ -42,6 +42,7 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
+  Info,
 } from 'lucide-react';
 
 interface EnrichedProject extends Project {
@@ -595,10 +596,12 @@ export default function ReviewsPage() {
           setActiveTab('info');
           break;
         case '2':
-          setActiveTab('review');
+          // Tasks tab (middle position)
+          if (pendingProjects[currentIndex]?.tasks?.length) setActiveTab('tasks');
           break;
         case '3':
-          if (pendingProjects[currentIndex]?.tasks?.length) setActiveTab('tasks');
+          // Your Review tab (right position)
+          setActiveTab('review');
           break;
         case 'ArrowLeft':
           if (currentIndex > 0) {
@@ -830,9 +833,30 @@ export default function ReviewsPage() {
               </div>
             </div>
 
+            {/* Review Flow Guide Banner */}
+            {!sessionId && (
+              <div className="mx-6 mt-6 mb-0 bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                <h4 className="text-sm font-medium text-blue-400 mb-2 flex items-center gap-2">
+                  <Info className="w-4 h-4" />
+                  Review Flow Guide
+                </h4>
+                <ol className="text-sm text-zinc-400 space-y-1.5 list-decimal list-inside">
+                  <li>
+                    <strong className="text-zinc-300">Read Project Info</strong> - Understand the project context, goals, and scope
+                  </li>
+                  <li>
+                    <strong className="text-zinc-300">Review Tasks</strong> - Examine tasks, especially those related to your area ({reviewerArea.replace('_', '/')})
+                  </li>
+                  <li>
+                    <strong className="text-zinc-300">Complete Your Review</strong> - Answer the review questions and submit your assessment
+                  </li>
+                </ol>
+              </div>
+            )}
+
             {/* Tabbed Content */}
             <div className="p-6">
-              {/* Tab Navigation */}
+              {/* Tab Navigation - Reordered: Info | Tasks | Review */}
               <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-4">
                 <button
                   onClick={() => setActiveTab('info')}
@@ -842,15 +866,7 @@ export default function ReviewsPage() {
                 >
                   <Layers className="w-4 h-4 inline mr-2" />
                   Project Info
-                </button>
-                <button
-                  onClick={() => setActiveTab('review')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'review' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                  }`}
-                >
-                  <Star className="w-4 h-4 inline mr-2" />
-                  Your Review
+                  <span className="ml-1 text-xs opacity-60">[1]</span>
                 </button>
                 {currentProject.tasks.length > 0 && (
                   <button
@@ -861,8 +877,19 @@ export default function ReviewsPage() {
                   >
                     <CheckCircle className="w-4 h-4 inline mr-2" />
                     Tasks ({currentProject.tasks.length})
+                    <span className="ml-1 text-xs opacity-60">[2]</span>
                   </button>
                 )}
+                <button
+                  onClick={() => setActiveTab('review')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'review' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                  }`}
+                >
+                  <Star className="w-4 h-4 inline mr-2" />
+                  Your Review
+                  <span className="ml-1 text-xs opacity-60">[3]</span>
+                </button>
               </div>
 
               {/* Tab Content */}

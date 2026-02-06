@@ -121,7 +121,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -131,14 +131,48 @@ export async function GET() {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+  // Parse query parameters for filtering
+  const { searchParams } = new URL(request.url);
+  const status = searchParams.get('status');
+  const difficulty = searchParams.get('difficulty');
+  const ai_potential = searchParams.get('ai_potential');
+  const owner_team_id = searchParams.get('owner_team_id');
+  const pillar_id = searchParams.get('pillar_id');
+  const project_id = searchParams.get('project_id');
+  const phase = searchParams.get('phase');
+
   try {
-    const { data: tasks, error } = await supabase
+    // Build query with pillar data through project relation
+    let query = supabase
       .from('tasks')
       .select(`
         *,
         owner_team:teams(*),
-        project:projects(title, slug)
-      `)
+        project:projects(id, title, slug, pillar_id, pillar:pillars(*))
+      `);
+
+    // Apply filters
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+    if (difficulty && difficulty !== 'all') {
+      query = query.eq('difficulty', difficulty);
+    }
+    if (ai_potential && ai_potential !== 'all') {
+      query = query.eq('ai_potential', ai_potential);
+    }
+    if (owner_team_id && owner_team_id !== 'all') {
+      query = query.eq('owner_team_id', owner_team_id);
+    }
+    if (project_id && project_id !== 'all') {
+      query = query.eq('project_id', project_id);
+    }
+    if (phase && phase !== 'all') {
+      query = query.eq('phase', phase);
+    }
+
+    // Execute query with ordering
+    const { data: tasks, error } = await query
       .order('phase')
       .order('order_index');
 
@@ -147,7 +181,13 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(tasks);
+    // If pillar filter is provided, filter client-side (can't directly filter on nested relation)
+    let filteredTasks = tasks;
+    if (pillar_id && pillar_id !== 'all') {
+      filteredTasks = tasks?.filter(t => t.project?.pillar_id === pillar_id) || [];
+    }
+
+    return NextResponse.json(filteredTasks);
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

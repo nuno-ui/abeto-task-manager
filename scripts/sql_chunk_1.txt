@@ -1,0 +1,1111 @@
+XT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Continuous Improvement
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Continuous Improvement',
+            'Establish continuous improvement process. Track KPIs, collect feedback, prioritize enhancements.',
+            'monitoring',
+            'not_started',
+            'easy',
+            'Ongoing (4h/week)',
+            'medium',
+            'Can analyze usage patterns and suggest improvements',
+            ARRAY['Analytics', 'Feedback tools'],
+            ARRAY['Data Analytics', 'Stakeholder Management'],
+            ARRAY['KPI tracking dashboard live', 'Monthly feedback review process', 'Enhancement backlog maintained', 'Quarterly improvement targets set'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping sdr-portal - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+    -- =========================================================================
+    -- INSTALLER PORTAL PRODUCT
+    -- =========================================================================
+    SELECT id INTO project_record FROM projects WHERE slug = 'installer-portal-product';
+    IF project_record.id IS NOT NULL THEN
+        -- Check if project already has tasks
+        SELECT COUNT(*) INTO existing_task_count FROM tasks WHERE project_id = project_record.id;
+        IF existing_task_count = 0 THEN
+            task_order := 0;
+
+        -- Task: Installer Needs Assessment
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Installer Needs Assessment',
+            'Interview 5+ installers to understand their workflow, pain points, and portal needs. Document current communication methods and inefficiencies.',
+            'discovery',
+            'not_started',
+            'easy',
+            '12-16h',
+            'low',
+            'Human relationship building required',
+            ARRAY['Interviews', 'Documentation'],
+            ARRAY['Stakeholder Management', 'Process Design'],
+            ARRAY['5+ installer interviews completed', 'Pain points documented and prioritized', 'Feature wishlist created', 'Current workflow mapped', 'Success criteria defined with installers'],
+            ARRAY[]::TEXT[],
+            ARRAY['Installer availability', 'Varied needs across installers'],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Legal & Compliance Review
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Legal & Compliance Review',
+            'Review legal requirements for installer portal: data access, GDPR, terms of service, liability. Engage legal counsel if needed.',
+            'discovery',
+            'not_started',
+            'medium',
+            '8-12h',
+            'low',
+            'Legal expertise required',
+            ARRAY['Legal review', 'Documentation'],
+            ARRAY['Compliance/Legal'],
+            ARRAY['Data access policy defined', 'Terms of service drafted', 'GDPR compliance verified', 'Liability boundaries clear', 'Legal sign-off obtained'],
+            ARRAY[]::TEXT[],
+            ARRAY['Legal delays', 'Compliance gaps'],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Portal Feature Specification
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Portal Feature Specification',
+            'Define portal features in detail: lead management, performance metrics, feedback, quotes, notifications. Prioritize MVP vs. future.',
+            'planning',
+            'not_started',
+            'medium',
+            '12-16h',
+            'medium',
+            'Can help structure feature specs and user stories',
+            ARRAY['Documentation', 'Prioritization frameworks'],
+            ARRAY['Business Logic', 'UX Design'],
+            ARRAY['Feature list with priorities', 'User stories for MVP features', 'Acceptance criteria defined', 'MVP scope agreed', 'Stakeholder sign-off'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: UX Design & Prototyping
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'UX Design & Prototyping',
+            'Design mobile-first portal interface. Create prototypes and test with installers. Ensure simplicity for field use.',
+            'planning',
+            'not_started',
+            'medium',
+            '16-24h',
+            'medium',
+            'Can suggest mobile UX patterns',
+            ARRAY['Figma', 'Mobile prototyping'],
+            ARRAY['UX Design'],
+            ARRAY['Mobile-first designs complete', 'Prototype tested with 3+ installers', 'Feedback incorporated', 'Final designs approved', 'Design system documented'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Authentication & Security Architecture
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Authentication & Security Architecture',
+            'Design secure authentication for installers. Define role-based access, session management, and security measures.',
+            'planning',
+            'not_started',
+            'hard',
+            '12-16h',
+            'medium',
+            'Can help with security architecture but needs expert review',
+            ARRAY['Auth0', 'Security documentation'],
+            ARRAY['Security/Auth', 'Compliance/Legal'],
+            ARRAY['Auth flow documented', 'Role-based access defined', 'Session management specified', 'Security requirements met', 'Penetration testing plan'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            TRUE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Authentication System Implementation
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Authentication System Implementation',
+            'Implement installer authentication with secure login, password reset, and session management.',
+            'development',
+            'not_started',
+            'hard',
+            '24-32h',
+            'medium',
+            'Can generate auth boilerplate but security needs review',
+            ARRAY['Auth0/Custom', 'JWT', 'Node.js'],
+            ARRAY['Security/Auth', 'API Integration'],
+            ARRAY['Login/logout working', 'Password reset functional', 'Session management implemented', 'Security audit passed', 'Multi-device support'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            TRUE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Lead Management Dashboard
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Lead Management Dashboard',
+            'Build lead management view: assigned leads, status updates, filtering, contact details, conversion tracking.',
+            'development',
+            'not_started',
+            'medium',
+            '24-32h',
+            'high',
+            'Can generate dashboard components and data tables',
+            ARRAY['React', 'Backend APIs'],
+            ARRAY['Frontend/React', 'API Integration'],
+            ARRAY['Lead list with filters', 'Lead detail view', 'Status update functionality', 'Contact info accessible', 'Conversion tracking visible', 'Mobile optimized'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Performance Metrics View
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Performance Metrics View',
+            'Build performance dashboard: conversion rate, response time SLA, comparison to peers, trends.',
+            'development',
+            'not_started',
+            'medium',
+            '16-24h',
+            'high',
+            'Can generate chart components and metrics displays',
+            ARRAY['React', 'Charts'],
+            ARRAY['Frontend/React', 'Data Analytics'],
+            ARRAY['Conversion rate displayed', 'SLA compliance shown', 'Trend charts working', 'Peer comparison (anonymized)', 'Goals and targets visible'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Feedback & Quote Submission
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Feedback & Quote Submission',
+            'Build feedback forms and quote submission. Allow installers to report lead quality issues and submit offer amounts.',
+            'development',
+            'not_started',
+            'easy',
+            '16-20h',
+            'high',
+            'Can generate form components and validation',
+            ARRAY['React', 'Backend APIs'],
+            ARRAY['Frontend/React', 'Business Logic'],
+            ARRAY['Feedback form working', 'Quote submission functional', 'Validation in place', 'Confirmation messages', 'Data syncing to backend'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Notification System
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Notification System',
+            'Implement push notifications, email, and SMS for new leads and important updates.',
+            'development',
+            'not_started',
+            'medium',
+            '12-16h',
+            'high',
+            'Can generate notification templates and logic',
+            ARRAY['SendGrid', 'Twilio', 'Push notifications'],
+            ARRAY['API Integration', 'DevOps'],
+            ARRAY['Email notifications working', 'SMS notifications working', 'Push notifications (if app)', 'Preference management', 'Delivery tracking'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Installer Beta Program
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Installer Beta Program',
+            'Run beta with 3-5 installers for 3 weeks. Collect daily feedback. Fix issues. Validate usability in field conditions.',
+            'testing',
+            'not_started',
+            'medium',
+            '24-36h',
+            'low',
+            'Human relationship management required',
+            ARRAY['Feedback tools', 'Support channel'],
+            ARRAY['Stakeholder Management', 'Process Design'],
+            ARRAY['Beta running 3+ weeks', 'Daily feedback collected', 'Critical bugs fixed', 'Field usability validated', 'Installer satisfaction >7/10'],
+            ARRAY[]::TEXT[],
+            ARRAY['Installer churn during beta', 'Field connectivity issues'],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Installer Onboarding Program
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Installer Onboarding Program',
+            'Create onboarding materials: videos, guides, FAQ. Design self-service onboarding flow. Prepare support documentation.',
+            'training',
+            'not_started',
+            'easy',
+            '16-24h',
+            'high',
+            'Can generate documentation and help scripts',
+            ARRAY['Video recording', 'Documentation'],
+            ARRAY['Training & Documentation', 'Change Management'],
+            ARRAY['Onboarding videos created', 'User guides published', 'FAQ documented', 'Self-service onboarding flow', 'Support process defined'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Phased Installer Rollout
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Phased Installer Rollout',
+            'Roll out to all installers in phases. Week 1: top performers. Week 2-3: remaining active. Provide hands-on support.',
+            'rollout',
+            'not_started',
+            'medium',
+            '20-30h',
+            'low',
+            'Human change management required',
+            ARRAY['Communication', 'Support tools'],
+            ARRAY['Change Management', 'Stakeholder Management'],
+            ARRAY['All active installers onboarded', 'Login success rate >95%', 'Support tickets resolved <24h', 'Old process deprecated', 'Feedback positive >80%'],
+            ARRAY['100% installer adoption within 4 weeks', '50% reduction in lead response time', '30% increase in feedback submission'],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Portal Performance & Iteration
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Portal Performance & Iteration',
+            'Monitor portal usage, performance, and satisfaction. Establish feedback loop. Plan and deliver enhancements.',
+            'monitoring',
+            'not_started',
+            'easy',
+            'Ongoing (6h/week)',
+            'medium',
+            'Can analyze usage patterns and suggest improvements',
+            ARRAY['Analytics', 'Feedback tools'],
+            ARRAY['Data Analytics', 'Stakeholder Management'],
+            ARRAY['Usage analytics dashboard live', 'Monthly NPS survey running', 'Enhancement backlog maintained', 'Quarterly release cycle established'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping installer-portal-product - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+    -- =========================================================================
+    -- AI CORTEX
+    -- =========================================================================
+    SELECT id INTO project_record FROM projects WHERE slug = 'ai-cortex';
+    IF project_record.id IS NOT NULL THEN
+        -- Check if project already has tasks
+        SELECT COUNT(*) INTO existing_task_count FROM tasks WHERE project_id = project_record.id;
+        IF existing_task_count = 0 THEN
+            task_order := 0;
+
+        -- Task: AI Use Case Prioritization
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'AI Use Case Prioritization',
+            'Catalog all potential AI use cases across the business. Score by impact, feasibility, and data availability. Select top 5 for MVP.',
+            'discovery',
+            'not_started',
+            'medium',
+            '16-24h',
+            'medium',
+            'Can help research AI capabilities and suggest use cases',
+            ARRAY['Workshops', 'Prioritization matrix'],
+            ARRAY['Business Logic', 'LLM/Prompt Engineering', 'Stakeholder Management'],
+            ARRAY['Use case catalog complete (20+ ideas)', 'Scoring matrix with impact/feasibility', 'Top 5 MVP use cases selected', 'Stakeholder alignment achieved', 'Success metrics defined per use case'],
+            ARRAY[]::TEXT[],
+            ARRAY['Over-ambition', 'Data availability gaps'],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Data Readiness Assessment
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Data Readiness Assessment',
+            'Assess data quality and availability for top AI use cases. Identify gaps, cleaning needs, and labeling requirements.',
+            'discovery',
+            'not_started',
+            'medium',
+            '12-16h',
+            'medium',
+            'Can help analyze data patterns and quality',
+            ARRAY['Data analysis tools', 'Documentation'],
+            ARRAY['Data Analytics', 'Database/SQL'],
+            ARRAY['Data availability mapped per use case', 'Quality issues documented', 'Cleaning requirements defined', 'Labeling needs identified', 'Data pipeline requirements specified'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: AI Architecture Design
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'AI Architecture Design',
+            'Design Cortex architecture: LLM integration layer, context aggregation, prompt management, agent framework, feedback loop.',
+            'planning',
+            'not_started',
+            'hard',
+            '20-28h',
+            'high',
+            'Can help design architecture and suggest patterns',
+            ARRAY['Architecture tools', 'Documentation'],
+            ARRAY['LLM/Prompt Engineering', 'API Integration', 'Database/SQL'],
+            ARRAY['Architecture diagram complete', 'LLM provider strategy defined', 'Context aggregation approach', 'Prompt versioning strategy', 'Agent framework selection', 'Feedback loop design', 'Cost estimation'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            TRUE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: LLM Provider Evaluation
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'LLM Provider Evaluation',
+            'Evaluate LLM providers (Claude, OpenAI, etc.) for cost, performance, and capabilities. Select primary and fallback providers.',
+            'planning',
+            'not_started',
+            'medium',
+            '8-12h',
+            'high',
+            'Can help benchmark and compare providers',
+            ARRAY['API access', 'Benchmarking'],
+            ARRAY['LLM/Prompt Engineering', 'Vendor Management'],
+            ARRAY['Provider comparison matrix', 'Cost analysis per use case', 'Performance benchmarks', 'Primary provider selected', 'Fallback strategy defined'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: LLM Integration Layer
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'LLM Integration Layer',
+            'Build unified LLM integration layer with API abstraction, caching, rate limiting, error handling, and cost tracking.',
+            'development',
+            'not_started',
+            'hard',
+            '24-32h',
+            'high',
+            'Can generate SDK wrappers and caching logic',
+            ARRAY['Node.js', 'API SDKs', 'Redis'],
+            ARRAY['API Integration', 'LLM/Prompt Engineering', 'DevOps'],
+            ARRAY['API abstraction working', 'Provider switching seamless', 'Caching implemented', 'Rate limiting in place', 'Error handling robust', 'Cost tracking enabled'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            TRUE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Context Aggregation Service
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Context Aggregation Service',
+            'Build service to aggregate relevant context for AI queries: deal history, conversations, calls, lead attributes.',
+            'development',
+            'not_started',
+            'hard',
+            '24-32h',
+            'medium',
+            'Can help with query optimization and data aggregation',
+            ARRAY['Node.js', 'PostgreSQL', 'Redis'],
+            ARRAY['Database/SQL', 'Data Analytics', 'API Integration'],
+            ARRAY['Context aggregation working', 'All relevant data sources included', 'Performance <500ms for context fetch', 'Caching for repeated queries', 'Token budget management'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            TRUE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Prompt Template System
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Prompt Template System',
+            'Build prompt management system with versioning, A/B testing, variables, and performance tracking.',
+            'development',
+            'not_started',
+            'medium',
+            '16-20h',
+            'high',
+            'Can generate prompt templates and management logic',
+            ARRAY['Node.js', 'PostgreSQL'],
+            ARRAY['LLM/Prompt Engineering', 'Database/SQL'],
+            ARRAY['Prompt versioning working', 'Variables system functional', 'A/B testing capability', 'Performance tracking', 'Rollback capability'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: MVP Use Case Implementation
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'MVP Use Case Implementation',
+            'Implement top 5 MVP AI use cases: conversation summaries, prioritization, script assistance, pattern detection, recommendations.',
+            'development',
+            'not_started',
+            'hard',
+            '40-56h',
+            'high',
+            'Core AI work - heavy AI assistance possible',
+            ARRAY['Full Cortex stack'],
+            ARRAY['LLM/Prompt Engineering', 'Business Logic'],
+            ARRAY['All 5 MVP use cases working', 'Accuracy >70% per use case', 'Response time <3s', 'Edge cases handled', 'Fallback behavior defined'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: AI Quality & Accuracy Testing
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'AI Quality & Accuracy Testing',
+            'Comprehensive testing of AI outputs. Create test datasets, measure accuracy, identify failure modes, tune prompts.',
+            'testing',
+            'not_started',
+            'hard',
+            '24-36h',
+            'medium',
+            'Can help generate test cases and analyze results',
+            ARRAY['Test datasets', 'Evaluation tools'],
+            ARRAY['Data Analytics', 'LLM/Prompt Engineering'],
+            ARRAY['Test datasets created per use case', 'Accuracy metrics established', 'Failure modes documented', 'Prompts tuned for accuracy', 'Performance baseline established'],
+            ARRAY[]::TEXT[],
+            ARRAY['AI hallucinations', 'Edge case failures'],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: User Acceptance Testing
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'User Acceptance Testing',
+            'UAT with SDR team and stakeholders. Validate AI outputs are useful and accurate in real workflows.',
+            'testing',
+            'not_started',
+            'medium',
+            '16-24h',
+            'low',
+            'Human judgment required',
+            ARRAY['UAT process', 'Feedback tools'],
+            ARRAY['Stakeholder Management', 'Process Design'],
+            ARRAY['UAT with 5+ users completed', 'Usefulness validated >7/10', 'Critical feedback addressed', 'Sign-off from stakeholders'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: AI User Training & Guidelines
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'AI User Training & Guidelines',
+            'Train users on AI capabilities, limitations, and best practices. Create guidelines for when to trust vs. verify AI outputs.',
+            'training',
+            'not_started',
+            'easy',
+            '12-16h',
+            'high',
+            'Can generate training materials and guidelines',
+            ARRAY['Training materials', 'Documentation'],
+            ARRAY['Training & Documentation', 'Change Management'],
+            ARRAY['Training materials created', 'AI usage guidelines published', 'Training sessions completed', 'FAQ documented', 'Escalation process for AI errors'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Gradual Cortex Rollout
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Gradual Cortex Rollout',
+            'Roll out Cortex features gradually. Start with low-risk use cases, expand based on performance and feedback.',
+            'rollout',
+            'not_started',
+            'medium',
+            '16-24h',
+            'low',
+            'Human judgment on rollout pace required',
+            ARRAY['Feature flags', 'Analytics'],
+            ARRAY['Change Management', 'DevOps'],
+            ARRAY['Phased rollout plan executed', 'Feature flags working', 'Rollback plan tested', 'Adoption tracking active', 'Feedback loop established'],
+            ARRAY['All MVP features live within 4 weeks', 'Zero critical AI failures', 'User satisfaction >8/10'],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Continuous AI Improvement
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Continuous AI Improvement',
+            'Establish continuous improvement: monitor accuracy, collect feedback, tune prompts, add use cases.',
+            'monitoring',
+            'not_started',
+            'medium',
+            'Ongoing (8h/week)',
+            'high',
+            'Can help analyze patterns and suggest prompt improvements',
+            ARRAY['Analytics', 'Feedback tools', 'Prompt tuning'],
+            ARRAY['LLM/Prompt Engineering', 'Data Analytics'],
+            ARRAY['Accuracy monitoring dashboard', 'Weekly prompt review process', 'User feedback integration', 'New use case pipeline', 'Cost optimization ongoing'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping ai-cortex - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+    -- =========================================================================
+    -- CAMPAIGN OS
+    -- =========================================================================
+    SELECT id INTO project_record FROM projects WHERE slug = 'campaign-os';
+    IF project_record.id IS NOT NULL THEN
+        -- Check if project already has tasks
+        SELECT COUNT(*) INTO existing_task_count FROM tasks WHERE project_id = project_record.id;
+        IF existing_task_count = 0 THEN
+            task_order := 0;
+
+        -- Task: Marketing Workflow Analysis
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Marketing Workflow Analysis',
+            'Document current paid media workflow: platforms used, reporting process, optimization methods, pain points.',
+            'discovery',
+            'not_started',
+            'easy',
+            '8-12h',
+            'low',
+            'Human domain expertise required',
+            ARRAY['Interviews', 'Documentation'],
+            ARRAY['Process Design', 'Business Logic'],
+            ARRAY['Current workflow documented', 'Tools inventory complete', 'Pain points prioritized', 'Opportunity areas identified'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Platform API Access & Permissions
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Platform API Access & Permissions',
+            'Secure API access for Meta, Google, TikTok. Document rate limits, data available, and permissions needed.',
+            'discovery',
+            'not_started',
+            'medium',
+            '8-12h',
+            'low',
+            'Platform-specific setup required',
+            ARRAY['Platform developer consoles'],
+            ARRAY['Vendor Management', 'External APIs'],
+            ARRAY['Meta Ads API access confirmed', 'Google Ads API access confirmed', 'TikTok API access confirmed (if used)', 'Rate limits documented', 'Data availability mapped'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Attribution Model Definition
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Attribution Model Definition',
+            'Define attribution model: first-touch, last-touch, multi-touch. Map UTM parameters to CRM. Specify data requirements.',
+            'planning',
+            'not_started',
+            'hard',
+            '12-16h',
+            'medium',
+            'Can help research attribution models and best practices',
+            ARRAY['Analytics', 'Documentation'],
+            ARRAY['Data Analytics', 'Business Logic'],
+            ARRAY['Attribution model selected', 'UTM parameter standard defined', 'CRM mapping documented', 'Data pipeline requirements', 'Stakeholder agreement'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            TRUE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Technical Architecture
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Technical Architecture',
+            'Design Campaign OS architecture: API integrations, data warehouse, dashboard, AI components.',
+            'planning',
+            'not_started',
+            'hard',
+            '12-16h',
+            'high',
+            'Can help design architecture and integration patterns',
+            ARRAY['Architecture tools'],
+            ARRAY['API Integration', 'Database/SQL', 'External APIs'],
+            ARRAY['Architecture diagram complete', 'Integration approach defined', 'Data model designed', 'Performance requirements'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Ad Platform Integrations
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Ad Platform Integrations',
+            'Build integrations with Meta and Google Ads APIs. Pull campaign data, spend, and performance metrics.',
+            'development',
+            'not_started',
+            'hard',
+            '32-44h',
+            'medium',
+            'Can help with API integration patterns but platform-specific',
+            ARRAY['Meta Ads API', 'Google Ads API', 'Node.js'],
+            ARRAY['API Integration', 'External APIs'],
+            ARRAY['Meta data syncing daily', 'Google data syncing daily', 'Campaign metrics accurate', 'Spend data reconciled', 'Error handling robust'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Attribution Pipeline
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Attribution Pipeline',
+            'Build attribution pipeline: UTM capture, CRM linking, conversion tracking, multi-touch attribution calculations.',
+            'development',
+            'not_started',
+            'hard',
+            '20-28h',
+            'medium',
+            'Can help with attribution logic but business rules complex',
+            ARRAY['Node.js', 'PostgreSQL'],
+            ARRAY['Data Analytics', 'Database/SQL', 'Business Logic'],
+            ARRAY['UTM capture working', 'CRM linking accurate', 'Conversion tracking functional', 'Attribution calculated correctly', 'Validated against manual calcs'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Campaign Dashboard
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Campaign Dashboard',
+            'Build dashboard: spend by channel, ROI by campaign, conversion funnel, creative performance.',
+            'development',
+            'not_started',
+            'medium',
+            '24-32h',
+            'high',
+            'Can generate dashboard components and visualizations',
+            ARRAY['React', 'Charts'],
+            ARRAY['Frontend/React', 'Data Analytics'],
+            ARRAY['Spend breakdown by channel', 'ROI calculations correct', 'Funnel visualization', 'Creative performance view', 'Date range filters'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: AI Creative Analysis
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'AI Creative Analysis',
+            'Build AI feature to analyze winning ads and suggest variations. Identify patterns in high-performing creatives.',
+            'development',
+            'not_started',
+            'medium',
+            '16-24h',
+            'high',
+            'Core AI feature - can generate analysis prompts',
+            ARRAY['LLM APIs', 'Node.js'],
+            ARRAY['LLM/Prompt Engineering'],
+            ARRAY['Creative analysis working', 'Patterns identified accurately', 'Suggestions actionable', 'Performance correlation shown'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Data Validation & UAT
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Data Validation & UAT',
+            'Validate all data against ad platform dashboards. User testing with marketing team.',
+            'testing',
+            'not_started',
+            'medium',
+            '16-24h',
+            'low',
+            'Human validation required',
+            ARRAY['Spreadsheets', 'Platform dashboards'],
+            ARRAY['Data Analytics'],
+            ARRAY['Data matches platform dashboards', 'ROI calculations validated by Finance', 'UAT completed with Marketing', 'Discrepancies documented and explained'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Marketing Team Training
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Marketing Team Training',
+            'Train marketing team on Campaign OS. Document workflows and best practices.',
+            'training',
+            'not_started',
+            'easy',
+            '8-12h',
+            'high',
+            'Can generate training materials',
+            ARRAY['Training materials'],
+            ARRAY['Training & Documentation'],
+            ARRAY['Training completed', 'Documentation published', 'Best practices defined'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Production Launch
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Production Launch',
+            'Launch Campaign OS. Migrate from old reporting process. Monitor accuracy and adoption.',
+            'rollout',
+            'not_started',
+            'easy',
+            '8-12h',
+            'low',
+            'Human change management',
+            ARRAY['Deployment'],
+            ARRAY['Change Management'],
+            ARRAY['System live', 'Team using daily', 'Old process deprecated'],
+            ARRAY['100% of reporting through Campaign OS', '75% reduction in reporting time', 'ROI visibility within 24h of spend'],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Ongoing Optimization
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_

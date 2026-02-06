@@ -1,0 +1,65 @@
+FLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Migration & Training
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Migration & Training',
+            'Migrate existing quotes and train users.',
+            'training',
+            'not_started',
+            'medium',
+            '10-14h',
+            'medium',
+            '',
+            ARRAY['Migration scripts', 'Training materials'],
+            ARRAY['Change Management', 'Training & Documentation'],
+            ARRAY['Data migrated', 'Users trained', 'Support active'],
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            FALSE,
+            FALSE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        -- Task: Launch
+        INSERT INTO tasks (
+            project_id, title, description, phase, status, difficulty,
+            estimated_hours, ai_potential, ai_assist_description,
+            tools_needed, knowledge_areas, acceptance_criteria,
+            success_metrics, risks, is_foundational, is_critical_path, order_index
+        ) VALUES (
+            project_record.id,
+            'Launch',
+            'Launch unified quote API and deprecate legacy systems.',
+            'rollout',
+            'not_started',
+            'medium',
+            '8-12h',
+            'low',
+            '',
+            ARRAY['Communication tools'],
+            ARRAY['Change Management'],
+            ARRAY['API live', 'Legacy deprecated', 'Monitoring active'],
+            ARRAY['100% quote capture', '30% faster quote turnaround'],
+            ARRAY[]::TEXT[],
+            FALSE,
+            TRUE,
+            task_order
+        ) ON CONFLICT DO NOTHING;
+        task_order := task_order + 1;
+
+        ELSE
+            RAISE NOTICE 'Skipping unified-quote-api - already has % tasks', existing_task_count;
+        END IF;
+    END IF;
+
+END $$;
+
+-- Summary: 258 tasks across 29 projects

@@ -71,6 +71,11 @@ export async function POST(request: Request) {
     if (body.why_it_matters !== undefined) projectData.why_it_matters = body.why_it_matters;
     if (body.category !== undefined) projectData.category = body.category;
 
+    // CRITICAL: These fields were missing and causing AI-generated projects to be incomplete
+    if (body.problem_statement !== undefined) projectData.problem_statement = body.problem_statement;
+    if (body.deliverables !== undefined) projectData.deliverables = body.deliverables;
+    if (body.tags !== undefined) projectData.tags = body.tags;
+
     // Rich fields for COO Dashboard
     if (body.human_role_before !== undefined) projectData.human_role_before = body.human_role_before;
     if (body.human_role_after !== undefined) projectData.human_role_after = body.human_role_after;
@@ -130,7 +135,8 @@ export async function GET() {
         *,
         pillar:pillars(*),
         owner_team:teams(*),
-        tasks(id, status)
+        tasks(id, status),
+        review_status:project_review_status(*)
       `)
       .order('created_at', { ascending: false });
 
@@ -139,12 +145,23 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform to include task counts and progress
+    // Transform to include task counts, progress, and review status
     const projectsWithCounts = projects?.map(p => {
       const tasks = p.tasks || [];
       const totalTasks = tasks.length;
       const completedTasks = tasks.filter((t: { status: string }) => t.status === 'completed').length;
       const inProgressTasks = tasks.filter((t: { status: string }) => t.status === 'in_progress').length;
+
+      // Extract review status (it comes as an array, get first item)
+      const reviewStatusData = Array.isArray(p.review_status) ? p.review_status[0] : p.review_status;
+
+      // Calculate review count (0-3 based on completed areas)
+      let reviewCount = 0;
+      if (reviewStatusData) {
+        if (reviewStatusData.management_reviewed) reviewCount++;
+        if (reviewStatusData.operations_sales_reviewed) reviewCount++;
+        if (reviewStatusData.product_tech_reviewed) reviewCount++;
+      }
 
       return {
         ...p,
@@ -153,7 +170,10 @@ export async function GET() {
         completed_tasks: completedTasks,
         in_progress_tasks: inProgressTasks,
         progress_percentage: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
-        tasks: undefined
+        tasks: undefined,
+        review_status: reviewStatusData || null,
+        review_count: reviewCount,
+        is_fully_reviewed: reviewStatusData?.all_reviewed || false
       };
     });
 

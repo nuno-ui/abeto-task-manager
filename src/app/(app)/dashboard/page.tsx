@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   FolderKanban,
@@ -19,9 +19,12 @@ import {
   Star,
   Clock,
   TrendingUp,
+  BarChart3,
+  Signal,
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Badge, ProgressBar } from '@/components/ui';
+import { AIProjectCreator } from '@/components/projects/AIProjectCreator';
 import type { Project } from '@/types/database';
 
 interface DashboardStats {
@@ -76,6 +79,8 @@ export default function DashboardPage() {
   const [avgProjectProgress, setAvgProjectProgress] = useState(0);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recentProjectsTab, setRecentProjectsTab] = useState<'recent' | 'complexity' | 'status' | 'progress'>('recent');
+  const [showAIModal, setShowAIModal] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -138,6 +143,24 @@ export default function DashboardPage() {
     return href ? <Link href={href}>{content}</Link> : content;
   };
 
+  // Sort projects based on selected tab
+  const difficultyOrder: Record<string, number> = { hard: 3, medium: 2, easy: 1 };
+  const statusOrder: Record<string, number> = { in_progress: 1, planning: 2, idea: 3, on_hold: 4, completed: 5 };
+
+  const sortedRecentProjects = useMemo(() => {
+    const projects = [...recentProjects];
+    switch (recentProjectsTab) {
+      case 'complexity':
+        return projects.sort((a, b) => (difficultyOrder[b.difficulty] || 0) - (difficultyOrder[a.difficulty] || 0));
+      case 'status':
+        return projects.sort((a, b) => (statusOrder[a.status] || 10) - (statusOrder[b.status] || 10));
+      case 'progress':
+        return projects.sort((a, b) => (b.progress_percentage || 0) - (a.progress_percentage || 0));
+      default:
+        return projects;
+    }
+  }, [recentProjects, recentProjectsTab]);
+
   const phaseColors: Record<string, string> = {
     discovery: '#3b82f6',
     planning: '#8b5cf6',
@@ -190,6 +213,13 @@ export default function DashboardPage() {
               <Plus className="w-4 h-4" />
               New Project
             </Link>
+            <button
+              onClick={() => setShowAIModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg transition-colors"
+            >
+              <Sparkles className="w-4 h-4" />
+              New with AI
+            </button>
             <Link
               href="/reviews"
               className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-sm rounded-lg transition-colors"
@@ -284,12 +314,12 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - 2/3 width */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Recent Projects */}
+            {/* Projects Overview */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
               <div className="flex items-center justify-between p-4 border-b border-zinc-800">
                 <h2 className="font-semibold text-white flex items-center gap-2">
                   <FolderKanban className="w-5 h-5 text-blue-400" />
-                  Recent Projects
+                  Projects Overview
                 </h2>
                 <Link
                   href="/projects"
@@ -298,13 +328,35 @@ export default function DashboardPage() {
                   View all <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
+              {/* Sub-tabs for sorting */}
+              <div className="flex gap-1 px-4 pt-3 pb-1">
+                {[
+                  { key: 'recent', label: 'Recent', icon: Clock },
+                  { key: 'complexity', label: 'Complexity', icon: BarChart3 },
+                  { key: 'status', label: 'Status', icon: Signal },
+                  { key: 'progress', label: 'Progress', icon: TrendingUp },
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setRecentProjectsTab(tab.key as any)}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
+                      recentProjectsTab === tab.key
+                        ? 'bg-zinc-700 text-white'
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                    }`}
+                  >
+                    <tab.icon className="w-3 h-3" />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
               <div className="p-4 space-y-3">
                 {recentProjects.length === 0 ? (
                   <p className="text-sm text-zinc-500 text-center py-8">
                     No projects yet. Create your first project!
                   </p>
                 ) : (
-                  recentProjects.map((project) => (
+                  sortedRecentProjects.map((project) => (
                     <Link
                       key={project.id}
                       href={`/projects/${project.slug}`}
@@ -314,17 +366,21 @@ export default function DashboardPage() {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-white truncate">{project.title}</h3>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="status" value={project.status}>
-                              {project.status.replace('_', ' ')}
-                            </Badge>
-                            <Badge variant="priority" value={project.priority}>
-                              {project.priority}
-                            </Badge>
+                            <span title="Status: Current project state">
+                              <Badge variant="status" value={project.status}>
+                                {project.status.replace('_', ' ')}
+                              </Badge>
+                            </span>
+                            <span title="Priority: Importance level">
+                              <Badge variant="priority" value={project.priority}>
+                                {project.priority}
+                              </Badge>
+                            </span>
                             {project.pillar && (
                               <span
-                                className="w-2 h-2 rounded-full"
+                                className="w-2 h-2 rounded-full cursor-help"
                                 style={{ backgroundColor: project.pillar.color }}
-                                title={project.pillar.name}
+                                title={`Business Area: ${project.pillar.name}`}
                               />
                             )}
                           </div>
@@ -518,6 +574,16 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Project Creator Modal */}
+      <AIProjectCreator
+        isOpen={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        onProjectCreated={() => {
+          setShowAIModal(false);
+          fetchDashboardData();
+        }}
+      />
     </div>
   );
 }

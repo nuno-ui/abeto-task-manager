@@ -17,6 +17,9 @@ import {
   Zap,
   Trash2,
   Loader2,
+  MessageSquare,
+  Send,
+  X,
 } from 'lucide-react';
 import { Badge, Avatar, ProgressBar } from '@/components/ui';
 import type { Task } from '@/types/database';
@@ -25,6 +28,7 @@ interface TaskCardProps {
   task: Task;
   onClick?: () => void;
   onDelete?: (taskId: string) => void;
+  onComment?: (taskId: string, comment: string) => void;
   deleting?: boolean;
   showProject?: boolean;
   expanded?: boolean;
@@ -47,8 +51,25 @@ const aiPotentialConfig = {
   high: { color: 'text-green-400', bg: 'bg-green-400/10', label: 'High AI Potential' },
 };
 
-export function TaskCard({ task, onClick, onDelete, deleting = false, showProject = false, expanded: initialExpanded = false }: TaskCardProps) {
+export function TaskCard({ task, onClick, onDelete, onComment, deleting = false, showProject = false, expanded: initialExpanded = false }: TaskCardProps) {
   const [isExpanded, setIsExpanded] = useState(initialExpanded);
+  const [showCommentInput, setShowCommentInput] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
+
+  const handleSubmitComment = async () => {
+    if (!commentText.trim() || !onComment) return;
+    setSubmittingComment(true);
+    try {
+      await onComment(task.id, commentText.trim());
+      setCommentText('');
+      setShowCommentInput(false);
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
 
   const aiConfig = task.ai_potential ? aiPotentialConfig[task.ai_potential as keyof typeof aiPotentialConfig] : null;
 
@@ -97,6 +118,17 @@ export function TaskCard({ task, onClick, onDelete, deleting = false, showProjec
                 Foundational
               </span>
             )}
+            {/* Quick Comment Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowCommentInput(!showCommentInput);
+              }}
+              className="p-1 text-zinc-500 hover:text-blue-400 hover:bg-blue-900/20 rounded transition-colors"
+              title="Add quick comment"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
             {onDelete && (
               <button
                 onClick={(e) => {
@@ -119,6 +151,45 @@ export function TaskCard({ task, onClick, onDelete, deleting = false, showProjec
           </div>
         </div>
 
+        {/* Quick Comment Input */}
+        {showCommentInput && (
+          <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="Add a quick comment..."
+              className="flex-1 px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmitComment();
+                }
+              }}
+            />
+            <button
+              onClick={handleSubmitComment}
+              disabled={!commentText.trim() || submittingComment}
+              className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {submittingComment ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setShowCommentInput(false);
+                setCommentText('');
+              }}
+              className="p-1.5 text-zinc-400 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Description */}
         {task.description && (
           <p className="text-sm text-zinc-400 mb-3 line-clamp-2">{task.description}</p>
@@ -126,19 +197,28 @@ export function TaskCard({ task, onClick, onDelete, deleting = false, showProjec
 
         {/* Badges Row */}
         <div className="flex flex-wrap gap-1.5 mb-3">
-          <Badge variant="status" value={task.status}>
-            {task.status.replace('_', ' ')}
-          </Badge>
+          <span title="Task Status: Current state of the task">
+            <Badge variant="status" value={task.status}>
+              {task.status.replace('_', ' ')}
+            </Badge>
+          </span>
           <span
-            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium cursor-help"
             style={{ backgroundColor: `${phaseColors[task.phase]}20`, color: phaseColors[task.phase] }}
+            title="Phase: Project lifecycle stage this task belongs to"
           >
             {task.phase}
           </span>
-          <Badge variant="difficulty" value={task.difficulty}>
-            {task.difficulty}
-          </Badge>
-          {task.owner_team && <Badge>{task.owner_team.name}</Badge>}
+          <span title="Difficulty: Estimated complexity level">
+            <Badge variant="difficulty" value={task.difficulty}>
+              {task.difficulty}
+            </Badge>
+          </span>
+          {task.owner_team && (
+            <span title="Owner Team: Team responsible for this task">
+              <Badge>{task.owner_team.name}</Badge>
+            </span>
+          )}
         </div>
 
         {/* Progress if in progress */}

@@ -1,19 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   FolderKanban,
   ListTodo,
   Users,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Activity,
   ClipboardCheck,
   Shield,
+  Heart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -27,7 +28,7 @@ const navigation = [
   { name: 'Reviews', href: '/reviews', icon: ClipboardCheck },
   { name: 'Activity', href: '/activity', icon: Activity },
   { name: 'Team', href: '/team', icon: Users },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Health', href: '/settings', icon: Heart },
 ];
 
 const adminNavigation = [
@@ -63,17 +64,34 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-zinc-800">
-        {!collapsed && (
+        {!collapsed ? (
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">A</span>
-            </div>
+            <Image
+              src="/abeto-logo.svg"
+              alt="Abeto"
+              width={32}
+              height={28}
+              className="w-8 h-7"
+            />
             <span className="font-semibold text-white">Abeto Tasks</span>
+          </Link>
+        ) : (
+          <Link href="/dashboard" className="mx-auto">
+            <Image
+              src="/abeto-logo.svg"
+              alt="Abeto"
+              width={28}
+              height={24}
+              className="w-7 h-6"
+            />
           </Link>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+          className={cn(
+            "p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors",
+            collapsed && "absolute right-2"
+          )}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>

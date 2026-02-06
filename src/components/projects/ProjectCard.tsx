@@ -32,6 +32,8 @@ import {
   BookOpen,
   Layers,
   BarChart3,
+  Star,
+  Check,
 } from 'lucide-react';
 import { Badge, ProgressBar } from '@/components/ui';
 import { formatDate } from '@/lib/utils';
@@ -133,6 +135,11 @@ export function ProjectCard({ project, expanded = false, onClick, variant = 'def
   const totalTasks = project.total_tasks || 0;
   const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
+  // Review status - project may have review_status from API
+  const reviewStatus = (project as any).review_status;
+  const reviewCount = (project as any).review_count || 0;
+  const isFullyReviewed = (project as any).is_fully_reviewed || false;
+
   // Calculate AI potential if tasks have that data
   const hasAIPotential = project.tasks?.some(t => t.ai_potential && t.ai_potential !== 'none');
 
@@ -189,27 +196,57 @@ export function ProjectCard({ project, expanded = false, onClick, variant = 'def
 
       {/* ========== BADGES ROW ========== */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <Badge variant="status" value={project.status}>
-          {project.status.replace('_', ' ')}
-        </Badge>
-        <Badge variant="priority" value={project.priority}>
-          {project.priority}
-        </Badge>
-        {project.category && (
-          <Badge className="bg-zinc-800 text-zinc-300">
-            {project.category}
+        <span title="Status: Current project state">
+          <Badge variant="status" value={project.status}>
+            {project.status.replace('_', ' ')}
           </Badge>
+        </span>
+        <span title="Priority: Importance level">
+          <Badge variant="priority" value={project.priority}>
+            {project.priority}
+          </Badge>
+        </span>
+        {project.category && (
+          <span title="Category: Project type">
+            <Badge className="bg-zinc-800 text-zinc-300">
+              {project.category}
+            </Badge>
+          </span>
         )}
         {project.owner_team && (
-          <Badge className="bg-purple-500/20 text-purple-300">
-            {project.owner_team.name}
-          </Badge>
+          <span title="Owner Team: Responsible team">
+            <Badge className="bg-purple-500/20 text-purple-300">
+              {project.owner_team.name}
+            </Badge>
+          </span>
         )}
         {project.estimated_hours_min && project.estimated_hours_max && (
-          <span className="text-xs text-zinc-400 flex items-center gap-1">
+          <span className="text-xs text-zinc-400 flex items-center gap-1 cursor-help" title="Estimated Hours: Time range for completion">
             <Clock className="w-3 h-3" />
             {project.estimated_hours_min}-{project.estimated_hours_max}h
           </span>
+        )}
+        {/* Review Status Indicators */}
+        {reviewStatus && (
+          <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-zinc-700">
+            <Star className="w-3.5 h-3.5 text-yellow-500" />
+            <div
+              className={`w-2 h-2 rounded-full ${reviewStatus.management_reviewed ? 'bg-green-500' : 'bg-zinc-600'}`}
+              title={`Management: ${reviewStatus.management_reviewed ? 'Reviewed' : 'Pending'}`}
+            />
+            <div
+              className={`w-2 h-2 rounded-full ${reviewStatus.operations_sales_reviewed ? 'bg-green-500' : 'bg-zinc-600'}`}
+              title={`Ops/Sales: ${reviewStatus.operations_sales_reviewed ? 'Reviewed' : 'Pending'}`}
+            />
+            <div
+              className={`w-2 h-2 rounded-full ${reviewStatus.product_tech_reviewed ? 'bg-green-500' : 'bg-zinc-600'}`}
+              title={`Product/Tech: ${reviewStatus.product_tech_reviewed ? 'Reviewed' : 'Pending'}`}
+            />
+            {isFullyReviewed && (
+              <Check className="w-3.5 h-3.5 text-green-400" />
+            )}
+            <span className="text-xs text-zinc-500">{reviewCount}/3</span>
+          </div>
         )}
       </div>
 
@@ -313,13 +350,22 @@ export function ProjectCard({ project, expanded = false, onClick, variant = 'def
 
       {/* ========== PROGRESS ========== */}
       {totalTasks > 0 && (
-        <div className="mb-3">
+        <Link
+          href={`/tasks?project_id=${project.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="block mb-3 p-2 -mx-2 rounded-lg hover:bg-zinc-800/50 transition-colors group/progress"
+        >
           <div className="flex justify-between text-xs text-zinc-400 mb-1">
-            <span>Progress</span>
-            <span>{completedTasks}/{totalTasks} tasks ({progress}%)</span>
+            <span className="flex items-center gap-1">
+              Progress
+              <ArrowRight className="w-3 h-3 opacity-0 group-hover/progress:opacity-100 transition-opacity text-blue-400" />
+            </span>
+            <span className="group-hover/progress:text-blue-400 transition-colors">
+              {completedTasks}/{totalTasks} tasks ({progress}%)
+            </span>
           </div>
           <ProgressBar value={progress} />
-        </div>
+        </Link>
       )}
 
       {/* ========== EXPAND/COLLAPSE BUTTON ========== */}

@@ -9,7 +9,12 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Abeto Task Manager",
-  description: "Comprehensive task management for Operations teams",
+  description: "AI-Powered Project & Task Management for Operations teams",
+  icons: {
+    icon: '/abeto-logo.svg',
+    shortcut: '/abeto-logo.svg',
+    apple: '/abeto-logo.svg',
+  },
 };
 
 export default function RootLayout({

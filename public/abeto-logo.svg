@@ -1,0 +1,21 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Abeto Logo - Task Management / Checklist Theme -->
+  <!-- Stylized checkmark within a rounded square representing completed tasks -->
+
+  <!-- Background rounded square -->
+  <rect x="10" y="10" width="80" height="80" rx="16" ry="16" fill="#F5B41A" />
+
+  <!-- Checkmark path - bold and dynamic -->
+  <path
+    d="M28 52 L42 66 L72 36"
+    fill="none"
+    stroke="#1a1a1a"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Small efficiency lines (speed/progress indicators) -->
+  <line x1="20" y1="30" x2="32" y2="30" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" opacity="0.6" />
+  <line x1="20" y1="40" x2="28" y2="40" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" opacity="0.4" />
+</svg>

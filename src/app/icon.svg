@@ -1,0 +1,20 @@
+<svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Abeto Logo - Stylized flowing A -->
+  <path
+    d="M20 95
+       C5 95 0 75 10 55
+       C18 40 28 30 38 35
+       C50 42 45 58 32 62
+       C18 66 12 52 22 40
+       C35 25 55 18 80 75
+       L105 25
+       C110 15 120 15 125 25
+       C130 35 125 45 120 55
+       L95 105"
+    fill="none"
+    stroke="#F5B41A"
+    stroke-width="18"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
