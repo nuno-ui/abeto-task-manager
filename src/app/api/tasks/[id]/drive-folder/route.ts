@@ -36,10 +36,14 @@ export async function GET(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
+    // Supabase can return arrays or objects for relations
+    const projectData = task.project as { title: string } | { title: string }[] | null;
+    const projectTitle = Array.isArray(projectData) ? projectData[0]?.title : projectData?.title;
+
     return NextResponse.json({
       taskId: task.id,
       taskTitle: task.title,
-      projectTitle: (task.project as { title: string } | null)?.title || null,
+      projectTitle: projectTitle || null,
       folderUrl: task.google_drive_folder_url,
       folderId: task.google_drive_folder_id,
       isConfigured: !!task.google_drive_folder_url,

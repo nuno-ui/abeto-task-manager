@@ -1019,6 +1019,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               problem_statement: editingTask.problem_statement || undefined,
               deliverables: editingTask.deliverables || [],
               demo_link: editingTask.demo_link || undefined,
+              google_drive_folder_url: editingTask.google_drive_folder_url || undefined,
             }}
             teams={teams}
             users={users}

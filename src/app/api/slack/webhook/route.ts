@@ -115,11 +115,14 @@ async function getSlackUserInfo(slackUserId: string, botToken: string): Promise<
           .single();
 
         if (abetoUser) {
+          // Supabase returns single relations as objects, not arrays when using .single()
+          const teamData = abetoUser.team as { name: string } | { name: string }[] | null;
+          const teamName = Array.isArray(teamData) ? teamData[0]?.name : teamData?.name;
           result.abetoUser = {
             id: abetoUser.id,
             full_name: abetoUser.full_name || result.slackUserName,
             email: abetoUser.email,
-            team_name: (abetoUser.team as { name: string } | null)?.name,
+            team_name: teamName,
           };
         }
       }
