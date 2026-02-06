@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Sparkles, Loader2, Check, ChevronDown, ChevronRight, Clock, Zap, Send, MessageSquare, Edit3, RefreshCw } from 'lucide-react';
+import { X, Sparkles, Loader2, Check, ChevronDown, ChevronRight, ChevronUp, Clock, Zap, Send, MessageSquare, Edit3, RefreshCw, AlertCircle, ArrowRight, Plus, ExternalLink, Package, Users, Target, Lightbulb } from 'lucide-react';
 
 interface GeneratedTask {
   title: string;
@@ -77,7 +77,30 @@ interface AIProjectCreatorProps {
   onProjectCreated: () => void;
 }
 
-type Stage = 'input' | 'questions' | 'generating' | 'preview' | 'refining';
+// Match result types for similarity detection
+interface MatchedProject {
+  type: 'project' | 'task';
+  id: string;
+  title: string;
+  slug: string;
+  similarity_reason: string;
+  overlap_percentage?: number;
+  problem_statement?: string;
+  deliverables?: string[];
+  status?: string;
+  priority?: string;
+  pillar_name?: string;
+  task_count?: number;
+}
+
+interface MatchResult {
+  matchType: 'exact' | 'similar' | 'task_candidate' | 'new';
+  matches: MatchedProject[];
+  suggestion: string;
+  reasoning?: string;
+}
+
+type Stage = 'input' | 'analyzing' | 'suggestions' | 'task_preview' | 'questions' | 'generating' | 'preview' | 'refining';
 
 export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjectCreatorProps) {
   // Form inputs
@@ -105,6 +128,14 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
   const [error, setError] = useState<string | null>(null);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set(['discovery', 'planning', 'development']));
 
+  // Similarity matching state
+  const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
+  const [expandedMatches, setExpandedMatches] = useState<Set<string>>(new Set());
+  const [userDifferenceReason, setUserDifferenceReason] = useState('');
+  const [selectedProjectForTask, setSelectedProjectForTask] = useState<MatchedProject | null>(null);
+  const [generatedTaskForExisting, setGeneratedTaskForExisting] = useState<GeneratedTask | null>(null);
+  const [taskRationale, setTaskRationale] = useState('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,9 +147,52 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
 
     setLoading(true);
     setError(null);
+    setStage('analyzing');
 
     try {
-      // First, check if we need clarifying questions
+      // First, check for similar existing projects
+      const matchResponse = await fetch('/api/ai/create-project', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: projectIdea.trim(),
+          problemSolved: problemSolved.trim(),
+          expectedDeliverables: expectedDeliverables.trim(),
+          mode: 'match'
+        })
+      });
+
+      const matchData = await matchResponse.json();
+
+      if (!matchResponse.ok) {
+        throw new Error(matchData.error || 'Failed to check for similar projects');
+      }
+
+      // If matches found (not 'new'), show suggestions
+      if (matchData.matchType !== 'new' && matchData.matches?.length > 0) {
+        setMatchResult(matchData);
+        setStage('suggestions');
+        setLoading(false);
+        return;
+      }
+
+      // No matches found, proceed to analyze for questions
+      await proceedToAnalyze();
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to process request');
+      setStage('input');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Proceed to analyze mode (called after match or when user says "this is different")
+  const proceedToAnalyze = async (differenceReason?: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
       const response = await fetch('/api/ai/create-project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,6 +200,7 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
           description: projectIdea.trim(),
           problemSolved: problemSolved.trim(),
           expectedDeliverables: expectedDeliverables.trim(),
+          userDifferenceReason: differenceReason || userDifferenceReason,
           mode: 'analyze'
         })
       });
@@ -137,11 +212,9 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
       }
 
       if (data.needsQuestions && data.questions?.length > 0) {
-        // AI wants to ask clarifying questions
         setAiQuestions(data.questions);
         setStage('questions');
       } else if (data.project) {
-        // AI generated directly
         setProject(data.project);
         setTasks(data.tasks || []);
         setSummary(data.summary || '');
@@ -150,9 +223,99 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
     } catch (err) {
       console.error('Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to process request');
+      setStage('input');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle "This is different, create new project"
+  const handleProceedWithNewProject = async () => {
+    setStage('generating');
+    await proceedToAnalyze(userDifferenceReason);
+  };
+
+  // Handle "Add as task to existing project"
+  const handleAddAsTask = async (matchedProject: MatchedProject) => {
+    setSelectedProjectForTask(matchedProject);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/ai/create-project', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: projectIdea.trim(),
+          problemSolved: problemSolved.trim(),
+          expectedDeliverables: expectedDeliverables.trim(),
+          targetProjectId: matchedProject.id,
+          mode: 'generate_task'
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate task');
+      }
+
+      setGeneratedTaskForExisting(data.task);
+      setTaskRationale(data.rationale || '');
+      setStage('task_preview');
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate task');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Confirm adding task to existing project
+  const handleConfirmTask = async () => {
+    if (!generatedTaskForExisting || !selectedProjectForTask) return;
+
+    setCreating(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tasks: [{
+            ...generatedTaskForExisting,
+            project_id: selectedProjectForTask.id
+          }]
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create task');
+      }
+
+      onProjectCreated();
+      handleClose();
+    } catch (err) {
+      console.error('Error creating task:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create task');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // Toggle match card expansion
+  const toggleMatchExpansion = (matchId: string) => {
+    setExpandedMatches(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(matchId)) {
+        newSet.delete(matchId);
+      } else {
+        newSet.add(matchId);
+      }
+      return newSet;
+    });
   };
 
   const handleAnswerQuestions = async () => {
@@ -316,6 +479,13 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
     setQuestionAnswers({});
     setError(null);
     setStage('input');
+    // Reset similarity matching state
+    setMatchResult(null);
+    setExpandedMatches(new Set());
+    setUserDifferenceReason('');
+    setSelectedProjectForTask(null);
+    setGeneratedTaskForExisting(null);
+    setTaskRationale('');
     onClose();
   };
 
@@ -327,6 +497,13 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
     setAiQuestions([]);
     setQuestionAnswers({});
     setStage('input');
+    // Reset similarity matching state
+    setMatchResult(null);
+    setExpandedMatches(new Set());
+    setUserDifferenceReason('');
+    setSelectedProjectForTask(null);
+    setGeneratedTaskForExisting(null);
+    setTaskRationale('');
   };
 
   const togglePhase = (phase: string) => {
@@ -380,6 +557,9 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
               <h2 className="text-lg font-semibold text-white">AI Project Generator</h2>
               <p className="text-sm text-zinc-400">
                 {stage === 'input' && 'Describe your project idea'}
+                {stage === 'analyzing' && 'Checking for similar projects...'}
+                {stage === 'suggestions' && 'I found some related projects'}
+                {stage === 'task_preview' && 'Review your new task'}
                 {stage === 'questions' && 'Answer a few questions'}
                 {stage === 'generating' && 'Generating your project...'}
                 {stage === 'preview' && 'Review your project draft'}
@@ -468,6 +648,345 @@ export function AIProjectCreator({ isOpen, onClose, onProjectCreated }: AIProjec
                     </>
                   )}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Stage: Analyzing - Loading state while checking for similar projects */}
+          {stage === 'analyzing' && (
+            <div className="p-6 flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 text-violet-400 animate-spin mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Checking for similar projects...</h3>
+                <p className="text-zinc-400 text-sm">
+                  Looking through existing projects and tasks to find the best fit.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Stage: Suggestions - Show similar projects found */}
+          {stage === 'suggestions' && matchResult && (
+            <div className="p-6">
+              <div className="max-w-2xl mx-auto space-y-6">
+                {/* AI Suggestion Banner */}
+                <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <Lightbulb className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm text-amber-300 font-medium mb-1">AI Suggestion</p>
+                      <p className="text-sm text-zinc-300">
+                        {matchResult.suggestion}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Match Cards */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    {matchResult.matchType === 'exact' ? 'Existing project found' :
+                     matchResult.matchType === 'task_candidate' ? 'Could be added to existing project' :
+                     'Similar projects'}
+                  </h4>
+
+                  {matchResult.matches.map((match) => (
+                    <div
+                      key={match.id}
+                      className="bg-zinc-800/50 border border-zinc-700 rounded-xl overflow-hidden"
+                    >
+                      {/* Match Card Header */}
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h5 className="font-semibold text-white">{match.title}</h5>
+                              <span className="px-2 py-0.5 text-xs bg-violet-500/20 text-violet-300 rounded">
+                                Project
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-zinc-500">
+                              {match.status && (
+                                <span className="px-2 py-0.5 bg-zinc-700 rounded">{match.status}</span>
+                              )}
+                              {match.priority && (
+                                <span className={`px-2 py-0.5 rounded ${
+                                  match.priority === 'critical' ? 'bg-red-500/20 text-red-300' :
+                                  match.priority === 'high' ? 'bg-orange-500/20 text-orange-300' :
+                                  'bg-zinc-700 text-zinc-300'
+                                }`}>{match.priority}</span>
+                              )}
+                              {match.pillar_name && (
+                                <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded">
+                                  {match.pillar_name}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {match.overlap_percentage && (
+                            <div className="text-right">
+                              <span className="text-lg font-bold text-emerald-400">{match.overlap_percentage}%</span>
+                              <p className="text-xs text-zinc-500">match</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Problem Statement */}
+                        {match.problem_statement && (
+                          <p className="text-sm text-zinc-400 mb-3 line-clamp-2">
+                            {match.problem_statement}
+                          </p>
+                        )}
+
+                        {/* Match Reason */}
+                        <div className="flex items-start gap-2 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg mb-3">
+                          <Zap className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                          <p className="text-xs text-emerald-300">{match.similarity_reason}</p>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleMatchExpansion(match.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+                          >
+                            {expandedMatches.has(match.id) ? (
+                              <>
+                                <ChevronUp className="w-3.5 h-3.5" />
+                                Hide Details
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-3.5 h-3.5" />
+                                View Details
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleAddAsTask(match)}
+                            disabled={loading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Add as Task to This Project
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Expanded Details */}
+                      {expandedMatches.has(match.id) && (
+                        <div className="px-4 pb-4 pt-0 border-t border-zinc-700 mt-2">
+                          <div className="pt-4 space-y-3">
+                            {match.deliverables && match.deliverables.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-zinc-400 mb-1.5 flex items-center gap-1">
+                                  <Package className="w-3.5 h-3.5" />
+                                  Deliverables
+                                </p>
+                                <ul className="space-y-1">
+                                  {match.deliverables.slice(0, 4).map((d, i) => (
+                                    <li key={i} className="text-xs text-zinc-300 flex items-start gap-2">
+                                      <Check className="w-3 h-3 mt-0.5 text-emerald-500 flex-shrink-0" />
+                                      {d}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {match.task_count !== undefined && (
+                              <p className="text-xs text-zinc-400">
+                                <span className="font-medium text-zinc-300">{match.task_count}</span> tasks in this project
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* User Difference Explanation */}
+                <div>
+                  <label className="text-sm font-medium text-zinc-400 mb-2 block">
+                    Think this is different? Tell me why (optional)
+                  </label>
+                  <textarea
+                    value={userDifferenceReason}
+                    onChange={(e) => setUserDifferenceReason(e.target.value)}
+                    placeholder="Explain how your request is different from the projects above..."
+                    className="w-full h-20 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                    disabled={loading}
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
+                    {error}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleStartOver}
+                    className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleProceedWithNewProject}
+                    disabled={loading}
+                    className="flex-1 py-3 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRight className="w-5 h-5" />
+                        This is Different - Create New Project
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Stage: Task Preview - Show AI-generated task for existing project */}
+          {stage === 'task_preview' && selectedProjectForTask && generatedTaskForExisting && (
+            <div className="p-6">
+              <div className="max-w-2xl mx-auto space-y-6">
+                {/* Target Project Info */}
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <Target className="w-5 h-5 text-emerald-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-emerald-300 font-medium mb-1">Adding task to:</p>
+                      <p className="text-white font-semibold">{selectedProjectForTask.title}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Generated Task Card */}
+                <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-5">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                      <h4 className="text-lg font-semibold text-white mb-1">
+                        {generatedTaskForExisting.title}
+                      </h4>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="px-2 py-0.5 bg-violet-500/20 text-violet-300 rounded">
+                          {generatedTaskForExisting.phase}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded ${
+                          generatedTaskForExisting.priority === 'critical' ? 'bg-red-500/20 text-red-300' :
+                          generatedTaskForExisting.priority === 'high' ? 'bg-orange-500/20 text-orange-300' :
+                          generatedTaskForExisting.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                          'bg-green-500/20 text-green-300'
+                        }`}>
+                          {generatedTaskForExisting.priority}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded ${
+                          generatedTaskForExisting.difficulty === 'hard' ? 'bg-red-500/20 text-red-300' :
+                          generatedTaskForExisting.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                          'bg-green-500/20 text-green-300'
+                        }`}>
+                          {generatedTaskForExisting.difficulty}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm text-zinc-400 flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {generatedTaskForExisting.estimated_hours}h
+                      </span>
+                      {generatedTaskForExisting.ai_potential && generatedTaskForExisting.ai_potential !== 'none' && (
+                        <span className="text-xs text-violet-400 flex items-center gap-1 mt-1">
+                          <Zap className="w-3 h-3" />
+                          {generatedTaskForExisting.ai_potential} AI potential
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-zinc-300 mb-4">
+                    {generatedTaskForExisting.description}
+                  </p>
+
+                  {/* Acceptance Criteria */}
+                  {generatedTaskForExisting.acceptance_criteria && generatedTaskForExisting.acceptance_criteria.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs font-medium text-zinc-400 mb-2">Acceptance Criteria:</p>
+                      <ul className="space-y-1">
+                        {generatedTaskForExisting.acceptance_criteria.map((criterion, i) => (
+                          <li key={i} className="text-xs text-zinc-300 flex items-start gap-2">
+                            <Check className="w-3 h-3 mt-0.5 text-emerald-500 flex-shrink-0" />
+                            {criterion}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* AI Assist Description */}
+                  {generatedTaskForExisting.ai_assist_description && (
+                    <div className="p-3 bg-violet-500/10 border border-violet-500/20 rounded-lg">
+                      <p className="text-xs text-violet-300">
+                        <Zap className="w-3 h-3 inline mr-1" />
+                        <span className="font-medium">AI can help:</span> {generatedTaskForExisting.ai_assist_description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Rationale */}
+                {taskRationale && (
+                  <div className="text-sm text-zinc-400 italic">
+                    <Lightbulb className="w-4 h-4 inline mr-1 text-amber-400" />
+                    {taskRationale}
+                  </div>
+                )}
+
+                {error && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
+                    {error}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setGeneratedTaskForExisting(null);
+                      setSelectedProjectForTask(null);
+                      setStage('suggestions');
+                    }}
+                    className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleConfirmTask}
+                    disabled={creating}
+                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    {creating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Adding Task...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-5 h-5" />
+                        Add Task to Project
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           )}

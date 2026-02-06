@@ -205,6 +205,97 @@ Each task MUST have:
 
 Today's date: {{TODAY}}`;
 
+const MATCH_PROMPT = `You are an expert project manager AI for Abeto. Your task is to analyze whether a user's project request overlaps with existing projects or should be added as a task to an existing project.
+
+## User's New Request:
+- Idea: {{PROJECT_IDEA}}
+- Problem Being Solved: {{PROBLEM_SOLVED}}
+- Expected Deliverables: {{DELIVERABLES}}
+
+## Existing Active Projects:
+{{EXISTING_PROJECTS}}
+
+## Analysis Guidelines:
+1. **exact**: The user's request essentially describes the same problem/solution as an existing project (>80% overlap)
+2. **similar**: Significant overlap exists - projects share goals, users, or systems but have distinct scopes (40-80% overlap)
+3. **task_candidate**: The user's request is a feature, enhancement, or subset that fits within an existing project's scope
+4. **new**: The request is genuinely distinct with minimal overlap (<40%)
+
+## Consider:
+- Problem statement similarity
+- Target users overlap
+- Technical scope/deliverables overlap
+- Business area alignment
+- Could this be a phase or task in an existing project?
+
+## Response Format (STRICT JSON):
+{
+  "matchType": "exact" | "similar" | "task_candidate" | "new",
+  "matches": [
+    {
+      "type": "project",
+      "id": "project_id",
+      "title": "Project Title",
+      "slug": "project-slug",
+      "similarity_reason": "Clear explanation of why this matches",
+      "overlap_percentage": 75,
+      "problem_statement": "The project's problem statement",
+      "deliverables": ["deliverable1", "deliverable2"],
+      "status": "planning",
+      "priority": "high",
+      "pillar_name": "Pillar Name or null",
+      "task_count": 12
+    }
+  ],
+  "suggestion": "A helpful, conversational recommendation for the user explaining what you found and what you suggest they do",
+  "reasoning": "Internal reasoning for the match determination"
+}
+
+IMPORTANT:
+- Return maximum 3 matches, ordered by relevance
+- Only include matches with >30% overlap
+- If matchType is "new", matches array should be empty
+- suggestion should be friendly and helpful, explaining options`;
+
+const GENERATE_TASK_PROMPT = `You are an expert project manager AI for Abeto. Create a single, well-structured task to add to an existing project based on the user's request.
+
+## User's Request:
+- Idea: {{PROJECT_IDEA}}
+- Problem Being Solved: {{PROBLEM_SOLVED}}
+- Expected Deliverables: {{DELIVERABLES}}
+
+## Target Project Context:
+{{PROJECT_CONTEXT}}
+
+## Your Task:
+Generate ONE comprehensive task that:
+1. Fits naturally within the existing project's scope
+2. Addresses the user's specific request
+3. Follows the project's naming conventions and structure
+4. Has appropriate phase assignment based on the project's current state
+
+## Response Format (STRICT JSON):
+{
+  "task": {
+    "title": "Clear, actionable task title",
+    "description": "Detailed description of what needs to be done (2-3 sentences)",
+    "phase": "discovery|planning|development|testing|training|rollout|monitoring",
+    "status": "not_started",
+    "priority": "low|medium|high|critical",
+    "difficulty": "easy|medium|hard",
+    "ai_potential": "none|low|medium|high",
+    "ai_assist_description": "How AI can help (if ai_potential > none)",
+    "estimated_hours": "4-8",
+    "is_foundational": false,
+    "is_critical_path": false,
+    "acceptance_criteria": ["Criterion 1", "Criterion 2", "Criterion 3"],
+    "tools_needed": ["Tool 1", "Tool 2"],
+    "knowledge_areas": ["Area 1", "Area 2"],
+    "deliverables": ["Deliverable 1", "Deliverable 2"]
+  },
+  "rationale": "Explanation of how this task fits into the project"
+}`;
+
 const REFINE_PROMPT = `You are an expert project manager AI. The user wants to modify an existing project plan draft.
 
 ## Current Project:
@@ -262,6 +353,8 @@ export async function POST(request: Request) {
       currentProject,
       currentTasks,
       refinementRequest,
+      targetProjectId,
+      userDifferenceReason,
       mode = 'analyze'
     } = body;
 
@@ -308,13 +401,186 @@ export async function POST(request: Request) {
     let systemPrompt: string;
     let userMessage: string;
 
-    if (mode === 'analyze') {
-      // Analyze mode - decide if we need questions
+    // ===== MATCH MODE - Check for similar existing projects =====
+    if (mode === 'match') {
+      // Fetch ALL active projects with rich data for matching
+      const { data: matchProjects } = await supabase
+        .from('projects')
+        .select(`
+          id, title, slug, description, status, priority, category,
+          problem_statement, deliverables, benefits, tags,
+          data_required, data_generates, why_it_matters,
+          pillar:pillars(name)
+        `)
+        .in('status', ['idea', 'planning', 'in_progress']);
+
+      // Get task counts per project
+      const { data: taskCounts } = await supabase
+        .from('tasks')
+        .select('project_id')
+        .neq('status', 'completed');
+
+      const taskCountMap: Record<string, number> = {};
+      taskCounts?.forEach(t => {
+        taskCountMap[t.project_id] = (taskCountMap[t.project_id] || 0) + 1;
+      });
+
+      // Format projects for AI matching
+      const matchProjectsContext = matchProjects && matchProjects.length > 0
+        ? JSON.stringify(matchProjects.map(p => ({
+            id: p.id,
+            title: p.title,
+            slug: p.slug,
+            status: p.status,
+            priority: p.priority,
+            category: p.category,
+            problem_statement: p.problem_statement,
+            deliverables: p.deliverables,
+            benefits: p.benefits,
+            tags: p.tags,
+            why_it_matters: p.why_it_matters,
+            pillar_name: (p.pillar as any)?.name || null,
+            task_count: taskCountMap[p.id] || 0
+          })), null, 2)
+        : '[]';
+
+      systemPrompt = MATCH_PROMPT
+        .replace('{{PROJECT_IDEA}}', description || '')
+        .replace('{{PROBLEM_SOLVED}}', problemSolved || 'Not specified')
+        .replace('{{DELIVERABLES}}', expectedDeliverables || 'Not specified')
+        .replace('{{EXISTING_PROJECTS}}', matchProjectsContext);
+
+      userMessage = 'Analyze similarity with existing projects. Respond with valid JSON only.';
+
+      // Make AI call for match analysis
+      const matchMessage = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }]
+      });
+
+      const matchTextContent = matchMessage.content.find(c => c.type === 'text');
+      if (!matchTextContent || matchTextContent.type !== 'text') {
+        throw new Error('No text response from AI');
+      }
+
+      const matchJsonMatch = matchTextContent.text.match(/\{[\s\S]*\}/);
+      if (!matchJsonMatch) {
+        throw new Error('Could not parse AI match response');
+      }
+
+      let matchJsonString = matchJsonMatch[0]
+        .replace(/,(\s*[}\]])/g, '$1')
+        .replace(/[\x00-\x1F\x7F]/g, (char) => {
+          if (char === '\n' || char === '\r' || char === '\t') return char;
+          return '';
+        });
+
+      const matchResponse = JSON.parse(matchJsonString);
+
+      return NextResponse.json({
+        matchType: matchResponse.matchType || 'new',
+        matches: matchResponse.matches || [],
+        suggestion: matchResponse.suggestion || '',
+        reasoning: matchResponse.reasoning
+      });
+
+    // ===== GENERATE_TASK MODE - Create single task for existing project =====
+    } else if (mode === 'generate_task') {
+      if (!targetProjectId) {
+        return NextResponse.json(
+          { error: 'Target project ID is required for generate_task mode' },
+          { status: 400 }
+        );
+      }
+
+      // Fetch the target project with full details
+      const { data: targetProject, error: projectError } = await supabase
+        .from('projects')
+        .select(`
+          id, title, slug, description, status, priority, category,
+          problem_statement, deliverables, benefits, why_it_matters,
+          current_loa, potential_loa, ops_process,
+          pillar:pillars(name)
+        `)
+        .eq('id', targetProjectId)
+        .single();
+
+      if (projectError || !targetProject) {
+        return NextResponse.json(
+          { error: 'Target project not found' },
+          { status: 404 }
+        );
+      }
+
+      // Fetch existing tasks for context
+      const { data: existingTasks } = await supabase
+        .from('tasks')
+        .select('title, phase, status')
+        .eq('project_id', targetProjectId)
+        .order('order_index', { ascending: true });
+
+      const projectContext = JSON.stringify({
+        ...targetProject,
+        pillar_name: (targetProject.pillar as any)?.name || null,
+        existing_tasks: existingTasks?.map(t => `${t.title} (${t.phase}, ${t.status})`) || []
+      }, null, 2);
+
+      systemPrompt = GENERATE_TASK_PROMPT
+        .replace('{{PROJECT_IDEA}}', description || '')
+        .replace('{{PROBLEM_SOLVED}}', problemSolved || 'Not specified')
+        .replace('{{DELIVERABLES}}', expectedDeliverables || 'Not specified')
+        .replace('{{PROJECT_CONTEXT}}', projectContext);
+
+      userMessage = 'Generate a single task for this project. Respond with valid JSON only.';
+
+      // Make AI call for task generation
+      const taskMessage = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }]
+      });
+
+      const taskTextContent = taskMessage.content.find(c => c.type === 'text');
+      if (!taskTextContent || taskTextContent.type !== 'text') {
+        throw new Error('No text response from AI');
+      }
+
+      const taskJsonMatch = taskTextContent.text.match(/\{[\s\S]*\}/);
+      if (!taskJsonMatch) {
+        throw new Error('Could not parse AI task response');
+      }
+
+      let taskJsonString = taskJsonMatch[0]
+        .replace(/,(\s*[}\]])/g, '$1')
+        .replace(/[\x00-\x1F\x7F]/g, (char) => {
+          if (char === '\n' || char === '\r' || char === '\t') return char;
+          return '';
+        });
+
+      const taskResponse = JSON.parse(taskJsonString);
+
+      return NextResponse.json({
+        task: taskResponse.task,
+        rationale: taskResponse.rationale,
+        projectTitle: targetProject.title,
+        projectSlug: targetProject.slug
+      });
+
+    // ===== ANALYZE MODE - Check if we need questions =====
+    } else if (mode === 'analyze') {
+      // Include user's difference reason if they explained why their request is different
+      const differenceContext = userDifferenceReason
+        ? `\n\nNote: The user explained their request is different from existing projects because: "${userDifferenceReason}"`
+        : '';
+
       systemPrompt = ANALYZE_PROMPT
         .replace('{{PROJECT_IDEA}}', description || '')
         .replace('{{PROBLEM_SOLVED}}', problemSolved || 'Not specified')
         .replace('{{DELIVERABLES}}', expectedDeliverables || 'Not specified')
-        .replace('{{EXISTING_PROJECTS}}', projectsContext);
+        .replace('{{EXISTING_PROJECTS}}', projectsContext + differenceContext);
 
       userMessage = 'Analyze the project input and determine if you need clarifying questions. Respond with JSON only.';
     } else if (mode === 'generate') {
@@ -325,11 +591,16 @@ export async function POST(request: Request) {
           ).join('\n\n')
         : '';
 
+      // Include user's difference reason if provided
+      const differenceContext = userDifferenceReason
+        ? `\n## User's Context:\nThe user explained: "${userDifferenceReason}"`
+        : '';
+
       systemPrompt = GENERATE_PROMPT
         .replace('{{PROJECT_IDEA}}', description || '')
         .replace('{{PROBLEM_SOLVED}}', problemSolved || 'Not specified')
         .replace('{{DELIVERABLES}}', expectedDeliverables || 'Not specified')
-        .replace('{{CLARIFICATIONS}}', clarificationsText)
+        .replace('{{CLARIFICATIONS}}', clarificationsText + differenceContext)
         .replace('{{TEAMS}}', teamsContext)
         .replace('{{PILLARS}}', pillarsContext)
         .replace('{{EXISTING_PROJECTS}}', projectsContext)
