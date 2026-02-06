@@ -76,6 +76,7 @@ export function TaskForm({
     blocked_by: [],
     due_date: '',
     demo_link: '',
+    google_drive_folder_url: '',
     is_foundational: false,
     is_critical_path: false,
     ...initialData,
@@ -277,6 +278,13 @@ export function TaskForm({
           value={formData.demo_link || ''}
           onChange={(e) => handleChange('demo_link', e.target.value)}
           placeholder="https://... (Notion, Google Docs, demo URL, etc.)"
+        />
+        <Input
+          label="Google Drive Folder"
+          type="url"
+          value={formData.google_drive_folder_url || ''}
+          onChange={(e) => handleChange('google_drive_folder_url', e.target.value)}
+          placeholder="https://drive.google.com/drive/folders/..."
         />
       </div>
 

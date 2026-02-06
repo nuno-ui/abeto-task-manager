@@ -183,6 +183,10 @@ export interface Task {
   // Demo/Document Link
   demo_link: string | null;
 
+  // Google Drive Integration
+  google_drive_folder_url: string | null;
+  google_drive_folder_id: string | null;
+
   created_at: string;
   updated_at: string;
   // Joined
@@ -371,6 +375,7 @@ export interface CreateTaskInput {
   problem_statement?: string;
   deliverables?: string[];
   demo_link?: string;
+  google_drive_folder_url?: string;
 }
 
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {

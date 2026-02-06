@@ -21,6 +21,7 @@ import {
   Send,
   X,
   ExternalLink,
+  FolderOpen,
 } from 'lucide-react';
 import { Badge, Avatar, ProgressBar } from '@/components/ui';
 import type { Task } from '@/types/database';
@@ -130,6 +131,19 @@ export function TaskCard({ task, onClick, onDelete, onComment, deleting = false,
                 title="Open Demo/Document"
               >
                 <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+            {/* Google Drive Folder Button */}
+            {task.google_drive_folder_url && (
+              <a
+                href={task.google_drive_folder_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="p-1 text-zinc-500 hover:text-amber-400 hover:bg-amber-900/20 rounded transition-colors"
+                title="Open Google Drive Folder"
+              >
+                <FolderOpen className="w-4 h-4" />
               </a>
             )}
             {/* Quick Comment Button */}
