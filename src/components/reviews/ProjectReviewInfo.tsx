@@ -17,6 +17,14 @@ import {
   Workflow,
   ExternalLink,
   Layers,
+  Gauge,
+  Calendar,
+  ListChecks,
+  TrendingUp,
+  Shield,
+  Timer,
+  Code,
+  HardDrive,
 } from 'lucide-react';
 import { Project, Task } from '@/types/database';
 
@@ -48,6 +56,7 @@ const difficultyColors: Record<string, string> = {
 
 export function ProjectReviewInfo({ project }: ProjectReviewInfoProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    assessment: true,
     problem: true,
     transformation: false,
     data: false,
@@ -88,6 +97,157 @@ export function ProjectReviewInfo({ project }: ProjectReviewInfoProps) {
           <p className="text-xs text-zinc-400 mt-1">Difficulty</p>
         </div>
       </div>
+
+      {/* Current Assessment Values - These are what reviewers vote on */}
+      <CollapsibleSection
+        title="Current Assessment (Pre-set Values)"
+        icon={<Gauge className="w-4 h-4 text-cyan-400" />}
+        isOpen={expandedSections.assessment}
+        onToggle={() => toggleSection('assessment')}
+      >
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <AssessmentBadge
+            label="Time Horizon"
+            value={project.time_horizon}
+            colorMap={{
+              short: 'bg-green-500/20 text-green-400',
+              medium: 'bg-yellow-500/20 text-yellow-400',
+              long: 'bg-blue-500/20 text-blue-400',
+            }}
+            labelMap={{
+              short: 'Short-term',
+              medium: 'Mid-term',
+              long: 'Long-term',
+            }}
+          />
+          <AssessmentBadge
+            label="Task List Quality"
+            value={project.task_list_quality}
+            colorMap={{
+              needs_work: 'bg-red-500/20 text-red-400',
+              acceptable: 'bg-yellow-500/20 text-yellow-400',
+              well_structured: 'bg-green-500/20 text-green-400',
+            }}
+            labelMap={{
+              needs_work: 'Needs Work',
+              acceptable: 'Acceptable',
+              well_structured: 'Well Structured',
+            }}
+          />
+          <AssessmentBadge
+            label="Pain Point Level"
+            value={project.pain_point_level}
+            colorMap={{
+              low: 'bg-red-500/20 text-red-400',
+              medium: 'bg-yellow-500/20 text-yellow-400',
+              high: 'bg-green-500/20 text-green-400',
+            }}
+            labelMap={{
+              low: 'Low',
+              medium: 'Medium',
+              high: 'Critical',
+            }}
+          />
+          <AssessmentBadge
+            label="Adoption Risk"
+            value={project.adoption_risk}
+            colorMap={{
+              high_risk: 'bg-red-500/20 text-red-400',
+              medium_risk: 'bg-yellow-500/20 text-yellow-400',
+              low_risk: 'bg-green-500/20 text-green-400',
+            }}
+            labelMap={{
+              high_risk: 'High Risk',
+              medium_risk: 'Medium Risk',
+              low_risk: 'Low Risk',
+            }}
+          />
+          <AssessmentBadge
+            label="ROI Confidence"
+            value={project.roi_confidence}
+            colorMap={{
+              low: 'bg-red-500/20 text-red-400',
+              medium: 'bg-yellow-500/20 text-yellow-400',
+              high: 'bg-green-500/20 text-green-400',
+            }}
+            labelMap={{
+              low: 'Low',
+              medium: 'Medium',
+              high: 'High',
+            }}
+          />
+          <AssessmentBadge
+            label="Strategic Alignment"
+            value={project.strategic_alignment}
+            colorMap={{
+              weak: 'bg-red-500/20 text-red-400',
+              moderate: 'bg-yellow-500/20 text-yellow-400',
+              strong: 'bg-green-500/20 text-green-400',
+            }}
+            labelMap={{
+              weak: 'Weak',
+              moderate: 'Moderate',
+              strong: 'Strong',
+            }}
+          />
+          <AssessmentBadge
+            label="Resource ROI"
+            value={project.resource_justified}
+            colorMap={{
+              poor: 'bg-red-500/20 text-red-400',
+              acceptable: 'bg-yellow-500/20 text-yellow-400',
+              strong: 'bg-green-500/20 text-green-400',
+            }}
+            labelMap={{
+              poor: 'Poor',
+              acceptable: 'Acceptable',
+              strong: 'Strong',
+            }}
+          />
+          <AssessmentBadge
+            label="Timeline"
+            value={project.timeline_realistic}
+            colorMap={{
+              too_aggressive: 'bg-red-500/20 text-red-400',
+              realistic: 'bg-green-500/20 text-green-400',
+              conservative: 'bg-blue-500/20 text-blue-400',
+            }}
+            labelMap={{
+              too_aggressive: 'Too Aggressive',
+              realistic: 'Realistic',
+              conservative: 'Conservative',
+            }}
+          />
+          <AssessmentBadge
+            label="Tech Debt Risk"
+            value={project.tech_debt_risk}
+            colorMap={{
+              high: 'bg-red-500/20 text-red-400',
+              medium: 'bg-yellow-500/20 text-yellow-400',
+              low: 'bg-green-500/20 text-green-400',
+            }}
+            labelMap={{
+              high: 'High',
+              medium: 'Medium',
+              low: 'Low',
+            }}
+          />
+          <AssessmentBadge
+            label="Data Readiness"
+            value={project.data_readiness}
+            colorMap={{
+              not_ready: 'bg-red-500/20 text-red-400',
+              partial: 'bg-yellow-500/20 text-yellow-400',
+              ready: 'bg-green-500/20 text-green-400',
+            }}
+            labelMap={{
+              not_ready: 'Not Ready',
+              partial: 'Partial',
+              ready: 'Ready',
+            }}
+          />
+        </div>
+      </CollapsibleSection>
 
       {/* Problem Statement & Deliverables */}
       <CollapsibleSection
@@ -406,6 +566,32 @@ function CollapsibleSection({
         )}
       </button>
       {isOpen && <div className="p-3 pt-0 border-t border-zinc-700/50">{children}</div>}
+    </div>
+  );
+}
+
+// Assessment badge component for displaying pre-set values
+function AssessmentBadge({
+  label,
+  value,
+  colorMap,
+  labelMap,
+}: {
+  label: string;
+  value: string | null | undefined;
+  colorMap: Record<string, string>;
+  labelMap: Record<string, string>;
+}) {
+  const displayValue = value || 'Not set';
+  const colorClass = value ? (colorMap[value] || 'bg-zinc-700 text-zinc-400') : 'bg-zinc-700 text-zinc-500';
+  const displayLabel = value ? (labelMap[value] || value) : 'Not set';
+
+  return (
+    <div className="bg-zinc-800/50 rounded-lg p-2">
+      <p className="text-[10px] text-zinc-500 uppercase mb-1">{label}</p>
+      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${colorClass}`}>
+        {displayLabel}
+      </span>
     </div>
   );
 }
