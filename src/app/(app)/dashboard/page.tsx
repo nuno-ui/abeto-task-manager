@@ -55,6 +55,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
   const [userName, setUserName] = useState('there');
+  const [userId, setUserId] = useState<string | undefined>(undefined);
   const [userArea, setUserArea] = useState<string>('all');
   const [pendingReviews, setPendingReviews] = useState(0);
 
@@ -68,6 +69,9 @@ export default function DashboardPage() {
       const response = await fetch('/api/auth/me');
       if (response.ok) {
         const data = await response.json();
+        if (data.user?.id) {
+          setUserId(data.user.id);
+        }
         if (data.user?.full_name) {
           // Get first name only
           const firstName = data.user.full_name.split(' ')[0];
@@ -211,6 +215,7 @@ export default function DashboardPage() {
               projects={projects}
               userArea={userArea}
               userName={userName}
+              userId={userId}
             />
           </div>
 

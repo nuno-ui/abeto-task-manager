@@ -49,9 +49,10 @@ interface TaskCompanionProps {
   projects: Project[];
   userArea?: string;
   userName?: string;
+  userId?: string;
 }
 
-export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 'there' }: TaskCompanionProps) {
+export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 'there', userId }: TaskCompanionProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -71,84 +72,158 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
 
     const now = new Date();
 
-    // Calculate stats
+    // Get user's personal tasks vs team tasks
+    const myTasks = userId ? tasks.filter(t => t.assignee_id === userId) : [];
+    const myActiveTasks = myTasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled');
+    const myInProgress = myTasks.filter(t => t.status === 'in_progress');
+    const myBlocked = myTasks.filter(t => t.status === 'blocked');
+    const myOverdue = myTasks.filter(t => {
+      if (!t.due_date || t.status === 'completed' || t.status === 'cancelled') return false;
+      return new Date(t.due_date) < now;
+    });
+
+    // Calculate team stats
     const activeProjects = projects.filter(p =>
       p.status === 'in_progress' || p.status === 'planning' || p.status === 'idea'
     );
     const totalTasks = tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled');
-    const notStartedTasks = tasks.filter(t => t.status === 'not_started');
-
-    const overdueProjects = projects.filter(p => {
-      if (!p.target_date || p.status === 'completed') return false;
-      return new Date(p.target_date) < now;
-    });
 
     const blockedTasks = tasks.filter(t => t.status === 'blocked');
 
     const highAIPotentialTasks = tasks.filter(t =>
       t.ai_potential === 'high' && t.status !== 'completed'
     );
+    const myHighAIPotential = userId ? highAIPotentialTasks.filter(t => t.assignee_id === userId) : [];
 
     const projectsNeedingReview = projects.filter(p =>
       (p.status === 'planning' || p.status === 'in_progress') && !p.pain_point_level
     );
 
-    // Fun facts for today - historical events and motivational endings
-    const funFacts = [
-      { fact: "On this day in 1492, Columbus reached America", ending: "Today, you might discover your next breakthrough! 🌎" },
-      { fact: "On this day in 2016, Portugal won the Euro Cup", ending: "Even underdogs can win — let's make today count! ⚽🏆" },
-      { fact: "The first email was sent in 1971", ending: "Small steps lead to revolutions. What will you start today? 📧" },
-      { fact: "Apple launched the iPhone in 2007", ending: "Innovation starts with a single idea. What's yours? 📱" },
-      { fact: "The Wright Brothers flew for 12 seconds in 1903", ending: "12 seconds changed the world. Your next task might too! ✈️" },
-      { fact: "SpaceX landed its first rocket in 2015", ending: "Persistence pays off. Keep pushing! 🚀" },
-      { fact: "The first website went live in 1991", ending: "Every empire starts with a single page. Build yours! 🌐" },
-      { fact: "Tesla delivered its first Roadster in 2008", ending: "Dream big, start small, scale fast. Let's go! ⚡" },
-      { fact: "Netflix started as a DVD rental service", ending: "Pivots create giants. Stay adaptable! 🎬" },
-      { fact: "Amazon was founded in a garage in 1994", ending: "Great things have humble beginnings. Start now! 📦" },
-    ];
+    // Historical events by month-day - REAL "This Day in History" events
+    const historicalEvents: Record<string, { fact: string; ending: string }> = {
+      // January
+      '01-01': { fact: "On this day in 1983, the Internet was born when ARPANET switched to TCP/IP", ending: "Every great network starts with a connection. What will you connect today? 🌐" },
+      '01-03': { fact: "On this day in 1977, Apple Computer was incorporated", ending: "Some of the greatest companies started with just an idea. Keep building! 🍎" },
+      '01-09': { fact: "On this day in 2007, Steve Jobs unveiled the first iPhone", ending: "Innovation often looks impossible until it's done. What will you create? 📱" },
+      '01-15': { fact: "On this day in 2001, Wikipedia went live", ending: "Knowledge grows when shared. Collaborate and learn! 📚" },
+      '01-27': { fact: "On this day in 1926, the first demonstration of television was given", ending: "Today's impossible is tomorrow's everyday. Dream bigger! 📺" },
+      // February
+      '02-04': { fact: "On this day in 2004, Mark Zuckerberg launched Facebook from his Harvard dorm", ending: "Side projects can change the world. What's yours? 👍" },
+      '02-06': { fact: "On this day in 1959, Jack Kilby filed the first patent for an integrated circuit", ending: "One invention sparked the entire digital age. Your work matters! 💡" },
+      '02-14': { fact: "On this day in 1946, ENIAC, the first electronic computer, was unveiled", ending: "From room-sized machines to pocket phones — progress never stops! 💻" },
+      '02-18': { fact: "On this day in 1930, Pluto was discovered by Clyde Tombaugh", ending: "Persistence reveals what others miss. Keep looking! 🔭" },
+      '02-21': { fact: "On this day in 1878, the first telephone directory was published (50 names)", ending: "Every network starts small. Grow yours! 📞" },
+      '02-28': { fact: "On this day in 1983, M*A*S*H aired its final episode to 106 million viewers", ending: "Great endings are earned through consistent effort. Keep going! 🌟" },
+      // March
+      '03-10': { fact: "On this day in 1876, Alexander Graham Bell made the first telephone call", ending: "The first call was just 'Mr. Watson, come here.' Simple beginnings, massive impact! 📞" },
+      '03-12': { fact: "On this day in 1989, Tim Berners-Lee proposed the World Wide Web", ending: "A memo changed human history. Never underestimate your ideas! 🕸️" },
+      '03-14': { fact: "On this day we celebrate Pi Day (3.14) — Einstein's birthday too!", ending: "Math and genius go hand in hand. Embrace the details! 🥧" },
+      '03-21': { fact: "On this day in 2006, Twitter was launched with Jack Dorsey's first tweet", ending: "140 characters started a revolution. Sometimes less is more! 🐦" },
+      '03-29': { fact: "On this day in 1886, Coca-Cola was invented by John Pemberton", ending: "Even accidents can become global phenomena. Stay curious! 🥤" },
+      // April
+      '04-01': { fact: "On this day in 1976, Steve Jobs and Steve Wozniak founded Apple in a garage", ending: "The garage-to-greatness story is real. Start where you are! 🍏" },
+      '04-03': { fact: "On this day in 1973, the first mobile phone call was made by Martin Cooper", ending: "That first call was to a competitor. Competition drives innovation! 📱" },
+      '04-12': { fact: "On this day in 1961, Yuri Gagarin became the first human in space", ending: "The first step is always the hardest. Take yours today! 🚀" },
+      '04-22': { fact: "On this day in 1970, the first Earth Day was celebrated", ending: "Every action for the planet counts. Build sustainably! 🌍" },
+      '04-28': { fact: "On this day in 2001, Dennis Tito became the first space tourist", ending: "Once-impossible dreams become reality. Keep dreaming! ✨" },
+      // May
+      '05-01': { fact: "On this day in 1931, the Empire State Building opened in 410 days", ending: "Speed and ambition can coexist. Move fast! 🏢" },
+      '05-14': { fact: "On this day in 1998, the final episode of Seinfeld aired", ending: "Knowing when to end is as important as starting. Focus on quality! 📺" },
+      '05-19': { fact: "On this day in 1999, Star Wars: Episode I premiered", ending: "Every saga needs a beginning. Start your next chapter! ⭐" },
+      '05-25': { fact: "On this day in 1977, Star Wars was released and changed cinema forever", ending: "A galaxy far, far away started with one vision. Trust yours! 🌌" },
+      // June
+      '06-16': { fact: "On this day in 1903, Ford Motor Company was incorporated", ending: "Henry Ford failed twice before succeeding. Persistence wins! 🚗" },
+      '06-21': { fact: "On this day in 2004, SpaceShipOne became the first private spacecraft in space", ending: "Private innovation reaches new heights. Aim high! 🚀" },
+      '06-29': { fact: "On this day in 2007, the first iPhone went on sale", ending: "Technology that fits in your pocket changed everything. Think portable! 📱" },
+      // July
+      '07-05': { fact: "On this day in 1996, Dolly the sheep became the first cloned mammal", ending: "Science fiction becomes science fact. Stay ahead of the curve! 🐑" },
+      '07-10': { fact: "On this day in 2016, Portugal won Euro 2016 against France", ending: "Underdogs can win championships. Believe in your team! ⚽🏆" },
+      '07-16': { fact: "On this day in 1969, Apollo 11 launched for the Moon", ending: "The impossible mission succeeded. What's your moonshot? 🌙" },
+      '07-20': { fact: "On this day in 1969, Neil Armstrong walked on the Moon", ending: "One small step, one giant leap. Take your step today! 👨‍🚀" },
+      // August
+      '08-06': { fact: "On this day in 1991, the World Wide Web went public", ending: "What started as a project became the backbone of modern life. Build for impact! 🌐" },
+      '08-12': { fact: "On this day in 1981, IBM introduced the Personal Computer", ending: "The PC revolution started here. Every revolution needs a spark! 💻" },
+      '08-19': { fact: "On this day in 2004, Google went public at $85/share", ending: "From Stanford dorm to trillion-dollar company. Start scrappy! 🔍" },
+      // September
+      '09-02': { fact: "On this day in 1998, Google was founded in a garage", ending: "A search engine from a garage now organizes the world's information. Think big! 🔎" },
+      '09-09': { fact: "On this day in 2014, Apple Watch was announced", ending: "Wearable tech went mainstream. What's the next frontier? ⌚" },
+      '09-12': { fact: "On this day in 1958, Jack Kilby demonstrated the first integrated circuit", ending: "One chip sparked the entire computing revolution. Small can be mighty! 🔬" },
+      '09-28': { fact: "On this day in 1928, Alexander Fleming discovered penicillin by accident", ending: "Accidents can lead to breakthroughs. Stay observant! 🔬" },
+      // October
+      '10-04': { fact: "On this day in 1957, Sputnik 1 became the first artificial satellite", ending: "The space age began with a beep. What signal will you send? 🛰️" },
+      '10-06': { fact: "On this day in 2010, Instagram was launched", ending: "Simple ideas executed well can reach billions. Keep it simple! 📷" },
+      '10-23': { fact: "On this day in 2001, Apple launched the iPod", ending: "1,000 songs in your pocket changed music forever. Reimagine the ordinary! 🎵" },
+      '10-29': { fact: "On this day in 1969, the first ARPANET message was sent", ending: "That first message was 'LO' (it crashed). Even the internet had bugs! 🌐" },
+      // November
+      '11-10': { fact: "On this day in 1983, Microsoft Word was released", ending: "The tool billions use to write started here. Build for users! 📝" },
+      '11-12': { fact: "On this day in 1990, Tim Berners-Lee published a formal proposal for the Web", ending: "One proposal connected the world. Documentation matters! 📄" },
+      '11-18': { fact: "On this day in 1928, Mickey Mouse debuted in Steamboat Willie", ending: "A mouse built an entertainment empire. Imagination wins! 🐭" },
+      '11-22': { fact: "On this day in 2005, the Xbox 360 was released", ending: "Gaming went mainstream. Entertainment evolves — so should you! 🎮" },
+      // December
+      '12-03': { fact: "On this day in 1992, the first SMS text message was sent", ending: "'Merry Christmas' changed communication forever. Short and sweet wins! 💬" },
+      '12-17': { fact: "On this day in 1903, the Wright Brothers achieved first powered flight (12 seconds)", ending: "12 seconds changed human history. Every second counts! ✈️" },
+      '12-21': { fact: "On this day in 2015, SpaceX landed its first rocket successfully", ending: "Failure after failure, then success. Never give up! 🚀" },
+      '12-25': { fact: "On this day in 1990, Tim Berners-Lee achieved the first Web communication", ending: "A Christmas gift to humanity — the connected world! 🎄" },
+    };
 
-    // Pick a random fun fact based on the day
-    const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
-    const todaysFact = funFacts[dayOfYear % funFacts.length];
+    // Get today's date key (MM-DD format)
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayKey = `${month}-${day}`;
+
+    // Get today's fact, or use a fallback
+    const todaysFact = historicalEvents[todayKey] || {
+      fact: `On this day, countless innovations were made by people who just started`,
+      ending: "Today is perfect to add your own achievement to history! 🌟"
+    };
 
     // Build a comprehensive welcome message
     let content = `Hey ${userName}! 🤖 I'm Abeto's Task Companion, your best help to make your time efficient and be productive.\n\n`;
-    content += `**Here's what I'm seeing:**\n\n`;
 
-    // Summary stats
-    content += `📊 **${activeProjects.length} active project${activeProjects.length !== 1 ? 's' : ''}** with **${totalTasks.length} task${totalTasks.length !== 1 ? 's' : ''}**`;
-    if (notStartedTasks.length > 0) {
-      content += ` — ${notStartedTasks.length} not started yet`;
+    // PERSONAL STATS (if user is identified)
+    if (userId && myActiveTasks.length > 0) {
+      content += `**Your Tasks:**\n`;
+      content += `📋 You have **${myActiveTasks.length} task${myActiveTasks.length !== 1 ? 's' : ''}** assigned to you`;
+      if (myInProgress.length > 0) {
+        content += ` — ${myInProgress.length} in progress`;
+      }
+      content += '\n';
+
+      // Personal issues
+      if (myOverdue.length > 0) {
+        content += `🚨 **${myOverdue.length} of your task${myOverdue.length !== 1 ? 's are' : ' is'} overdue!**\n`;
+      }
+      if (myBlocked.length > 0) {
+        content += `⚠️ **${myBlocked.length} of your task${myBlocked.length !== 1 ? 's are' : ' is'} blocked**\n`;
+      }
+      if (myHighAIPotential.length > 0) {
+        content += `🤖 **${myHighAIPotential.length} of your task${myHighAIPotential.length !== 1 ? 's' : ''} can be accelerated with AI!**\n`;
+      }
+      content += '\n';
     }
-    content += '\n\n';
 
-    // Issues section
-    const issues: string[] = [];
+    // TEAM OVERVIEW
+    content += `**Team Overview:**\n`;
+    content += `📊 **${activeProjects.length} active project${activeProjects.length !== 1 ? 's' : ''}** with **${totalTasks.length} total task${totalTasks.length !== 1 ? 's' : ''}**\n`;
 
-    if (overdueProjects.length > 0) {
-      issues.push(`🚨 **${overdueProjects.length} project${overdueProjects.length !== 1 ? 's' : ''} delayed** — delivery date passed`);
-    }
+    // Team issues
+    const teamIssues: string[] = [];
 
     if (blockedTasks.length > 0) {
-      issues.push(`⚠️ **${blockedTasks.length} task${blockedTasks.length !== 1 ? 's' : ''} blocked** — waiting on dependencies`);
-    }
-
-    if (highAIPotentialTasks.length > 0) {
-      issues.push(`🤖 **${highAIPotentialTasks.length} task${highAIPotentialTasks.length !== 1 ? 's' : ''} can be accelerated with AI** — don't wait!`);
+      teamIssues.push(`⚠️ ${blockedTasks.length} task${blockedTasks.length !== 1 ? 's' : ''} blocked across the team`);
     }
 
     if (projectsNeedingReview.length > 0) {
-      issues.push(`📋 **${projectsNeedingReview.length} project${projectsNeedingReview.length !== 1 ? 's' : ''} pending your review** — [Start reviewing →](/reviews)`);
+      teamIssues.push(`📋 ${projectsNeedingReview.length} project${projectsNeedingReview.length !== 1 ? 's' : ''} pending review — [Start reviewing →](/reviews)`);
     }
 
-    if (issues.length > 0) {
-      content += issues.join('\n');
-      content += '\n\n';
-    } else {
-      content += `✨ **All clear!** No blockers or urgent items right now.\n\n`;
+    if (teamIssues.length > 0) {
+      content += teamIssues.join('\n');
+      content += '\n';
     }
+    content += '\n';
 
-    // Fun fact section
+    // Fun fact section with REAL date
     content += `---\n💡 *${todaysFact.fact}*\n*${todaysFact.ending}*\n\n`;
 
     // Footer with Slack reminder
@@ -162,7 +237,7 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
       timestamp: new Date(),
     };
     setMessages([welcomeMessage]);
-  }, [userName, tasks, projects]);
+  }, [userName, userId, tasks, projects]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
