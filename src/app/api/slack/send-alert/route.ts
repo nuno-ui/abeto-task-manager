@@ -16,9 +16,20 @@ function getSupabaseClient(): SupabaseClient {
 
 // Send a message to Slack
 async function sendSlackMessage(channel: string, text: string, blocks?: unknown[]) {
-  const botToken = process.env.SLACK_BOT_TOKEN;
+  // Try environment variable first, then database
+  let botToken = process.env.SLACK_BOT_TOKEN;
+
   if (!botToken) {
-    throw new Error('SLACK_BOT_TOKEN not configured');
+    const { data: settings } = await getSupabaseClient()
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'slack_bot_token')
+      .single();
+    botToken = settings?.value;
+  }
+
+  if (!botToken) {
+    throw new Error('SLACK_BOT_TOKEN not configured in environment or database');
   }
 
   const payload: { channel: string; text: string; blocks?: unknown[] } = {
