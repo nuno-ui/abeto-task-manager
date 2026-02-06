@@ -19,6 +19,8 @@ interface SlackEvent {
     user?: string;
     channel?: string;
     ts?: string;
+    bot_id?: string;
+    subtype?: string;
   };
   challenge?: string;
 }
@@ -248,36 +250,70 @@ async function sendSlackResponse(channel: string, text: string) {
   }
 }
 
+// Process message asynchronously (fire and forget)
+async function processSlackMessage(channel: string, cleanMessage: string) {
+  try {
+    console.log(`Processing Slack message: "${cleanMessage}" in channel ${channel}`);
+
+    // Fetch current tasks and projects
+    const { tasks, projects } = await fetchTasksAndProjects();
+    console.log(`Fetched ${tasks.length} tasks and ${projects.length} projects`);
+
+    // Generate AI response
+    const aiResponse = await generateAIResponse(cleanMessage, tasks, projects);
+    console.log(`Generated AI response: ${aiResponse.substring(0, 100)}...`);
+
+    // Send response using Slack Web API
+    await sendSlackResponse(channel, aiResponse);
+    console.log('Slack response sent successfully');
+  } catch (error) {
+    console.error('Error processing Slack message:', error);
+    // Try to send an error message to the channel
+    try {
+      await sendSlackResponse(channel, 'Sorry, I encountered an error processing your request. Please try again.');
+    } catch (sendError) {
+      console.error('Failed to send error message to Slack:', sendError);
+    }
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body: SlackEvent = await request.json();
+    console.log('Received Slack event:', JSON.stringify(body, null, 2));
 
     // Handle Slack URL verification challenge
     if (body.type === 'url_verification') {
+      console.log('Handling URL verification challenge');
       return handleVerification(body);
     }
 
     // Handle event callbacks
     if (body.type === 'event_callback' && body.event) {
       const event = body.event;
+      console.log('Event type:', event.type, 'User:', event.user, 'Channel:', event.channel);
+
+      // Ignore bot messages to prevent loops
+      if (event.bot_id || event.subtype === 'bot_message') {
+        console.log('Ignoring bot message');
+        return NextResponse.json({ ok: true });
+      }
 
       // Only respond to app mentions or direct messages
       if (event.type === 'app_mention' || event.type === 'message') {
         const message = event.text || '';
+        console.log('Message text:', message);
 
         // Remove bot mention from message
         const cleanMessage = message.replace(/<@[A-Z0-9]+>/g, '').trim();
+        console.log('Clean message:', cleanMessage);
 
         if (cleanMessage && event.channel) {
-          // Fetch current tasks and projects
-          const { tasks, projects } = await fetchTasksAndProjects();
+          // IMPORTANT: Respond to Slack immediately to prevent retries (3s timeout)
+          // Process the message asynchronously
+          processSlackMessage(event.channel, cleanMessage);
 
-          // Generate AI response
-          const aiResponse = await generateAIResponse(cleanMessage, tasks, projects);
-
-          // Send response using Slack Web API
-          await sendSlackResponse(event.channel, aiResponse);
-
+          // Return immediately - Slack requires response within 3 seconds
           return NextResponse.json({ ok: true });
         }
       }
