@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Header } from '@/components/layout/Header';
 import { ReviewerIdentification } from '@/components/reviews/ReviewerIdentification';
 import { ReviewProgress } from '@/components/reviews/ReviewProgress';
 import { ReviewQuestionCard } from '@/components/reviews/ReviewQuestionCard';
@@ -804,11 +803,8 @@ export default function ReviewsPage() {
   // Show auth loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen">
-        <Header title="Project Reviews" />
-        <div className="flex items-center justify-center p-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
       </div>
     );
   }
@@ -816,14 +812,11 @@ export default function ReviewsPage() {
   // Redirect if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen">
-        <Header title="Project Reviews" />
-        <div className="flex flex-col items-center justify-center p-12 gap-4">
-          <p className="text-zinc-400">Please sign in to access the review system.</p>
-          <a href="/login" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Sign In
-          </a>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center p-12 gap-4">
+        <p className="text-zinc-400">Please sign in to access the review system.</p>
+        <a href="/login" className="px-4 py-2 bg-amber-500 text-zinc-900 font-medium rounded-lg hover:bg-amber-400">
+          Sign In
+        </a>
       </div>
     );
   }
@@ -831,16 +824,13 @@ export default function ReviewsPage() {
   // Show identification screen if no area selected
   if (!reviewerArea) {
     return (
-      <div className="min-h-screen">
-        <Header title="Project Reviews" />
-        <div className="p-6 max-w-4xl mx-auto">
-          <ReviewerIdentification
-            currentArea={reviewerArea}
-            onSelectArea={handleSelectArea}
-            preferredArea={preferredArea}
-            userName={user?.full_name || user?.email}
-          />
-        </div>
+      <div className="min-h-screen p-6 max-w-4xl mx-auto">
+        <ReviewerIdentification
+          currentArea={reviewerArea}
+          onSelectArea={handleSelectArea}
+          preferredArea={preferredArea}
+          userName={user?.full_name || user?.email}
+        />
       </div>
     );
   }
@@ -848,13 +838,10 @@ export default function ReviewsPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen">
-        <Header title="Project Reviews" />
-        <div className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-40 bg-zinc-900 rounded-xl" />
-            <div className="h-96 bg-zinc-900 rounded-xl" />
-          </div>
+      <div className="min-h-screen p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-40 bg-zinc-900 rounded-xl" />
+          <div className="h-96 bg-zinc-900 rounded-xl" />
         </div>
       </div>
     );
@@ -863,32 +850,29 @@ export default function ReviewsPage() {
   // All done state
   if (pendingProjects.length === 0) {
     return (
-      <div className="min-h-screen">
-        <Header title="Project Reviews" />
-        <div className="p-6 max-w-4xl mx-auto">
-          <ReviewProgress
-            totalProjects={stats.totalProjects}
-            reviewedProjects={stats.reviewedProjects}
-            feedbackCount={feedbackCount}
-            commentCount={commentCount}
-            streak={streak}
-          />
-          <div className="mt-8 text-center py-16 bg-zinc-900 rounded-xl border border-zinc-800">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">All Caught Up!</h2>
-            <p className="text-zinc-400 mb-6">
-              You&apos;ve reviewed all projects from the {reviewerArea.replace('_', ' / ')} perspective.
-            </p>
-            <button
-              onClick={() => {
-                setReviewerArea(null);
-                localStorage.removeItem('reviewerArea');
-              }}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              Review from Another Perspective
-            </button>
-          </div>
+      <div className="min-h-screen p-6 max-w-4xl mx-auto">
+        <ReviewProgress
+          totalProjects={stats.totalProjects}
+          reviewedProjects={stats.reviewedProjects}
+          feedbackCount={feedbackCount}
+          commentCount={commentCount}
+          streak={streak}
+        />
+        <div className="mt-8 text-center py-16 bg-zinc-900 rounded-xl border border-zinc-800">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">All Caught Up!</h2>
+          <p className="text-zinc-400 mb-6">
+            You&apos;ve reviewed all projects from the {reviewerArea.replace('_', ' / ')} perspective.
+          </p>
+          <button
+            onClick={() => {
+              setReviewerArea(null);
+              localStorage.removeItem('reviewerArea');
+            }}
+            className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-lg transition-colors"
+          >
+            Review from Another Perspective
+          </button>
         </div>
       </div>
     );
@@ -896,8 +880,6 @@ export default function ReviewsPage() {
 
   return (
     <div className="min-h-screen">
-      <Header title="Project Reviews" />
-
       <div className="p-6 space-y-6">
         {/* Progress with gamification */}
         <ReviewProgress
@@ -924,22 +906,33 @@ export default function ReviewsPage() {
         )}
 
         {/* Area indicator and switch */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800 rounded-lg px-4 py-3">
           <div className="flex items-center gap-3">
             <span className="text-sm text-zinc-400">Reviewing as:</span>
-            <span className="px-3 py-1 bg-zinc-800 text-white rounded-full text-sm font-medium capitalize">
+            <span className="px-3 py-1.5 bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-full text-sm font-medium capitalize">
               {reviewerArea.replace('_', ' / ')}
             </span>
           </div>
-          <button
-            onClick={() => {
-              setReviewerArea(null);
-              localStorage.removeItem('reviewerArea');
-            }}
-            className="text-sm text-zinc-400 hover:text-white transition-colors"
-          >
-            Switch perspective
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
+              title="Re-read intro & guidelines"
+            >
+              <Info className="w-4 h-4" />
+              <span className="hidden sm:inline">Help</span>
+            </button>
+            <button
+              onClick={() => {
+                setReviewerArea(null);
+                localStorage.removeItem('reviewerArea');
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Layers className="w-4 h-4" />
+              Switch Perspective
+            </button>
+          </div>
         </div>
 
         {/* Current Project Review Card */}
