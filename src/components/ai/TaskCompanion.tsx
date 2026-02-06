@@ -497,65 +497,26 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
   );
 }
 
-// Slack Setup Modal Component
+// Slack Info Modal Component - Shows how to use Slack (already connected)
 function SlackSetupModal({ onClose }: { onClose: () => void }) {
-  const [step, setStep] = useState(1);
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
-  const [webhookUrl, setWebhookUrl] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const handleTestWebhook = async () => {
-    if (!webhookUrl.trim() || !webhookUrl.startsWith('https://hooks.slack.com/')) {
-      setTestResult('error');
-      setErrorMessage('Please enter a valid Slack webhook URL (starts with https://hooks.slack.com/)');
-      return;
-    }
-
-    setIsTesting(true);
-    setTestResult(null);
-    setErrorMessage('');
-
-    try {
-      // Test the webhook through our API (to avoid CORS issues)
-      const response = await fetch('/api/slack/test-webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ webhookUrl }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setTestResult('success');
-        setStep(2);
-      } else {
-        setTestResult('error');
-        const errorMsg = data.error || 'Webhook test failed';
-        const details = data.details ? ` (${data.details})` : '';
-        setErrorMessage(`${errorMsg}${details}`);
-      }
-    } catch (err) {
-      setTestResult('error');
-      const errMsg = err instanceof Error ? err.message : 'Unknown error';
-      setErrorMessage(`Connection failed: ${errMsg}`);
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 rounded-xl border border-zinc-800 w-full max-w-lg overflow-hidden">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-[#4A154B] flex items-center justify-center">
               <Slack className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="font-semibold text-white">Connect to Slack</h2>
-              <p className="text-sm text-zinc-400">Get Task Companion in your workspace</p>
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-white">Abeto in Slack</h2>
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Connected
+                </span>
+              </div>
+              <p className="text-sm text-zinc-400">AI assistant at your fingertips</p>
             </div>
           </div>
           <button
@@ -567,180 +528,94 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          {step === 1 && (
-            <div className="space-y-4">
-              <div className="p-4 bg-zinc-800/50 rounded-lg">
-                <h3 className="font-medium text-white mb-2">What you'll get:</h3>
-                <ul className="space-y-2 text-sm text-zinc-300">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    AI-powered task assistance in Slack
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    Ask about tasks, projects, and deadlines
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    Get recommendations on what to work on
-                  </li>
-                </ul>
-              </div>
-
-              <div className="p-4 bg-amber-900/20 border border-amber-800/30 rounded-lg">
-                <h4 className="text-sm font-medium text-amber-300 mb-2 flex items-center gap-2">
-                  <Lightbulb className="w-4 h-4" />
-                  Setup Required
-                </h4>
-                <p className="text-sm text-amber-200/80">
-                  You'll need to create a Slack Incoming Webhook first. Follow the steps below.
-                </p>
-              </div>
-
-              <div className="p-4 bg-zinc-800/50 rounded-lg">
-                <h4 className="text-sm font-medium text-white mb-3">Step 1: Create Incoming Webhook</h4>
-                <ol className="space-y-2 text-sm text-zinc-400">
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">1</span>
-                    <span>Go to <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline">api.slack.com/apps</a> and create a new app</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">2</span>
-                    <span>Select <strong className="text-zinc-300">"From scratch"</strong>, name it "Task Companion"</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">3</span>
-                    <span>Go to <strong className="text-zinc-300">"Incoming Webhooks"</strong> → Turn it ON</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">4</span>
-                    <span>Click <strong className="text-zinc-300">"Add New Webhook to Workspace"</strong></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">5</span>
-                    <span>Choose a channel and copy the webhook URL</span>
-                  </li>
-                </ol>
-              </div>
-
-              <div className="p-4 bg-zinc-800/50 rounded-lg">
-                <h4 className="text-sm font-medium text-white mb-3">Step 2: Enable Two-Way Communication (Optional)</h4>
-                <p className="text-xs text-zinc-500 mb-2">To let Task Companion respond when @mentioned in Slack:</p>
-                <ol className="space-y-2 text-sm text-zinc-400">
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0">1</span>
-                    <span>In your app settings, go to <strong className="text-zinc-300">"Event Subscriptions"</strong></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0">2</span>
-                    <span>Turn <strong className="text-zinc-300">"Enable Events"</strong> ON</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0">3</span>
-                    <span>Set Request URL: <code className="bg-zinc-700 px-1 rounded text-xs">https://abeto-task-manager.vercel.app/api/slack/webhook</code></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0">4</span>
-                    <span>Under <strong className="text-zinc-300">"Subscribe to bot events"</strong>, add: <code className="bg-zinc-700 px-1 rounded text-xs">app_mention</code> and <code className="bg-zinc-700 px-1 rounded text-xs">message.im</code></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0">5</span>
-                    <span>Click <strong className="text-zinc-300">"Save Changes"</strong> then <strong className="text-zinc-300">"reinstall your app"</strong></span>
-                  </li>
-                </ol>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  Paste your Webhook URL here:
-                </label>
-                <input
-                  type="text"
-                  value={webhookUrl}
-                  onChange={(e) => {
-                    setWebhookUrl(e.target.value);
-                    setTestResult(null);
-                    setErrorMessage('');
-                  }}
-                  className={`w-full px-3 py-2 bg-zinc-800 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                    testResult === 'error' ? 'border-red-500' : 'border-zinc-700'
-                  }`}
-                  placeholder="https://hooks.slack.com/services/T.../B.../..."
-                />
-                {testResult === 'error' && (
-                  <p className="text-xs text-red-400 mt-1">{errorMessage}</p>
-                )}
-              </div>
-
-              <button
-                onClick={handleTestWebhook}
-                disabled={isTesting || !webhookUrl.trim()}
-                className="w-full py-3 bg-[#4A154B] hover:bg-[#3a1139] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                {isTesting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Testing connection...
-                  </>
-                ) : (
-                  <>
-                    <Slack className="w-4 h-4" />
-                    Test & Connect
-                  </>
-                )}
-              </button>
+        <div className="p-6 space-y-5">
+          {/* How to use */}
+          <div>
+            <h3 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-400" />
+              How to Use
+            </h3>
+            <div className="p-4 bg-violet-900/20 border border-violet-800/30 rounded-lg">
+              <p className="text-sm text-violet-200 mb-2">
+                Just mention <code className="px-1.5 py-0.5 bg-zinc-800 rounded text-violet-300 font-mono">@Abeto</code> in any channel and ask anything!
+              </p>
+              <p className="text-xs text-zinc-400">
+                The AI knows about your projects, tasks, and can help you prioritize work.
+              </p>
             </div>
-          )}
+          </div>
 
-          {step === 2 && (
-            <div className="space-y-4">
-              <div className="text-center py-4">
-                <div className="w-16 h-16 rounded-full bg-green-900/30 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-green-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Slack Connected! 🎉</h3>
-                <p className="text-zinc-400">
-                  Check your Slack channel for the confirmation message.
-                </p>
+          {/* Available Commands */}
+          <div>
+            <h3 className="text-sm font-medium text-zinc-300 mb-3">Available Commands</h3>
+            <div className="space-y-2">
+              <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Abeto help</code>
+                <span className="text-sm text-zinc-400">Show all available commands</span>
               </div>
-
-              <div className="p-4 bg-green-900/20 border border-green-800/30 rounded-lg">
-                <h4 className="text-sm font-medium text-green-300 mb-2 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Webhook Connected!
-                </h4>
-                <p className="text-sm text-green-200/80">
-                  Your webhook has been saved. If you also set up Event Subscriptions, you can now @mention Task Companion in Slack and it will respond!
-                </p>
+              <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Abeto my tasks</code>
+                <span className="text-sm text-zinc-400">See your assigned tasks and status</span>
               </div>
-
-              <div className="p-4 bg-zinc-800/50 rounded-lg">
-                <p className="text-sm text-zinc-300 mb-2">Try these commands in Slack:</p>
-                <ul className="space-y-1.5 text-sm text-zinc-400">
-                  <li className="flex items-center gap-2">
-                    <span className="text-violet-400">→</span>
-                    <code className="bg-zinc-700 px-1.5 py-0.5 rounded">@Task Companion what should I work on?</code>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-violet-400">→</span>
-                    <code className="bg-zinc-700 px-1.5 py-0.5 rounded">@Task Companion show blocked tasks</code>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-violet-400">→</span>
-                    <code className="bg-zinc-700 px-1.5 py-0.5 rounded">@Task Companion project status</code>
-                  </li>
-                </ul>
+              <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Abeto projects</code>
+                <span className="text-sm text-zinc-400">List active projects and progress</span>
               </div>
-
-              <button
-                onClick={onClose}
-                className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg transition-colors"
-              >
-                Done
-              </button>
+              <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Abeto summary</code>
+                <span className="text-sm text-zinc-400">Quick overview of what needs attention</span>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded shrink-0">@Abeto blocked</code>
+                <span className="text-sm text-zinc-400">Show blocked tasks that need help</span>
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Example questions */}
+          <div>
+            <h3 className="text-sm font-medium text-zinc-300 mb-3">Or Ask Anything</h3>
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <div className="space-y-2 text-sm text-zinc-300">
+                <p>• &quot;What should I work on today?&quot;</p>
+                <p>• &quot;What&apos;s the status of the Automation project?&quot;</p>
+                <p>• &quot;Show me overdue tasks&quot;</p>
+                <p>• &quot;Which tasks have high AI potential?&quot;</p>
+                <p>• &quot;Summarize this week&apos;s progress&quot;</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Automatic notifications */}
+          <div>
+            <h3 className="text-sm font-medium text-zinc-300 mb-3">Automatic Notifications</h3>
+            <p className="text-xs text-zinc-500 mb-2">You&apos;ll receive Slack messages when:</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-2 p-2 bg-zinc-800/30 rounded-lg">
+                <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                <span className="text-xs text-zinc-300">New task assigned</span>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-zinc-800/30 rounded-lg">
+                <Clock className="w-3.5 h-3.5 text-yellow-400" />
+                <span className="text-xs text-zinc-300">Deadline approaching</span>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-zinc-800/30 rounded-lg">
+                <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                <span className="text-xs text-zinc-300">Task blocked</span>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-zinc-800/30 rounded-lg">
+                <Star className="w-3.5 h-3.5 text-violet-400" />
+                <span className="text-xs text-zinc-300">Review needed</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full py-3 bg-[#4A154B] hover:bg-[#3a1139] text-white font-medium rounded-lg transition-colors"
+          >
+            Got it!
+          </button>
         </div>
       </div>
     </div>

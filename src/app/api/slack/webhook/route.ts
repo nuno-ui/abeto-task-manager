@@ -381,6 +381,270 @@ ${projects.slice(0, 20).map(p => `
   return textContent?.type === 'text' ? textContent.text : 'Sorry, I could not generate a response.';
 }
 
+// Handle specific known commands with structured responses (no AI needed)
+async function handleKnownCommand(
+  command: string,
+  tasks: TaskSummary[],
+  projects: ProjectSummary[],
+  userInfo?: SlackUserInfo
+): Promise<string | null> {
+  const now = new Date();
+  const userName = userInfo?.abetoUser?.full_name || userInfo?.slackUserName || 'there';
+  const userId = userInfo?.abetoUser?.id;
+  const userTeam = userInfo?.abetoUser?.team_name;
+
+  // Normalize command (lowercase, trim)
+  const cmd = command.toLowerCase().trim();
+
+  // === HELP COMMAND ===
+  if (cmd === 'help' || cmd === '?' || cmd === 'commands') {
+    return `👋 *Hi ${userName}!* Here's what I can help you with:
+
+*📋 Task Commands*
+• \`@Abeto my tasks\` - See your assigned tasks
+• \`@Abeto blocked\` - Show blocked tasks needing attention
+• \`@Abeto overdue\` - Show overdue tasks
+
+*📊 Project Commands*
+• \`@Abeto projects\` - List all active projects
+• \`@Abeto summary\` - Get a quick overview of everything
+
+*💬 Ask Me Anything*
+• \`@Abeto what should I work on?\`
+• \`@Abeto status of [project name]\`
+• \`@Abeto how many tasks are in progress?\`
+
+Just mention me and ask! 🤖`;
+  }
+
+  // === MY TASKS COMMAND ===
+  if (cmd === 'my tasks' || cmd === 'mytasks' || cmd === 'tasks' || cmd === 'my work') {
+    if (!userId) {
+      return `❌ Sorry ${userName}, I couldn't find your user account in Abeto. Make sure your Slack email matches your Abeto account.`;
+    }
+
+    const myTasks = tasks.filter(t => t.assignee_id === userId && t.status !== 'completed');
+
+    if (myTasks.length === 0) {
+      return `✨ *No active tasks assigned to you, ${userName}!*\n\nYou're all caught up, or tasks may be assigned to your team rather than you personally.`;
+    }
+
+    const inProgress = myTasks.filter(t => t.status === 'in_progress');
+    const notStarted = myTasks.filter(t => t.status === 'not_started');
+    const blocked = myTasks.filter(t => t.status === 'blocked');
+    const overdue = myTasks.filter(t => t.due_date && new Date(t.due_date) < now);
+
+    let response = `📋 *${userName}'s Tasks* (${myTasks.length} active)\n\n`;
+
+    if (overdue.length > 0) {
+      response += `🚨 *OVERDUE (${overdue.length})*\n`;
+      overdue.slice(0, 3).forEach(t => {
+        response += `• _${t.title}_ - ${t.project?.title || 'No project'}\n`;
+      });
+      if (overdue.length > 3) response += `  _...and ${overdue.length - 3} more_\n`;
+      response += '\n';
+    }
+
+    if (blocked.length > 0) {
+      response += `⚠️ *BLOCKED (${blocked.length})*\n`;
+      blocked.slice(0, 3).forEach(t => {
+        response += `• _${t.title}_ - ${t.project?.title || 'No project'}\n`;
+      });
+      if (blocked.length > 3) response += `  _...and ${blocked.length - 3} more_\n`;
+      response += '\n';
+    }
+
+    if (inProgress.length > 0) {
+      response += `🔄 *IN PROGRESS (${inProgress.length})*\n`;
+      inProgress.slice(0, 5).forEach(t => {
+        const dueStr = t.due_date ? ` (due ${new Date(t.due_date).toLocaleDateString()})` : '';
+        response += `• _${t.title}_${dueStr}\n`;
+      });
+      if (inProgress.length > 5) response += `  _...and ${inProgress.length - 5} more_\n`;
+      response += '\n';
+    }
+
+    if (notStarted.length > 0) {
+      response += `📝 *NOT STARTED (${notStarted.length})*\n`;
+      notStarted.slice(0, 5).forEach(t => {
+        response += `• _${t.title}_\n`;
+      });
+      if (notStarted.length > 5) response += `  _...and ${notStarted.length - 5} more_\n`;
+    }
+
+    return response.trim();
+  }
+
+  // === BLOCKED COMMAND ===
+  if (cmd === 'blocked' || cmd === 'blockers') {
+    let blockedTasks = tasks.filter(t => t.status === 'blocked');
+
+    // If user is in system, prioritize their team's blocked tasks
+    if (userTeam) {
+      const teamBlocked = blockedTasks.filter(t => t.owner_team === userTeam);
+      const otherBlocked = blockedTasks.filter(t => t.owner_team !== userTeam);
+      blockedTasks = [...teamBlocked, ...otherBlocked];
+    }
+
+    if (blockedTasks.length === 0) {
+      return `✅ *No blocked tasks!*\n\nGreat news - nothing is currently blocked across all projects.`;
+    }
+
+    let response = `⚠️ *Blocked Tasks* (${blockedTasks.length} total)\n\n`;
+
+    blockedTasks.slice(0, 10).forEach(t => {
+      const teamStr = t.owner_team ? ` [${t.owner_team}]` : '';
+      const assigneeStr = t.assignee_name ? ` → ${t.assignee_name}` : '';
+      response += `• *${t.title}*${teamStr}${assigneeStr}\n`;
+      response += `  _${t.project?.title || 'No project'}_ | Priority: ${t.priority}\n`;
+    });
+
+    if (blockedTasks.length > 10) {
+      response += `\n_...and ${blockedTasks.length - 10} more blocked tasks_`;
+    }
+
+    return response;
+  }
+
+  // === OVERDUE COMMAND ===
+  if (cmd === 'overdue' || cmd === 'late' || cmd === 'past due') {
+    const overdueTasks = tasks.filter(t => {
+      if (!t.due_date || t.status === 'completed') return false;
+      return new Date(t.due_date) < now;
+    });
+
+    if (overdueTasks.length === 0) {
+      return `✅ *No overdue tasks!*\n\nEverything is on schedule. 🎉`;
+    }
+
+    let response = `🚨 *Overdue Tasks* (${overdueTasks.length} total)\n\n`;
+
+    overdueTasks.slice(0, 10).forEach(t => {
+      const daysOverdue = Math.floor((now.getTime() - new Date(t.due_date!).getTime()) / (1000 * 60 * 60 * 24));
+      const assigneeStr = t.assignee_name ? ` → ${t.assignee_name}` : ' (unassigned)';
+      response += `• *${t.title}*${assigneeStr}\n`;
+      response += `  _${t.project?.title || 'No project'}_ | ${daysOverdue} day${daysOverdue === 1 ? '' : 's'} overdue\n`;
+    });
+
+    if (overdueTasks.length > 10) {
+      response += `\n_...and ${overdueTasks.length - 10} more overdue tasks_`;
+    }
+
+    return response;
+  }
+
+  // === PROJECTS COMMAND ===
+  if (cmd === 'projects' || cmd === 'project list' || cmd === 'all projects') {
+    const activeProjects = projects.filter(p =>
+      p.status === 'in_progress' || p.status === 'planning' || p.status === 'not_started'
+    );
+
+    if (activeProjects.length === 0) {
+      return `📊 *No active projects found*\n\nAll projects may be completed or on hold.`;
+    }
+
+    let response = `📊 *Active Projects* (${activeProjects.length} total)\n\n`;
+
+    // Group by status
+    const inProgress = activeProjects.filter(p => p.status === 'in_progress');
+    const planning = activeProjects.filter(p => p.status === 'planning');
+    const notStarted = activeProjects.filter(p => p.status === 'not_started');
+
+    if (inProgress.length > 0) {
+      response += `*🔄 In Progress (${inProgress.length})*\n`;
+      inProgress.slice(0, 5).forEach(p => {
+        const progressBar = getProgressBar(p.progress_percentage);
+        response += `• *${p.title}* ${progressBar} ${p.progress_percentage}%\n`;
+      });
+      if (inProgress.length > 5) response += `  _...and ${inProgress.length - 5} more_\n`;
+      response += '\n';
+    }
+
+    if (planning.length > 0) {
+      response += `*📝 Planning (${planning.length})*\n`;
+      planning.slice(0, 3).forEach(p => {
+        response += `• _${p.title}_ (${p.priority} priority)\n`;
+      });
+      if (planning.length > 3) response += `  _...and ${planning.length - 3} more_\n`;
+      response += '\n';
+    }
+
+    if (notStarted.length > 0) {
+      response += `*⏳ Not Started (${notStarted.length})*\n`;
+      notStarted.slice(0, 3).forEach(p => {
+        response += `• _${p.title}_\n`;
+      });
+      if (notStarted.length > 3) response += `  _...and ${notStarted.length - 3} more_\n`;
+    }
+
+    return response.trim();
+  }
+
+  // === SUMMARY COMMAND ===
+  if (cmd === 'summary' || cmd === 'status' || cmd === 'overview' || cmd === 'dashboard') {
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.status === 'completed').length;
+    const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
+    const blockedTasks = tasks.filter(t => t.status === 'blocked').length;
+    const overdueTasks = tasks.filter(t => {
+      if (!t.due_date || t.status === 'completed') return false;
+      return new Date(t.due_date) < now;
+    }).length;
+
+    const activeProjects = projects.filter(p =>
+      p.status === 'in_progress' || p.status === 'planning'
+    ).length;
+    const avgProgress = projects.length > 0
+      ? Math.round(projects.reduce((sum, p) => sum + p.progress_percentage, 0) / projects.length)
+      : 0;
+
+    let response = `📊 *Abeto Summary*\n\n`;
+    response += `*Projects*\n`;
+    response += `• Active: ${activeProjects} projects\n`;
+    response += `• Average progress: ${avgProgress}%\n\n`;
+
+    response += `*Tasks*\n`;
+    response += `• Total: ${totalTasks} tasks\n`;
+    response += `• In progress: ${inProgressTasks}\n`;
+    response += `• Completed: ${completedTasks}\n`;
+
+    if (blockedTasks > 0) {
+      response += `• ⚠️ Blocked: ${blockedTasks}\n`;
+    }
+    if (overdueTasks > 0) {
+      response += `• 🚨 Overdue: ${overdueTasks}\n`;
+    }
+
+    // User-specific summary if logged in
+    if (userId) {
+      const myTasks = tasks.filter(t => t.assignee_id === userId && t.status !== 'completed');
+      const myInProgress = myTasks.filter(t => t.status === 'in_progress').length;
+      const myBlocked = myTasks.filter(t => t.status === 'blocked').length;
+
+      response += `\n*Your Tasks, ${userName}*\n`;
+      response += `• Active: ${myTasks.length} tasks\n`;
+      response += `• In progress: ${myInProgress}\n`;
+      if (myBlocked > 0) {
+        response += `• ⚠️ Blocked: ${myBlocked}\n`;
+      }
+    }
+
+    response += `\n_Need details? Try \`@Abeto my tasks\` or \`@Abeto projects\`_`;
+
+    return response;
+  }
+
+  // Command not recognized - return null to let AI handle it
+  return null;
+}
+
+// Helper function for progress bar
+function getProgressBar(percentage: number): string {
+  const filled = Math.round(percentage / 10);
+  const empty = 10 - filled;
+  return '▓'.repeat(filled) + '░'.repeat(empty);
+}
+
 // Send response back to Slack using the Web API (chat.postMessage)
 async function sendSlackResponse(channel: string, text: string) {
   try {
@@ -493,12 +757,22 @@ export async function POST(request: Request) {
             const { tasks, projects } = await fetchTasksAndProjects();
             console.log(`Fetched ${tasks.length} tasks and ${projects.length} projects`);
 
-            // Generate AI response with user context
-            const aiResponse = await generateAIResponse(cleanMessage, tasks, projects, userInfo);
-            console.log(`Generated AI response: ${aiResponse.substring(0, 100)}...`);
+            // First, try to handle known commands (no AI needed)
+            const knownCommandResponse = await handleKnownCommand(cleanMessage, tasks, projects, userInfo);
+
+            let responseText: string;
+            if (knownCommandResponse) {
+              console.log(`Handled as known command: ${cleanMessage}`);
+              responseText = knownCommandResponse;
+            } else {
+              // Fall back to AI for complex/unknown requests
+              console.log(`Using AI for: ${cleanMessage}`);
+              responseText = await generateAIResponse(cleanMessage, tasks, projects, userInfo);
+              console.log(`Generated AI response: ${responseText.substring(0, 100)}...`);
+            }
 
             // Send response using Slack Web API
-            await sendSlackResponse(event.channel, aiResponse);
+            await sendSlackResponse(event.channel, responseText);
             console.log('Slack response sent successfully');
           } catch (processError) {
             console.error('Error processing Slack message:', processError);

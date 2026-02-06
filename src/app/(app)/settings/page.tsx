@@ -1330,6 +1330,56 @@ function SettingsPageContent() {
                       </div>
                     </div>
 
+                    {/* Slack App Setup Guide (for developers) */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-purple-500/20 rounded-lg">
+                          <Slack className="w-6 h-6 text-purple-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">Slack App Setup</h3>
+                          <p className="text-sm text-zinc-400">Configuration for the Abeto Slack integration</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                          <h4 className="text-sm font-medium text-zinc-300 mb-2">1. Slack App Configuration</h4>
+                          <p className="text-sm text-zinc-400 mb-2">Create app at <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">api.slack.com/apps</a></p>
+                          <div className="text-xs text-zinc-500 space-y-1">
+                            <p>• App Manifest: Use <code className="px-1 py-0.5 bg-zinc-700 rounded">@Abeto</code> as bot name</p>
+                            <p>• Scopes: <code className="px-1 py-0.5 bg-zinc-700 rounded">app_mentions:read</code>, <code className="px-1 py-0.5 bg-zinc-700 rounded">chat:write</code>, <code className="px-1 py-0.5 bg-zinc-700 rounded">users:read</code></p>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                          <h4 className="text-sm font-medium text-zinc-300 mb-2">2. Environment Variables</h4>
+                          <div className="font-mono text-xs text-zinc-400 space-y-1">
+                            <p><span className="text-purple-400">SLACK_BOT_TOKEN</span>=xoxb-...</p>
+                            <p><span className="text-purple-400">SLACK_SIGNING_SECRET</span>=...</p>
+                            <p><span className="text-purple-400">SLACK_BOT_USER_ID</span>=U...</p>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                          <h4 className="text-sm font-medium text-zinc-300 mb-2">3. Event Subscriptions</h4>
+                          <p className="text-sm text-zinc-400 mb-2">Webhook URL:</p>
+                          <div className="flex items-center gap-2">
+                            <code className="flex-1 px-3 py-2 bg-zinc-700 rounded text-xs text-zinc-300 truncate">
+                              https://abeto.vercel.app/api/slack/webhook
+                            </code>
+                            <button
+                              onClick={() => copyToClipboard('https://abeto.vercel.app/api/slack/webhook', 'webhook')}
+                              className="p-2 text-zinc-400 hover:text-white"
+                            >
+                              {copied === 'webhook' ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          <p className="text-xs text-zinc-500 mt-2">Subscribe to: <code className="px-1 py-0.5 bg-zinc-700 rounded">app_mention</code> event</p>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Quick SQL Queries */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                       <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
