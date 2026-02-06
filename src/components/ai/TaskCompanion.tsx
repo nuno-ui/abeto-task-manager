@@ -10,19 +10,11 @@ import {
   CheckCircle2,
   ArrowRight,
   Loader2,
-  MessageSquare,
-  Lightbulb,
-  Target,
-  Calendar,
-  TrendingUp,
   Slack,
-  Settings,
   X,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
   Zap,
   Star,
+  Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Task, Project } from '@/types/database';
@@ -51,12 +43,6 @@ interface TaskAlert {
   href?: string;
 }
 
-interface TaskRecommendation {
-  task: Task;
-  reason: string;
-  priority: 'high' | 'medium' | 'low';
-}
-
 interface TaskCompanionProps {
   tasks: Task[];
   projects: Project[];
@@ -70,16 +56,13 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
   const [isLoading, setIsLoading] = useState(false);
   const [showSlackSetup, setShowSlackSetup] = useState(false);
   const [alerts, setAlerts] = useState<TaskAlert[]>([]);
-  const [recommendations, setRecommendations] = useState<TaskRecommendation[]>([]);
-  const [showAlerts, setShowAlerts] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Calculate alerts and recommendations on mount and when tasks change
+  // Calculate alerts on mount and when tasks change
   useEffect(() => {
     calculateAlerts();
-    calculateRecommendations();
-  }, [tasks]);
+  }, [tasks, projects]);
 
   // Generate dynamic welcome message based on current state
   useEffect(() => {
@@ -209,71 +192,6 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
     });
 
     setAlerts(newAlerts.slice(0, 6)); // Show top 6 alerts
-  };
-
-  const calculateRecommendations = () => {
-    const newRecommendations: TaskRecommendation[] = [];
-
-    // Filter to relevant tasks (not completed, not cancelled)
-    const activeTasks = tasks.filter(
-      (t) => t.status !== 'completed' && t.status !== 'cancelled'
-    );
-
-    // Prioritize critical path tasks
-    activeTasks
-      .filter((t) => t.is_critical_path && t.status === 'not_started')
-      .slice(0, 2)
-      .forEach((task) => {
-        newRecommendations.push({
-          task,
-          reason: 'Critical path - start this to unblock other work',
-          priority: 'high',
-        });
-      });
-
-    // Prioritize foundational tasks
-    activeTasks
-      .filter((t) => t.is_foundational && t.status === 'not_started')
-      .slice(0, 2)
-      .forEach((task) => {
-        if (!newRecommendations.find((r) => r.task.id === task.id)) {
-          newRecommendations.push({
-            task,
-            reason: 'Foundational - builds base for other tasks',
-            priority: 'high',
-          });
-        }
-      });
-
-    // Add high AI potential tasks
-    activeTasks
-      .filter((t) => t.ai_potential === 'high' && t.status === 'not_started')
-      .slice(0, 2)
-      .forEach((task) => {
-        if (!newRecommendations.find((r) => r.task.id === task.id)) {
-          newRecommendations.push({
-            task,
-            reason: 'High AI potential - can be accelerated with AI assistance',
-            priority: 'medium',
-          });
-        }
-      });
-
-    // Add in-progress tasks to continue
-    activeTasks
-      .filter((t) => t.status === 'in_progress')
-      .slice(0, 2)
-      .forEach((task) => {
-        if (!newRecommendations.find((r) => r.task.id === task.id)) {
-          newRecommendations.push({
-            task,
-            reason: 'In progress - continue to completion',
-            priority: 'medium',
-          });
-        }
-      });
-
-    setRecommendations(newRecommendations.slice(0, 5));
   };
 
   const handleSendMessage = async () => {
@@ -409,82 +327,57 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
   return (
     <div className="flex flex-col h-full bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-gradient-to-r from-violet-900/20 to-blue-900/20">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800 bg-gradient-to-r from-violet-900/20 to-blue-900/20">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
             <Bot className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="font-semibold text-white flex items-center gap-2">
-              Task Companion
-              <Sparkles className="w-4 h-4 text-violet-400" />
-            </h2>
-            <p className="text-xs text-zinc-400">Your AI-powered task assistant</p>
+            <h2 className="font-semibold text-white text-sm">Task Companion</h2>
+            <p className="text-xs text-zinc-500">AI assistant</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Slack Button - More visible */}
           <button
             onClick={() => setShowSlackSetup(true)}
-            className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-            title="Connect to Slack"
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#4A154B]/80 hover:bg-[#4A154B] text-white text-xs rounded-lg transition-colors"
           >
-            <Slack className="w-5 h-5" />
+            <Slack className="w-4 h-4" />
+            <span className="hidden sm:inline">Add to Slack</span>
           </button>
         </div>
       </div>
 
-      {/* Alerts Section */}
+      {/* Compact Alerts Bar - only shows count, clicking expands in chat */}
       {alerts.length > 0 && (
-        <div className="border-b border-zinc-800">
-          <button
-            onClick={() => setShowAlerts(!showAlerts)}
-            className="w-full flex items-center justify-between px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800/50 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-orange-400" />
-              <span className="font-medium">Alerts</span>
-              <span className="px-2 py-0.5 bg-orange-900/30 text-orange-400 text-xs rounded-full">
-                {alerts.length}
-              </span>
-            </div>
-            {showAlerts ? (
-              <ChevronUp className="w-4 h-4 text-zinc-500" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-zinc-500" />
+        <div className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 border-b border-zinc-800">
+          <span className="text-xs text-zinc-400">Quick alerts:</span>
+          <div className="flex items-center gap-1.5">
+            {alerts.slice(0, 4).map((alert, idx) => {
+              const href = alert.href
+                ? alert.href
+                : alert.task?.project
+                  ? `/projects/${alert.task.project.slug}`
+                  : alert.project
+                    ? `/projects/${alert.project.slug}`
+                    : '#';
+              return (
+                <Link
+                  key={idx}
+                  href={href}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${getAlertColor(alert.type)} hover:opacity-80 transition-opacity`}
+                  title={alert.task?.title || alert.project?.title || alert.message}
+                >
+                  {getAlertIcon(alert.type)}
+                  <span className="hidden sm:inline">{alert.type === 'review' ? 'Reviews' : alert.type}</span>
+                </Link>
+              );
+            })}
+            {alerts.length > 4 && (
+              <span className="text-xs text-zinc-500">+{alerts.length - 4}</span>
             )}
-          </button>
-
-          {showAlerts && (
-            <div className="px-4 pb-3 space-y-2">
-              {alerts.map((alert, idx) => {
-                // Determine the link href
-                const href = alert.href
-                  ? alert.href
-                  : alert.task?.project
-                    ? `/projects/${alert.task.project.slug}`
-                    : alert.project
-                      ? `/projects/${alert.project.slug}`
-                      : '#';
-                // Determine the title to show
-                const title = alert.task?.title || alert.project?.title || 'Alert';
-
-                return (
-                  <Link
-                    key={idx}
-                    href={href}
-                    className={`flex items-start gap-3 p-2 rounded-lg border ${getAlertColor(alert.type)} hover:opacity-90 transition-opacity`}
-                  >
-                    <div className="mt-0.5">{getAlertIcon(alert.type)}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{title}</p>
-                      <p className="text-xs opacity-80">{alert.message}</p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 mt-1 opacity-50" />
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+          </div>
         </div>
       )}
 
