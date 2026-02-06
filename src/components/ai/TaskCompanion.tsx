@@ -178,58 +178,35 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
       ending: "Today is perfect to add your own achievement to history! 🌟"
     };
 
-    // Build a comprehensive welcome message
-    let content = `Hey ${userName}! 🤖 I'm Abeto's Task Companion, your best help to make your time efficient and be productive.\n\n`;
+    // Build a COMPACT welcome message (to fit without scrolling)
+    let content = `Hey ${userName}! 👋 `;
 
-    // PERSONAL STATS (if user is identified)
+    // Compact summary line
+    const summaryParts: string[] = [];
+
     if (userId && myActiveTasks.length > 0) {
-      content += `**Your Tasks:**\n`;
-      content += `📋 You have **${myActiveTasks.length} task${myActiveTasks.length !== 1 ? 's' : ''}** assigned to you`;
-      if (myInProgress.length > 0) {
-        content += ` — ${myInProgress.length} in progress`;
-      }
-      content += '\n';
-
-      // Personal issues
-      if (myOverdue.length > 0) {
-        content += `🚨 **${myOverdue.length} of your task${myOverdue.length !== 1 ? 's are' : ' is'} overdue!**\n`;
-      }
-      if (myBlocked.length > 0) {
-        content += `⚠️ **${myBlocked.length} of your task${myBlocked.length !== 1 ? 's are' : ' is'} blocked**\n`;
-      }
-      if (myHighAIPotential.length > 0) {
-        content += `🤖 **${myHighAIPotential.length} of your task${myHighAIPotential.length !== 1 ? 's' : ''} can be accelerated with AI!**\n`;
-      }
-      content += '\n';
+      summaryParts.push(`**${myActiveTasks.length} task${myActiveTasks.length !== 1 ? 's' : ''}** assigned to you`);
+    }
+    if (myOverdue.length > 0) {
+      summaryParts.push(`🚨 ${myOverdue.length} overdue`);
+    }
+    if (myBlocked.length > 0) {
+      summaryParts.push(`⚠️ ${myBlocked.length} blocked`);
     }
 
-    // TEAM OVERVIEW
-    content += `**Team Overview:**\n`;
-    content += `📊 **${activeProjects.length} active project${activeProjects.length !== 1 ? 's' : ''}** with **${totalTasks.length} total task${totalTasks.length !== 1 ? 's' : ''}**\n`;
-
-    // Team issues
-    const teamIssues: string[] = [];
-
-    if (blockedTasks.length > 0) {
-      teamIssues.push(`⚠️ ${blockedTasks.length} task${blockedTasks.length !== 1 ? 's' : ''} blocked across the team`);
+    if (summaryParts.length > 0) {
+      content += summaryParts.join(' • ');
+    } else {
+      content += `**${activeProjects.length} projects** • **${totalTasks.length} tasks** active`;
     }
 
+    // Add one-liner about reviews if needed
     if (projectsNeedingReview.length > 0) {
-      teamIssues.push(`📋 ${projectsNeedingReview.length} project${projectsNeedingReview.length !== 1 ? 's' : ''} pending review — [Start reviewing →](/reviews)`);
+      content += `\n📋 ${projectsNeedingReview.length} project${projectsNeedingReview.length !== 1 ? 's' : ''} need review`;
     }
 
-    if (teamIssues.length > 0) {
-      content += teamIssues.join('\n');
-      content += '\n';
-    }
-    content += '\n';
-
-    // Fun fact section with REAL date
-    content += `---\n💡 *${todaysFact.fact}*\n*${todaysFact.ending}*\n\n`;
-
-    // Footer with Slack reminder
-    content += `---\n📱 **Tip:** You can also chat with me on Slack using \`@Task-Companion\`!\n\n`;
-    content += `Ask me anything using the suggestions below, or type your own question about your projects and tasks.`;
+    // Fun fact - compact version
+    content += `\n\n💡 *${todaysFact.fact.length > 80 ? todaysFact.fact.substring(0, 77) + '...' : todaysFact.fact}*`;
 
     const welcomeMessage: Message = {
       id: 'welcome',
