@@ -508,7 +508,7 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
   const handleTestWebhook = async () => {
     if (!webhookUrl.trim() || !webhookUrl.startsWith('https://hooks.slack.com/')) {
       setTestResult('error');
-      setErrorMessage('Please enter a valid Slack webhook URL');
+      setErrorMessage('Please enter a valid Slack webhook URL (starts with https://hooks.slack.com/)');
       return;
     }
 
@@ -517,21 +517,21 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
     setErrorMessage('');
 
     try {
-      // Test the webhook by sending a test message
-      const response = await fetch(webhookUrl, {
+      // Test the webhook through our API (to avoid CORS issues)
+      const response = await fetch('/api/slack/test-webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: '🤖 *Task Companion Connected!*\n\nYour Abeto Task Manager is now linked to this channel.\n\nTo complete setup, add this webhook URL to your Vercel environment variables:\n`SLACK_WEBHOOK_URL`\n\nThen you can mention @task-companion to ask questions!'
-        }),
+        body: JSON.stringify({ webhookUrl }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         setTestResult('success');
         setStep(2);
       } else {
         setTestResult('error');
-        setErrorMessage('Webhook test failed. Check the URL and try again.');
+        setErrorMessage(data.error || 'Webhook test failed. Check the URL and try again.');
       }
     } catch {
       setTestResult('error');
