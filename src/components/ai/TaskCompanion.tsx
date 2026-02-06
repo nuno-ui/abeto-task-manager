@@ -71,46 +71,89 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
 
     const now = new Date();
 
-    // Calculate issues
-    const overdueTasks = tasks.filter(t => {
-      if (!t.due_date || t.status === 'completed') return false;
-      return new Date(t.due_date) < now;
+    // Calculate stats
+    const activeProjects = projects.filter(p =>
+      p.status === 'in_progress' || p.status === 'planning' || p.status === 'idea'
+    );
+    const totalTasks = tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled');
+    const notStartedTasks = tasks.filter(t => t.status === 'not_started');
+
+    const overdueProjects = projects.filter(p => {
+      if (!p.target_date || p.status === 'completed') return false;
+      return new Date(p.target_date) < now;
     });
+
+    const blockedTasks = tasks.filter(t => t.status === 'blocked');
+
+    const highAIPotentialTasks = tasks.filter(t =>
+      t.ai_potential === 'high' && t.status !== 'completed'
+    );
 
     const projectsNeedingReview = projects.filter(p =>
       (p.status === 'planning' || p.status === 'in_progress') && !p.pain_point_level
     );
 
-    const blockedTasks = tasks.filter(t => t.status === 'blocked');
-    const criticalNotStarted = tasks.filter(t => t.is_critical_path && t.status === 'not_started');
+    // Fun facts for today - historical events and motivational endings
+    const funFacts = [
+      { fact: "On this day in 1492, Columbus reached America", ending: "Today, you might discover your next breakthrough! 🌎" },
+      { fact: "On this day in 2016, Portugal won the Euro Cup", ending: "Even underdogs can win — let's make today count! ⚽🏆" },
+      { fact: "The first email was sent in 1971", ending: "Small steps lead to revolutions. What will you start today? 📧" },
+      { fact: "Apple launched the iPhone in 2007", ending: "Innovation starts with a single idea. What's yours? 📱" },
+      { fact: "The Wright Brothers flew for 12 seconds in 1903", ending: "12 seconds changed the world. Your next task might too! ✈️" },
+      { fact: "SpaceX landed its first rocket in 2015", ending: "Persistence pays off. Keep pushing! 🚀" },
+      { fact: "The first website went live in 1991", ending: "Every empire starts with a single page. Build yours! 🌐" },
+      { fact: "Tesla delivered its first Roadster in 2008", ending: "Dream big, start small, scale fast. Let's go! ⚡" },
+      { fact: "Netflix started as a DVD rental service", ending: "Pivots create giants. Stay adaptable! 🎬" },
+      { fact: "Amazon was founded in a garage in 1994", ending: "Great things have humble beginnings. Start now! 📦" },
+    ];
 
-    // Build a proactive message
-    let content = `Hey ${userName}! 🤖 Here's what I'm seeing:\n\n`;
+    // Pick a random fun fact based on the day
+    const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    const todaysFact = funFacts[dayOfYear % funFacts.length];
 
+    // Build a comprehensive welcome message
+    let content = `Hey ${userName}! 🤖 I'm Abeto's Task Companion, your best help to make your time efficient and be productive.\n\n`;
+    content += `**Here's what I'm seeing:**\n\n`;
+
+    // Summary stats
+    content += `📊 **${activeProjects.length} active project${activeProjects.length !== 1 ? 's' : ''}** with **${totalTasks.length} task${totalTasks.length !== 1 ? 's' : ''}**`;
+    if (notStartedTasks.length > 0) {
+      content += ` — ${notStartedTasks.length} not started yet`;
+    }
+    content += '\n\n';
+
+    // Issues section
     const issues: string[] = [];
 
-    if (projectsNeedingReview.length > 0) {
-      issues.push(`📋 **${projectsNeedingReview.length} project${projectsNeedingReview.length > 1 ? 's' : ''} need stakeholder review** — These are missing pain point assessments. [Start reviewing →](/reviews)`);
-    }
-
-    if (overdueTasks.length > 0) {
-      issues.push(`🚨 **${overdueTasks.length} overdue task${overdueTasks.length > 1 ? 's' : ''}** — "${overdueTasks[0].title}"${overdueTasks.length > 1 ? ` and ${overdueTasks.length - 1} more` : ''}`);
+    if (overdueProjects.length > 0) {
+      issues.push(`🚨 **${overdueProjects.length} project${overdueProjects.length !== 1 ? 's' : ''} delayed** — delivery date passed`);
     }
 
     if (blockedTasks.length > 0) {
-      issues.push(`⚠️ **${blockedTasks.length} blocked task${blockedTasks.length > 1 ? 's' : ''}** — These need attention to unblock progress`);
+      issues.push(`⚠️ **${blockedTasks.length} task${blockedTasks.length !== 1 ? 's' : ''} blocked** — waiting on dependencies`);
     }
 
-    if (criticalNotStarted.length > 0) {
-      issues.push(`⚡ **${criticalNotStarted.length} critical path task${criticalNotStarted.length > 1 ? 's' : ''} not started** — These could delay other work`);
+    if (highAIPotentialTasks.length > 0) {
+      issues.push(`🤖 **${highAIPotentialTasks.length} task${highAIPotentialTasks.length !== 1 ? 's' : ''} can be accelerated with AI** — don't wait!`);
+    }
+
+    if (projectsNeedingReview.length > 0) {
+      issues.push(`📋 **${projectsNeedingReview.length} project${projectsNeedingReview.length !== 1 ? 's' : ''} pending your review** — [Start reviewing →](/reviews)`);
     }
 
     if (issues.length > 0) {
-      content += issues.join('\n\n');
-      content += '\n\n---\nAsk me anything or click on an alert above to take action!';
+      content += issues.join('\n');
+      content += '\n\n';
     } else {
-      content = `Hey ${userName}! 🤖 Looking good — no urgent issues right now!\n\nI can help you:\n• Find what to work on next\n• Check project status\n• Track upcoming deadlines\n\nWhat would you like to know?`;
+      content += `✨ **All clear!** No blockers or urgent items right now.\n\n`;
     }
+
+    // Fun fact section
+    content += `---\n💡 *${todaysFact.fact}*\n*${todaysFact.ending}*\n\n`;
+
+    // Footer with Slack reminder
+    content += `---\n📱 **Tip:** You can also chat with me on Slack using \`@Task-Companion\`!\n\n`;
+    content += `Ask me anything using the suggestions below, or type your own question about your projects and tasks.`;
 
     const welcomeMessage: Message = {
       id: 'welcome',
