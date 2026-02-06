@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { Header } from '@/components/layout/Header';
 import {
   Settings,
   Database,
@@ -32,6 +32,13 @@ import {
   Code,
   Terminal,
   MessageSquare,
+  Bug,
+  Slack,
+  Send,
+  Loader2,
+  CheckCircle,
+  Bot,
+  Bell,
 } from 'lucide-react';
 
 interface Pillar {
@@ -97,11 +104,30 @@ interface HealthData {
   timestamp: string;
 }
 
-export default function SettingsPage() {
+type SectionType = 'health' | 'bugs' | 'slack' | 'pillars' | 'data-quality' | 'developer' | 'about';
+
+function SettingsPageContent() {
+  const searchParams = useSearchParams();
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [stats, setStats] = useState<Stats>({ teams: 0, users: 0, projects: 0, tasks: 0 });
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'health' | 'pillars' | 'data-quality' | 'developer' | 'about'>('health');
+  const [activeSection, setActiveSection] = useState<SectionType>('health');
+
+  // Handle URL tab parameter
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['health', 'bugs', 'slack', 'pillars', 'data-quality', 'developer', 'about'].includes(tab)) {
+      setActiveSection(tab as SectionType);
+    }
+  }, [searchParams]);
+
+  // Bug report state
+  const [bugTitle, setBugTitle] = useState('');
+  const [bugDescription, setBugDescription] = useState('');
+  const [bugPriority, setBugPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [bugCategory, setBugCategory] = useState<'ui' | 'functionality' | 'performance' | 'data' | 'other'>('functionality');
+  const [submittingBug, setSubmittingBug] = useState(false);
+  const [bugSubmitted, setBugSubmitted] = useState(false);
 
   // Health data
   const [healthData, setHealthData] = useState<HealthData | null>(null);
@@ -232,8 +258,43 @@ export default function SettingsPage() {
     return null;
   };
 
+  const handleBugSubmit = async () => {
+    if (!bugTitle.trim() || !bugDescription.trim()) return;
+
+    setSubmittingBug(true);
+    try {
+      // For now, we'll create a GitHub issue via the API or store in Supabase
+      // This is a placeholder - you can implement the actual submission later
+      const response = await fetch('/api/bugs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: bugTitle,
+          description: bugDescription,
+          priority: bugPriority,
+          category: bugCategory,
+        }),
+      });
+
+      if (response.ok) {
+        setBugSubmitted(true);
+        setBugTitle('');
+        setBugDescription('');
+        setBugPriority('medium');
+        setBugCategory('functionality');
+        setTimeout(() => setBugSubmitted(false), 5000);
+      }
+    } catch (error) {
+      console.error('Error submitting bug:', error);
+    } finally {
+      setSubmittingBug(false);
+    }
+  };
+
   const sections = [
     { id: 'health', label: 'System Health', icon: Heart, description: 'API and database status' },
+    { id: 'bugs', label: 'Report Bug', icon: Bug, description: 'Report issues and feedback' },
+    { id: 'slack', label: 'Slack Integration', icon: Slack, description: 'Connect your workspace' },
     { id: 'pillars', label: 'Pillars', icon: Layers, description: 'Strategic pillars management' },
     { id: 'data-quality', label: 'Data Quality', icon: AlertCircle, description: 'Missing data and issues' },
     { id: 'developer', label: 'Developer Tools', icon: Code, description: 'Supabase access and queries' },
@@ -247,8 +308,6 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen">
-      <Header title="Health & Status" />
-
       <div className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
@@ -447,6 +506,345 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Bug Report Section */}
+                {activeSection === 'bugs' && (
+                  <div className="space-y-6">
+                    {/* Bug Report Form */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-red-500/20 rounded-lg">
+                          <Bug className="w-6 h-6 text-red-400" />
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-semibold text-white">Report a Bug</h2>
+                          <p className="text-sm text-zinc-400">
+                            Help us improve Abeto by reporting issues you encounter
+                          </p>
+                        </div>
+                      </div>
+
+                      {bugSubmitted ? (
+                        <div className="p-6 bg-green-500/10 border border-green-500/30 rounded-xl text-center">
+                          <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold text-green-400 mb-2">Bug Report Submitted!</h3>
+                          <p className="text-sm text-zinc-400">
+                            Thank you for helping us improve Abeto. We&apos;ll look into this issue.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {/* Bug Title */}
+                          <div>
+                            <label className="block text-sm font-medium text-zinc-300 mb-2">
+                              Bug Title <span className="text-red-400">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={bugTitle}
+                              onChange={(e) => setBugTitle(e.target.value)}
+                              placeholder="Brief description of the issue"
+                              className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50"
+                            />
+                          </div>
+
+                          {/* Category and Priority */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                                Category
+                              </label>
+                              <select
+                                value={bugCategory}
+                                onChange={(e) => setBugCategory(e.target.value as typeof bugCategory)}
+                                className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50"
+                              >
+                                <option value="ui">UI / Visual</option>
+                                <option value="functionality">Functionality</option>
+                                <option value="performance">Performance</option>
+                                <option value="data">Data / Sync</option>
+                                <option value="other">Other</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                                Priority
+                              </label>
+                              <select
+                                value={bugPriority}
+                                onChange={(e) => setBugPriority(e.target.value as typeof bugPriority)}
+                                className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50"
+                              >
+                                <option value="low">Low - Minor inconvenience</option>
+                                <option value="medium">Medium - Affects workflow</option>
+                                <option value="high">High - Blocking issue</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Bug Description */}
+                          <div>
+                            <label className="block text-sm font-medium text-zinc-300 mb-2">
+                              Description <span className="text-red-400">*</span>
+                            </label>
+                            <textarea
+                              value={bugDescription}
+                              onChange={(e) => setBugDescription(e.target.value)}
+                              placeholder="Please describe the issue in detail. Include steps to reproduce if possible."
+                              rows={5}
+                              className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 resize-none"
+                            />
+                          </div>
+
+                          {/* Tips */}
+                          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                            <h4 className="text-sm font-medium text-amber-400 mb-2">💡 Tips for a great bug report:</h4>
+                            <ul className="text-xs text-zinc-400 space-y-1">
+                              <li>• Include the steps to reproduce the issue</li>
+                              <li>• Mention what you expected vs what happened</li>
+                              <li>• Include the URL or page where the issue occurred</li>
+                              <li>• Note your browser (Chrome, Firefox, Safari, etc.)</li>
+                            </ul>
+                          </div>
+
+                          {/* Submit Button */}
+                          <div className="flex justify-end">
+                            <button
+                              onClick={handleBugSubmit}
+                              disabled={submittingBug || !bugTitle.trim() || !bugDescription.trim()}
+                              className="flex items-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {submittingBug ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  Submitting...
+                                </>
+                              ) : (
+                                <>
+                                  <Send className="w-4 h-4" />
+                                  Submit Bug Report
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* GitHub Issues Link */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-zinc-700/50 rounded-lg">
+                          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-white">View All Issues on GitHub</h3>
+                          <p className="text-sm text-zinc-400">Track the status of reported bugs and feature requests</p>
+                        </div>
+                        <a
+                          href="https://github.com/nunomfelix/abeto-task-manager/issues"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          Open Issues
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Slack Integration Section */}
+                {activeSection === 'slack' && (
+                  <div className="space-y-6">
+                    {/* Slack Overview */}
+                    <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 rounded-xl p-6">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="p-3 bg-purple-500/20 rounded-lg">
+                          <Slack className="w-8 h-8 text-purple-400" />
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-semibold text-white">Slack Integration</h2>
+                          <p className="text-sm text-zinc-400">
+                            Connect Abeto to your Slack workspace for real-time notifications
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-zinc-300 text-sm leading-relaxed">
+                        Get notified when projects are created, tasks are assigned, reviews are needed, and more.
+                        The AI Companion can also send you personalized alerts and summaries directly in Slack.
+                      </p>
+                    </div>
+
+                    {/* Setup Steps */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                        <Settings className="w-5 h-5 text-amber-400" />
+                        Setup Guide
+                      </h3>
+
+                      <div className="space-y-6">
+                        {/* Step 1 */}
+                        <div className="flex gap-4">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-semibold text-sm">
+                            1
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-white mb-2">Create a Slack App</h4>
+                            <p className="text-sm text-zinc-400 mb-3">
+                              Go to the Slack API portal and create a new app for your workspace.
+                            </p>
+                            <a
+                              href="https://api.slack.com/apps"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-sm text-white rounded-lg transition-colors"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Open Slack API Portal
+                            </a>
+                          </div>
+                        </div>
+
+                        {/* Step 2 */}
+                        <div className="flex gap-4">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-semibold text-sm">
+                            2
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-white mb-2">Configure Bot Permissions</h4>
+                            <p className="text-sm text-zinc-400 mb-3">
+                              Add the following OAuth scopes to your bot:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {['chat:write', 'users:read', 'users:read.email', 'channels:read', 'app_mentions:read'].map((scope) => (
+                                <span key={scope} className="px-2 py-1 bg-zinc-800 text-xs font-mono text-zinc-300 rounded">
+                                  {scope}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Step 3 */}
+                        <div className="flex gap-4">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-semibold text-sm">
+                            3
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-white mb-2">Set Environment Variables</h4>
+                            <p className="text-sm text-zinc-400 mb-3">
+                              Add these environment variables to your Vercel deployment:
+                            </p>
+                            <div className="bg-zinc-800/50 rounded-lg p-4 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <code className="text-xs text-amber-400">SLACK_BOT_TOKEN</code>
+                                <span className="text-xs text-zinc-500">xoxb-...</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <code className="text-xs text-amber-400">SLACK_SIGNING_SECRET</code>
+                                <span className="text-xs text-zinc-500">From app settings</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <code className="text-xs text-amber-400">SLACK_CHANNEL_ID</code>
+                                <span className="text-xs text-zinc-500">C0123456789</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Step 4 */}
+                        <div className="flex gap-4">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-semibold text-sm">
+                            4
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-white mb-2">Configure Webhook URL</h4>
+                            <p className="text-sm text-zinc-400 mb-3">
+                              Set up Event Subscriptions with this Request URL:
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <code className="flex-1 px-3 py-2 bg-zinc-800/50 rounded-lg text-xs text-zinc-300 font-mono">
+                                https://your-domain.vercel.app/api/webhooks/slack
+                              </code>
+                              <button
+                                onClick={() => copyToClipboard('https://abeto-task-manager.vercel.app/api/webhooks/slack', 'slack-webhook')}
+                                className="p-2 text-zinc-400 hover:text-white transition-colors"
+                              >
+                                {copied === 'slack-webhook' ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Step 5 */}
+                        <div className="flex gap-4">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center text-green-400 font-semibold text-sm">
+                            ✓
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-white mb-2">Install to Workspace</h4>
+                            <p className="text-sm text-zinc-400">
+                              Install the app to your Slack workspace and invite the bot to your preferred channel.
+                              You&apos;re all set!
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AI Companion Settings Preview */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-amber-500/20 rounded-lg">
+                          <Bot className="w-5 h-5 text-amber-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-white">AI Companion Notifications</h3>
+                          <p className="text-sm text-zinc-400">Coming soon - personalize your alerts</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-zinc-800/50 rounded-lg opacity-60">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Bell className="w-4 h-4 text-blue-400" />
+                            <span className="text-sm font-medium text-zinc-300">Daily Summary</span>
+                          </div>
+                          <p className="text-xs text-zinc-500">Get a morning digest of your tasks and priorities</p>
+                        </div>
+                        <div className="p-4 bg-zinc-800/50 rounded-lg opacity-60">
+                          <div className="flex items-center gap-3 mb-2">
+                            <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                            <span className="text-sm font-medium text-zinc-300">Deadline Alerts</span>
+                          </div>
+                          <p className="text-xs text-zinc-500">Reminders when deadlines are approaching</p>
+                        </div>
+                        <div className="p-4 bg-zinc-800/50 rounded-lg opacity-60">
+                          <div className="flex items-center gap-3 mb-2">
+                            <CheckSquare className="w-4 h-4 text-green-400" />
+                            <span className="text-sm font-medium text-zinc-300">Task Assignments</span>
+                          </div>
+                          <p className="text-xs text-zinc-500">Notify when you&apos;re assigned new tasks</p>
+                        </div>
+                        <div className="p-4 bg-zinc-800/50 rounded-lg opacity-60">
+                          <div className="flex items-center gap-3 mb-2">
+                            <BarChart3 className="w-4 h-4 text-purple-400" />
+                            <span className="text-sm font-medium text-zinc-300">Weekly Reports</span>
+                          </div>
+                          <p className="text-xs text-zinc-500">Automated progress reports every week</p>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-zinc-500 mt-4 text-center">
+                        These settings will be available in a future update
+                      </p>
+                    </div>
                   </div>
                 )}
 
@@ -1137,5 +1535,17 @@ LIMIT 50;`
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+      </div>
+    }>
+      <SettingsPageContent />
+    </Suspense>
   );
 }
