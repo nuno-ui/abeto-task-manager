@@ -1,15 +1,23 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to avoid build-time errors
+let supabase: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (!supabase) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabase;
+}
 
 // GET - Retrieve Slack settings
 export async function GET() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabaseClient()
       .from('app_settings')
       .select('key, value')
       .in('key', ['slack_webhook_url', 'slack_bot_token']);
@@ -75,7 +83,7 @@ export async function POST(request: Request) {
     }
 
     if (upserts.length > 0) {
-      const { error } = await supabase
+      const { error } = await getSupabaseClient()
         .from('app_settings')
         .upsert(upserts, { onConflict: 'key' });
 
