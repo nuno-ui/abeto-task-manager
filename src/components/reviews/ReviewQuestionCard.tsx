@@ -18,6 +18,7 @@ interface ReviewQuestionCardProps {
   value?: string | number | null;
   onChange: (value: string | number) => void;
   disabled?: boolean;
+  compact?: boolean;
 }
 
 const colorMap: Record<string, string> = {
@@ -40,6 +41,7 @@ export function ReviewQuestionCard({
   value,
   onChange,
   disabled,
+  compact = false,
 }: ReviewQuestionCardProps) {
   const [showContext, setShowContext] = useState(false);
 
@@ -51,21 +53,21 @@ export function ReviewQuestionCard({
   };
 
   return (
-    <div className="bg-zinc-800/40 rounded-lg p-4 space-y-3 border border-zinc-700/50">
+    <div className={`bg-zinc-800/40 rounded-lg border border-zinc-700/50 ${compact ? 'p-3 space-y-2' : 'p-4 space-y-3'}`}>
       {/* Question header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
-          <h4 className="text-sm font-medium text-white">{question.question}</h4>
-          <p className="text-xs text-zinc-400 mt-0.5">{question.description}</p>
+          <h4 className={`font-medium text-white ${compact ? 'text-xs' : 'text-sm'}`}>{question.question}</h4>
+          {!compact && <p className="text-xs text-zinc-400 mt-0.5">{question.description}</p>}
         </div>
         {question.fieldRef && currentFieldValue !== undefined && (
           <button
             onClick={() => setShowContext(!showContext)}
-            className="flex items-center gap-1 px-2 py-1 text-xs text-zinc-400 hover:text-white bg-zinc-800 rounded transition-colors"
+            className={`flex items-center gap-1 text-zinc-400 hover:text-white bg-zinc-800 rounded transition-colors ${compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'}`}
           >
-            <HelpCircle className="w-3 h-3" />
-            Context
-            {showContext ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            <HelpCircle className={compact ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
+            {!compact && 'Context'}
+            {showContext ? <ChevronUp className={compact ? 'w-2.5 h-2.5' : 'w-3 h-3'} /> : <ChevronDown className={compact ? 'w-2.5 h-2.5' : 'w-3 h-3'} />}
           </button>
         )}
       </div>
@@ -78,7 +80,7 @@ export function ReviewQuestionCard({
         </div>
       )}
 
-      {/* Rating input (1-5 stars) */}
+      {/* Rating input (1-5 stars) - kept for backwards compatibility but prefer 3-option select */}
       {question.type === 'rating' && (
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
@@ -86,17 +88,17 @@ export function ReviewQuestionCard({
               key={star}
               onClick={() => onChange(star)}
               disabled={disabled}
-              className={`p-1 rounded transition-colors ${
+              className={`rounded transition-colors ${compact ? 'p-0.5' : 'p-1'} ${
                 value && Number(value) >= star
                   ? 'text-yellow-400'
                   : 'text-zinc-600 hover:text-zinc-400'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <Star className="w-6 h-6" fill={value && Number(value) >= star ? 'currentColor' : 'none'} />
+              <Star className={compact ? 'w-4 h-4' : 'w-6 h-6'} fill={value && Number(value) >= star ? 'currentColor' : 'none'} />
             </button>
           ))}
           {value && (
-            <span className="ml-2 text-xs text-zinc-400">
+            <span className={`ml-2 text-zinc-400 ${compact ? 'text-[10px]' : 'text-xs'}`}>
               {Number(value) <= 2 ? 'Concern' : Number(value) === 3 ? 'Neutral' : 'Good'}
             </span>
           )}
@@ -105,37 +107,41 @@ export function ReviewQuestionCard({
 
       {/* Boolean input (Yes/No) */}
       {question.type === 'boolean' && (
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center ${compact ? 'gap-1' : 'gap-2'}`}>
           <button
             onClick={() => onChange('yes')}
             disabled={disabled}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+            className={`flex items-center rounded-lg border transition-colors ${
+              compact ? 'gap-1 px-2 py-1' : 'gap-2 px-4 py-2'
+            } ${
               value === 'yes'
                 ? 'bg-green-500/20 text-green-400 border-green-500/50'
                 : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'
             } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <Check className="w-4 h-4" />
-            Yes
+            <Check className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+            <span className={compact ? 'text-xs' : ''}>Yes</span>
           </button>
           <button
             onClick={() => onChange('no')}
             disabled={disabled}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+            className={`flex items-center rounded-lg border transition-colors ${
+              compact ? 'gap-1 px-2 py-1' : 'gap-2 px-4 py-2'
+            } ${
               value === 'no'
                 ? 'bg-red-500/20 text-red-400 border-red-500/50'
                 : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'
             } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <X className="w-4 h-4" />
-            No
+            <X className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+            <span className={compact ? 'text-xs' : ''}>No</span>
           </button>
         </div>
       )}
 
       {/* Select input (colored options) */}
       {question.type === 'select' && question.options && (
-        <div className="flex flex-wrap gap-2">
+        <div className={`flex flex-wrap ${compact ? 'gap-1' : 'gap-2'}`}>
           {question.options.map((option) => {
             const isSelected = value === option.value;
             const color = option.color || 'blue';
@@ -144,7 +150,9 @@ export function ReviewQuestionCard({
                 key={option.value}
                 onClick={() => onChange(option.value)}
                 disabled={disabled}
-                className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                className={`rounded-lg border transition-colors ${
+                  compact ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm'
+                } ${
                   isSelected
                     ? selectedColorMap[color]
                     : colorMap[color]
@@ -163,9 +171,11 @@ export function ReviewQuestionCard({
           value={value as string || ''}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
-          placeholder="Enter your feedback..."
-          className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 resize-none disabled:opacity-50"
-          rows={2}
+          placeholder={compact ? 'Enter feedback...' : 'Enter your feedback...'}
+          className={`w-full bg-zinc-900 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-blue-500 resize-none disabled:opacity-50 ${
+            compact ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'
+          }`}
+          rows={compact ? 1 : 2}
         />
       )}
     </div>

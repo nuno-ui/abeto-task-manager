@@ -85,7 +85,12 @@ const REVIEW_QUESTIONS: Record<ReviewerArea, ReviewQuestion[]> = {
       id: 'strategic_alignment',
       question: 'Strategic Alignment',
       description: 'How well does this project align with Abeto\'s vision and strategic goals?',
-      type: 'rating',
+      type: 'select',
+      options: [
+        { value: 'weak', label: 'Weak alignment', color: 'red' },
+        { value: 'moderate', label: 'Moderate alignment', color: 'yellow' },
+        { value: 'strong', label: 'Strong alignment', color: 'green' },
+      ],
     },
     {
       id: 'priority_appropriate',
@@ -103,7 +108,12 @@ const REVIEW_QUESTIONS: Record<ReviewerArea, ReviewQuestion[]> = {
       id: 'resource_justified',
       question: 'Resource Justification',
       description: 'Is the estimated effort/cost justified by the expected business value?',
-      type: 'rating',
+      type: 'select',
+      options: [
+        { value: 'poor', label: 'Poor ROI', color: 'red' },
+        { value: 'acceptable', label: 'Acceptable ROI', color: 'yellow' },
+        { value: 'strong', label: 'Strong ROI', color: 'green' },
+      ],
     },
     {
       id: 'timeline_realistic',
@@ -115,6 +125,42 @@ const REVIEW_QUESTIONS: Record<ReviewerArea, ReviewQuestion[]> = {
         { value: 'realistic', label: 'Timeline is realistic', color: 'green' },
         { value: 'conservative', label: 'Could be faster', color: 'blue' },
       ],
+    },
+    {
+      id: 'complexity_check',
+      question: 'Complexity Assessment',
+      description: 'Is the difficulty rating accurate?',
+      type: 'select',
+      options: [
+        { value: 'overestimated', label: 'Simpler than stated', color: 'blue' },
+        { value: 'accurate', label: 'Complexity is accurate', color: 'green' },
+        { value: 'underestimated', label: 'More complex than stated', color: 'red' },
+      ],
+      fieldRef: 'difficulty',
+    },
+    {
+      id: 'hours_check',
+      question: 'Hours Estimate',
+      description: 'Are the estimated hours realistic?',
+      type: 'select',
+      options: [
+        { value: 'too_low', label: 'Will take longer', color: 'red' },
+        { value: 'realistic', label: 'Estimate is good', color: 'green' },
+        { value: 'too_high', label: 'Could be faster', color: 'blue' },
+      ],
+      fieldRef: 'estimated_hours_min',
+    },
+    {
+      id: 'progress_check',
+      question: 'Progress Check',
+      description: 'Is the project on track?',
+      type: 'select',
+      options: [
+        { value: 'behind', label: 'Behind schedule', color: 'red' },
+        { value: 'on_track', label: 'On track', color: 'green' },
+        { value: 'ahead', label: 'Ahead of schedule', color: 'blue' },
+      ],
+      fieldRef: 'progress_percentage',
     },
     {
       id: 'dependencies_ok',
@@ -134,14 +180,24 @@ const REVIEW_QUESTIONS: Record<ReviewerArea, ReviewQuestion[]> = {
     {
       id: 'pain_point_valid',
       question: 'Pain Point Validation',
-      description: 'Does this solve a real operational pain point? How painful is it today?',
-      type: 'rating',
+      description: 'Does this solve a real operational pain point?',
+      type: 'select',
+      options: [
+        { value: 'low', label: 'Not a real pain point', color: 'red' },
+        { value: 'medium', label: 'Moderate pain', color: 'yellow' },
+        { value: 'high', label: 'Critical pain point', color: 'green' },
+      ],
     },
     {
       id: 'user_impact',
       question: 'User Impact',
       description: 'Will the empowered users actually benefit from this?',
-      type: 'rating',
+      type: 'select',
+      options: [
+        { value: 'low', label: 'Low impact', color: 'red' },
+        { value: 'medium', label: 'Moderate impact', color: 'yellow' },
+        { value: 'high', label: 'High impact', color: 'green' },
+      ],
       fieldRef: 'who_is_empowered',
     },
     {
@@ -170,7 +226,60 @@ const REVIEW_QUESTIONS: Record<ReviewerArea, ReviewQuestion[]> = {
       id: 'roi_confidence',
       question: 'ROI Confidence',
       description: 'How confident are you in the claimed benefits/time savings?',
-      type: 'rating',
+      type: 'select',
+      options: [
+        { value: 'low', label: 'Low confidence', color: 'red' },
+        { value: 'medium', label: 'Moderate confidence', color: 'yellow' },
+        { value: 'high', label: 'High confidence', color: 'green' },
+      ],
+    },
+    {
+      id: 'complexity_check',
+      question: 'Complexity Assessment',
+      description: 'Is the difficulty rating accurate?',
+      type: 'select',
+      options: [
+        { value: 'overestimated', label: 'Simpler than stated', color: 'blue' },
+        { value: 'accurate', label: 'Complexity is accurate', color: 'green' },
+        { value: 'underestimated', label: 'More complex than stated', color: 'red' },
+      ],
+      fieldRef: 'difficulty',
+    },
+    {
+      id: 'priority_check',
+      question: 'Priority Assessment',
+      description: 'Is the priority level appropriate?',
+      type: 'select',
+      options: [
+        { value: 'too_high', label: 'Should be lower', color: 'red' },
+        { value: 'correct', label: 'Priority is correct', color: 'green' },
+        { value: 'too_low', label: 'Should be higher', color: 'blue' },
+      ],
+      fieldRef: 'priority',
+    },
+    {
+      id: 'hours_check',
+      question: 'Hours Estimate',
+      description: 'Are the estimated hours realistic?',
+      type: 'select',
+      options: [
+        { value: 'too_low', label: 'Will take longer', color: 'red' },
+        { value: 'realistic', label: 'Estimate is good', color: 'green' },
+        { value: 'too_high', label: 'Could be faster', color: 'blue' },
+      ],
+      fieldRef: 'estimated_hours_min',
+    },
+    {
+      id: 'progress_check',
+      question: 'Progress Check',
+      description: 'Is the project on track?',
+      type: 'select',
+      options: [
+        { value: 'behind', label: 'Behind schedule', color: 'red' },
+        { value: 'on_track', label: 'On track', color: 'green' },
+        { value: 'ahead', label: 'Ahead of schedule', color: 'blue' },
+      ],
+      fieldRef: 'progress_percentage',
     },
     {
       id: 'ops_comment',
@@ -208,7 +317,12 @@ const REVIEW_QUESTIONS: Record<ReviewerArea, ReviewQuestion[]> = {
       id: 'tech_debt_risk',
       question: 'Tech Debt Risk',
       description: 'Will this create technical debt or maintenance burden?',
-      type: 'rating',
+      type: 'select',
+      options: [
+        { value: 'high', label: 'High debt risk', color: 'red' },
+        { value: 'medium', label: 'Moderate debt', color: 'yellow' },
+        { value: 'low', label: 'Low debt risk', color: 'green' },
+      ],
     },
     {
       id: 'data_ready',
@@ -221,6 +335,30 @@ const REVIEW_QUESTIONS: Record<ReviewerArea, ReviewQuestion[]> = {
         { value: 'ready', label: 'Data is ready', color: 'green' },
       ],
       fieldRef: 'data_required',
+    },
+    {
+      id: 'priority_check',
+      question: 'Priority Assessment',
+      description: 'Is the priority level appropriate?',
+      type: 'select',
+      options: [
+        { value: 'too_high', label: 'Should be lower', color: 'red' },
+        { value: 'correct', label: 'Priority is correct', color: 'green' },
+        { value: 'too_low', label: 'Should be higher', color: 'blue' },
+      ],
+      fieldRef: 'priority',
+    },
+    {
+      id: 'progress_check',
+      question: 'Progress Check',
+      description: 'Is the project on track?',
+      type: 'select',
+      options: [
+        { value: 'behind', label: 'Behind schedule', color: 'red' },
+        { value: 'on_track', label: 'On track', color: 'green' },
+        { value: 'ahead', label: 'Ahead of schedule', color: 'blue' },
+      ],
+      fieldRef: 'progress_percentage',
     },
     {
       id: 'integration_concerns',
@@ -301,7 +439,7 @@ export default function ReviewsPage() {
   const [commentCount, setCommentCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [pendingArea, setPendingArea] = useState<ReviewerArea | null>(null);
-  const [activeTab, setActiveTab] = useState<'info' | 'review' | 'tasks'>('info');
+  const [leftPanel, setLeftPanel] = useState<'info' | 'tasks'>('info');
   const [reviewAnswers, setReviewAnswers] = useState<Record<string, string | number>>({});
   const [taskFeedback, setTaskFeedback] = useState<Record<string, { taskId: string; hoursCheck?: 'too_low' | 'accurate' | 'too_high'; hasBlockers?: boolean; comment?: string }>>({});
   const [streak, setStreak] = useState(0);
@@ -507,7 +645,7 @@ export default function ReviewsPage() {
           setComments([]);
           setReviewAnswers({});
           setTaskFeedback({});
-          setActiveTab('info');
+          setLeftPanel('info');
           setStats(prev => ({
             ...prev,
             reviewedProjects: prev.reviewedProjects + 1,
@@ -534,7 +672,7 @@ export default function ReviewsPage() {
       setComments([]);
       setReviewAnswers({});
       setTaskFeedback({});
-      setActiveTab('info');
+      setLeftPanel('info');
     }
   };
 
@@ -579,7 +717,7 @@ export default function ReviewsPage() {
       setComments([]);
       setReviewAnswers({});
       setTaskFeedback({});
-      setActiveTab('info');
+      setLeftPanel('info');
     }
   };
 
@@ -593,15 +731,11 @@ export default function ReviewsPage() {
 
       switch (e.key) {
         case '1':
-          setActiveTab('info');
+          setLeftPanel('info');
           break;
         case '2':
-          // Tasks tab (middle position)
-          if (pendingProjects[currentIndex]?.tasks?.length) setActiveTab('tasks');
-          break;
-        case '3':
-          // Your Review tab (right position)
-          setActiveTab('review');
+          // Tasks tab
+          if (pendingProjects[currentIndex]?.tasks?.length) setLeftPanel('tasks');
           break;
         case 'ArrowLeft':
           if (currentIndex > 0) {
@@ -611,7 +745,7 @@ export default function ReviewsPage() {
             setComments([]);
             setReviewAnswers({});
             setTaskFeedback({});
-            setActiveTab('info');
+            setLeftPanel('info');
           }
           break;
         case 'ArrowRight':
@@ -622,7 +756,7 @@ export default function ReviewsPage() {
             setComments([]);
             setReviewAnswers({});
             setTaskFeedback({});
-            setActiveTab('info');
+            setLeftPanel('info');
           }
           break;
         case 'Escape':
@@ -759,8 +893,8 @@ export default function ReviewsPage() {
         {showKeyboardHints && currentProject && (
           <div className="flex items-center justify-between px-4 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-xs text-zinc-400">
             <div className="flex items-center gap-4">
-              <span><kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">1</kbd> <kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">2</kbd> <kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">3</kbd> Switch tabs</span>
-              <span><kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">←</kbd> <kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">→</kbd> Navigate</span>
+              <span><kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">1</kbd> <kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">2</kbd> Switch Info/Tasks</span>
+              <span><kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">←</kbd> <kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">→</kbd> Navigate projects</span>
               <span><kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">Ctrl+Enter</kbd> Complete review</span>
             </div>
             <button onClick={() => setShowKeyboardHints(false)} className="text-zinc-500 hover:text-zinc-300">
@@ -854,62 +988,70 @@ export default function ReviewsPage() {
               </div>
             )}
 
-            {/* Tabbed Content */}
+            {/* Split-Panel Content - Info/Tasks on Left, Review on Right */}
             <div className="p-6">
-              {/* Tab Navigation - Reordered: Info | Tasks | Review */}
-              <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-4">
-                <button
-                  onClick={() => setActiveTab('info')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'info' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                  }`}
-                >
-                  <Layers className="w-4 h-4 inline mr-2" />
-                  Project Info
-                  <span className="ml-1 text-xs opacity-60">[1]</span>
-                </button>
-                {currentProject.tasks.length > 0 && (
-                  <button
-                    onClick={() => setActiveTab('tasks')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === 'tasks' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                    }`}
-                  >
-                    <CheckCircle className="w-4 h-4 inline mr-2" />
-                    Tasks ({currentProject.tasks.length})
-                    <span className="ml-1 text-xs opacity-60">[2]</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => setActiveTab('review')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'review' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                  }`}
-                >
-                  <Star className="w-4 h-4 inline mr-2" />
-                  Your Review
-                  <span className="ml-1 text-xs opacity-60">[3]</span>
-                </button>
-              </div>
+              <div className="flex gap-6">
+                {/* LEFT PANEL - Project Info / Tasks (switchable) */}
+                <div className="flex-1 min-w-0">
+                  {/* Left Panel Tab Navigation */}
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      onClick={() => setLeftPanel('info')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        leftPanel === 'info' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                      }`}
+                    >
+                      <Layers className="w-4 h-4 inline mr-2" />
+                      Project Info
+                      <span className="ml-1 text-xs opacity-60">[1]</span>
+                    </button>
+                    {currentProject.tasks.length > 0 && (
+                      <button
+                        onClick={() => setLeftPanel('tasks')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          leftPanel === 'tasks' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                        }`}
+                      >
+                        <CheckCircle className="w-4 h-4 inline mr-2" />
+                        Tasks ({currentProject.tasks.length})
+                        <span className="ml-1 text-xs opacity-60">[2]</span>
+                      </button>
+                    )}
+                  </div>
 
-              {/* Tab Content */}
-              {activeTab === 'info' && (
-                <ProjectReviewInfo project={currentProject} />
-              )}
+                  {/* Left Panel Content */}
+                  <div className="bg-zinc-800/30 rounded-xl p-4 max-h-[600px] overflow-y-auto">
+                    {leftPanel === 'info' && (
+                      <ProjectReviewInfo project={currentProject} />
+                    )}
 
-              {activeTab === 'review' && (
-                <div className="space-y-4">
+                    {leftPanel === 'tasks' && currentProject.tasks.length > 0 && (
+                      <TaskReviewPanel
+                        tasks={currentProject.tasks}
+                        taskFeedback={taskFeedback}
+                        onTaskFeedback={handleTaskFeedback}
+                        selectedTaskId={selectedTaskId}
+                        onSelectTask={setSelectedTaskId}
+                        disabled={submitting}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* RIGHT PANEL - Review Form (always visible) */}
+                <div className="w-96 flex-shrink-0">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-zinc-400 uppercase">
-                      {reviewerArea.replace('_', ' / ')} Review Questions
+                    <h3 className="text-sm font-medium text-zinc-400 uppercase flex items-center gap-2">
+                      <Star className="w-4 h-4" />
+                      Your Review
                     </h3>
                     <span className="text-xs text-zinc-500">
                       {Object.keys(reviewAnswers).length} of {REVIEW_QUESTIONS[reviewerArea].length} answered
                     </span>
                   </div>
 
-                  {/* Review Questions */}
-                  <div className="space-y-4">
+                  <div className="bg-zinc-800/30 rounded-xl p-4 max-h-[600px] overflow-y-auto space-y-3">
+                    {/* Review Questions */}
                     {REVIEW_QUESTIONS[reviewerArea].map((question) => (
                       <ReviewQuestionCard
                         key={question.id}
@@ -918,62 +1060,52 @@ export default function ReviewsPage() {
                         value={reviewAnswers[question.id]}
                         onChange={(value) => handleAnswerChange(question.id, value)}
                         disabled={submitting}
+                        compact={true}
                       />
                     ))}
-                  </div>
 
-                  {/* General Comment */}
-                  <div className="bg-zinc-800/30 rounded-lg p-4 space-y-3 mt-6">
-                    <h4 className="text-sm font-medium text-white flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      Additional Comments
-                    </h4>
-                    <textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Any other thoughts, suggestions, or concerns about this project..."
-                      className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 resize-none"
-                      rows={3}
-                    />
-                    {newComment.trim() && (
-                      <button
-                        onClick={handleAddComment}
-                        disabled={submitting}
-                        className="flex items-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg text-sm transition-colors disabled:opacity-50"
-                      >
-                        <Send className="w-4 h-4" />
-                        Save Comment
-                      </button>
-                    )}
+                    {/* General Comment */}
+                    <div className="bg-zinc-900/50 rounded-lg p-3 space-y-2 mt-4 border border-zinc-700/50">
+                      <h4 className="text-xs font-medium text-white flex items-center gap-2">
+                        <MessageSquare className="w-3 h-3" />
+                        Additional Comments
+                      </h4>
+                      <textarea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Any other thoughts..."
+                        className="w-full px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-white text-xs focus:outline-none focus:border-blue-500 resize-none"
+                        rows={2}
+                      />
+                      {newComment.trim() && (
+                        <button
+                          onClick={handleAddComment}
+                          disabled={submitting}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 text-white rounded text-xs transition-colors disabled:opacity-50"
+                        >
+                          <Send className="w-3 h-3" />
+                          Save
+                        </button>
+                      )}
 
-                    {/* Show added comments */}
-                    {comments.length > 0 && (
-                      <div className="space-y-2 pt-3 border-t border-zinc-700">
-                        <p className="text-xs text-zinc-500">Your comments ({comments.length})</p>
-                        {comments.map((comment) => (
-                          <div key={comment.id} className="text-sm text-zinc-300 bg-zinc-800/50 p-2 rounded">
-                            {comment.task_id && (
-                              <span className="text-xs text-blue-400 block mb-1">On task</span>
-                            )}
-                            {comment.content}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                      {/* Show added comments */}
+                      {comments.length > 0 && (
+                        <div className="space-y-1 pt-2 border-t border-zinc-700">
+                          <p className="text-xs text-zinc-500">Your comments ({comments.length})</p>
+                          {comments.map((comment) => (
+                            <div key={comment.id} className="text-xs text-zinc-300 bg-zinc-800/50 p-1.5 rounded">
+                              {comment.task_id && (
+                                <span className="text-xs text-blue-400 block mb-0.5">On task</span>
+                              )}
+                              {comment.content}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {activeTab === 'tasks' && currentProject.tasks.length > 0 && (
-                <TaskReviewPanel
-                  tasks={currentProject.tasks}
-                  taskFeedback={taskFeedback}
-                  onTaskFeedback={handleTaskFeedback}
-                  selectedTaskId={selectedTaskId}
-                  onSelectTask={setSelectedTaskId}
-                  disabled={submitting}
-                />
-              )}
+              </div>
             </div>
 
             {/* Actions Footer */}
