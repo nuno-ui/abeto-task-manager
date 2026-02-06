@@ -81,29 +81,61 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
     calculateRecommendations();
   }, [tasks]);
 
-  // Add welcome message on mount
+  // Generate dynamic welcome message based on current state
   useEffect(() => {
-    const hour = new Date().getHours();
-    let greeting = 'Good morning';
-    if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
-    if (hour >= 17) greeting = 'Good evening';
+    if (tasks.length === 0 && projects.length === 0) return;
+
+    const now = new Date();
+
+    // Calculate issues
+    const overdueTasks = tasks.filter(t => {
+      if (!t.due_date || t.status === 'completed') return false;
+      return new Date(t.due_date) < now;
+    });
+
+    const projectsNeedingReview = projects.filter(p =>
+      (p.status === 'planning' || p.status === 'in_progress') && !p.pain_point_level
+    );
+
+    const blockedTasks = tasks.filter(t => t.status === 'blocked');
+    const criticalNotStarted = tasks.filter(t => t.is_critical_path && t.status === 'not_started');
+
+    // Build a proactive message
+    let content = `Hey ${userName}! 🤖 Here's what I'm seeing:\n\n`;
+
+    const issues: string[] = [];
+
+    if (projectsNeedingReview.length > 0) {
+      issues.push(`📋 **${projectsNeedingReview.length} project${projectsNeedingReview.length > 1 ? 's' : ''} need stakeholder review** — These are missing pain point assessments. [Start reviewing →](/reviews)`);
+    }
+
+    if (overdueTasks.length > 0) {
+      issues.push(`🚨 **${overdueTasks.length} overdue task${overdueTasks.length > 1 ? 's' : ''}** — "${overdueTasks[0].title}"${overdueTasks.length > 1 ? ` and ${overdueTasks.length - 1} more` : ''}`);
+    }
+
+    if (blockedTasks.length > 0) {
+      issues.push(`⚠️ **${blockedTasks.length} blocked task${blockedTasks.length > 1 ? 's' : ''}** — These need attention to unblock progress`);
+    }
+
+    if (criticalNotStarted.length > 0) {
+      issues.push(`⚡ **${criticalNotStarted.length} critical path task${criticalNotStarted.length > 1 ? 's' : ''} not started** — These could delay other work`);
+    }
+
+    if (issues.length > 0) {
+      content += issues.join('\n\n');
+      content += '\n\n---\nAsk me anything or click on an alert above to take action!';
+    } else {
+      content = `Hey ${userName}! 🤖 Looking good — no urgent issues right now!\n\nI can help you:\n• Find what to work on next\n• Check project status\n• Track upcoming deadlines\n\nWhat would you like to know?`;
+    }
 
     const welcomeMessage: Message = {
       id: 'welcome',
       role: 'assistant',
-      content: `${greeting}, ${userName}! I'm your Task Companion. I can help you:
-
-- **Find tasks** - "What should I work on today?"
-- **Get status updates** - "How is Project X progressing?"
-- **Manage priorities** - "What's blocking our team?"
-- **Track deadlines** - "What's due this week?"
-- **Answer questions** - Ask me anything about your projects and tasks!
-
-What would you like to know?`,
+      content,
       timestamp: new Date(),
     };
     setMessages([welcomeMessage]);
-  }, [userName]);
+  }, [userName, tasks, projects]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -334,10 +366,10 @@ What would you like to know?`,
   };
 
   const quickActions = [
-    { label: "What should I work on?", icon: Target },
-    { label: "What's due this week?", icon: Calendar },
-    { label: "Show blocked tasks", icon: AlertTriangle },
-    { label: "Project status summary", icon: TrendingUp },
+    { label: "What should I work on?" },
+    { label: "What's due this week?" },
+    { label: "Show blocked tasks" },
+    { label: "Project status" },
   ];
 
   const getAlertColor = (type: TaskAlert['type']) => {
@@ -456,42 +488,6 @@ What would you like to know?`,
         </div>
       )}
 
-      {/* Recommendations Section */}
-      {recommendations.length > 0 && messages.length <= 1 && (
-        <div className="px-4 py-3 border-b border-zinc-800">
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm font-medium text-zinc-300">Recommended Next</span>
-          </div>
-          <div className="space-y-2">
-            {recommendations.slice(0, 3).map((rec, idx) => (
-              <Link
-                key={idx}
-                href={rec.task.project ? `/projects/${rec.task.project.slug}` : '#'}
-                className="flex items-start gap-3 p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors group"
-              >
-                <div
-                  className={`w-2 h-2 rounded-full mt-2 ${
-                    rec.priority === 'high'
-                      ? 'bg-red-400'
-                      : rec.priority === 'medium'
-                      ? 'bg-yellow-400'
-                      : 'bg-green-400'
-                  }`}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate group-hover:text-violet-300 transition-colors">
-                    {rec.task.title}
-                  </p>
-                  <p className="text-xs text-zinc-500">{rec.reason}</p>
-                </div>
-                <ArrowRight className="w-4 h-4 mt-1 text-zinc-600 group-hover:text-violet-400 transition-colors" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
@@ -549,52 +545,53 @@ What would you like to know?`,
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Actions */}
-      {messages.length <= 1 && (
-        <div className="px-4 py-3 border-t border-zinc-800">
-          <p className="text-xs text-zinc-500 mb-2">Quick actions</p>
-          <div className="flex flex-wrap gap-2">
-            {quickActions.map((action, idx) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  setInput(action.label);
-                  setTimeout(() => handleSendMessage(), 100);
-                }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-full text-sm text-zinc-300 transition-colors"
-              >
-                <action.icon className="w-3.5 h-3.5 text-zinc-500" />
-                {action.label}
-              </button>
-            ))}
+      {/* Input Area */}
+      <div className="border-t border-zinc-800">
+        {/* Quick Actions - only show when no conversation yet */}
+        {messages.length <= 1 && (
+          <div className="px-4 pt-3 pb-2">
+            <div className="flex flex-wrap gap-1.5">
+              {quickActions.map((action, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setInput(action.label);
+                    setTimeout(() => handleSendMessage(), 100);
+                  }}
+                  className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 rounded-full text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Input */}
-      <div className="p-4 border-t border-zinc-800">
-        <div className="flex items-center gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask me anything about your tasks..."
-            className="flex-1 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-            disabled={isLoading}
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!input.trim() || isLoading}
-            className="p-3 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white transition-colors"
-          >
-            {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </button>
+        {/* Input */}
+        <div className="p-3">
+          <div className="flex items-center gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask me anything..."
+              className="flex-1 px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              disabled={isLoading}
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!input.trim() || isLoading}
+              className="p-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white transition-colors"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
