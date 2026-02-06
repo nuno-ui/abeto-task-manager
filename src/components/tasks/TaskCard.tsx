@@ -120,31 +120,45 @@ export function TaskCard({ task, onClick, onDelete, onComment, deleting = false,
                 Foundational
               </span>
             )}
-            {/* Demo/Doc Link Button */}
-            {task.demo_link && (
+            {/* Demo/Doc Link Button - Always visible */}
+            {task.demo_link ? (
               <a
                 href={task.demo_link}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="p-1 text-zinc-500 hover:text-violet-400 hover:bg-violet-900/20 rounded transition-colors"
+                className="p-1 text-violet-400 hover:text-violet-300 hover:bg-violet-900/20 rounded transition-colors"
                 title="Open Demo/Document"
               >
                 <ExternalLink className="w-4 h-4" />
               </a>
+            ) : (
+              <span
+                className="p-1 text-zinc-700 cursor-not-allowed"
+                title="No demo/document link"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </span>
             )}
-            {/* Google Drive Folder Button */}
-            {task.google_drive_folder_url && (
+            {/* Google Drive Folder Button - Always visible */}
+            {task.google_drive_folder_url ? (
               <a
                 href={task.google_drive_folder_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="p-1 text-zinc-500 hover:text-amber-400 hover:bg-amber-900/20 rounded transition-colors"
+                className="p-1 text-amber-400 hover:text-amber-300 hover:bg-amber-900/20 rounded transition-colors"
                 title="Open Google Drive Folder"
               >
                 <FolderOpen className="w-4 h-4" />
               </a>
+            ) : (
+              <span
+                className="p-1 text-zinc-700 cursor-not-allowed"
+                title="No Google Drive folder"
+              >
+                <FolderOpen className="w-4 h-4" />
+              </span>
             )}
             {/* Quick Comment Button */}
             <button
