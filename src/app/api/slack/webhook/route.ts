@@ -1,15 +1,27 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Initialize Anthropic client
-const anthropic = new Anthropic();
+// Lazy-load clients to avoid build-time errors
+let anthropic: Anthropic | null = null;
+let supabase: SupabaseClient | null = null;
 
-// Initialize Supabase client with service role
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getAnthropicClient(): Anthropic {
+  if (!anthropic) {
+    anthropic = new Anthropic();
+  }
+  return anthropic;
+}
+
+function getSupabaseClient(): SupabaseClient {
+  if (!supabase) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabase;
+}
 
 interface SlackEvent {
   type: string;
@@ -63,7 +75,7 @@ function handleVerification(body: SlackEvent) {
 // Fetch tasks and projects from database
 async function fetchTasksAndProjects() {
   // Fetch all tasks with project info
-  const { data: tasks, error: tasksError } = await supabase
+  const { data: tasks, error: tasksError } = await getSupabaseClient()
     .from('tasks')
     .select(`
       id,
@@ -88,7 +100,7 @@ async function fetchTasksAndProjects() {
   }
 
   // Fetch all projects
-  const { data: projects, error: projectsError } = await supabase
+  const { data: projects, error: projectsError } = await getSupabaseClient()
     .from('projects')
     .select(`
       id,
@@ -200,7 +212,7 @@ ${projects.slice(0, 20).map(p => `
 4. Mention overdue or critical tasks proactively
 5. Keep it friendly and professional`;
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropicClient().messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 800,
     system: systemPrompt,
@@ -217,7 +229,7 @@ async function sendSlackResponse(channel: string, text: string) {
     // Get the Bot Token from environment or database
     let botToken = process.env.SLACK_BOT_TOKEN;
     if (!botToken) {
-      const { data: settings } = await supabase
+      const { data: settings } = await getSupabaseClient()
         .from('app_settings')
         .select('value')
         .eq('key', 'slack_bot_token')
