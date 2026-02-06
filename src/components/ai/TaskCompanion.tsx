@@ -15,6 +15,7 @@ import {
   Zap,
   Star,
   Calendar,
+  Lightbulb,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Task, Project } from '@/types/database';

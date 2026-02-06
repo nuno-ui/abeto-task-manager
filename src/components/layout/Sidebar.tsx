@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  LayoutDashboard,
+  Home,
   FolderKanban,
   ListTodo,
   Users,
@@ -22,7 +22,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'My Workspace', href: '/dashboard', icon: Home },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
   { name: 'Tasks', href: '/tasks', icon: ListTodo },
   { name: 'Reviews', href: '/reviews', icon: ClipboardCheck },
