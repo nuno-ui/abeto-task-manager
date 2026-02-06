@@ -662,187 +662,146 @@ function SettingsPageContent() {
                 {/* Slack Integration Section */}
                 {activeSection === 'slack' && (
                   <div className="space-y-6">
-                    {/* Slack Overview */}
-                    <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 rounded-xl p-6">
+                    {/* Slack Status */}
+                    <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 rounded-xl p-6">
                       <div className="flex items-center gap-4 mb-4">
-                        <div className="p-3 bg-purple-500/20 rounded-lg">
-                          <Slack className="w-8 h-8 text-purple-400" />
+                        <div className="p-3 bg-green-500/20 rounded-lg">
+                          <Slack className="w-8 h-8 text-green-400" />
                         </div>
-                        <div>
-                          <h2 className="text-xl font-semibold text-white">Slack Integration</h2>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-semibold text-white">Slack Connected</h2>
+                            <span className="flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">
+                              <CheckCircle className="w-3 h-3" />
+                              Active
+                            </span>
+                          </div>
                           <p className="text-sm text-zinc-400">
-                            Connect Abeto to your Slack workspace for real-time notifications
+                            Abeto is integrated with your team&apos;s Slack workspace
                           </p>
                         </div>
                       </div>
-                      <p className="text-zinc-300 text-sm leading-relaxed">
-                        Get notified when projects are created, tasks are assigned, reviews are needed, and more.
-                        The AI Companion can also send you personalized alerts and summaries directly in Slack.
-                      </p>
                     </div>
 
-                    {/* Setup Steps */}
+                    {/* How to Use Slack Integration */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                       <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                        <Settings className="w-5 h-5 text-amber-400" />
-                        Setup Guide
+                        <MessageSquare className="w-5 h-5 text-purple-400" />
+                        How to Use Slack with Abeto
                       </h3>
 
                       <div className="space-y-6">
-                        {/* Step 1 */}
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-semibold text-sm">
-                            1
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-white mb-2">Create a Slack App</h4>
-                            <p className="text-sm text-zinc-400 mb-3">
-                              Go to the Slack API portal and create a new app for your workspace.
-                            </p>
-                            <a
-                              href="https://api.slack.com/apps"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-sm text-white rounded-lg transition-colors"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              Open Slack API Portal
-                            </a>
-                          </div>
-                        </div>
-
-                        {/* Step 2 */}
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-semibold text-sm">
-                            2
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-white mb-2">Configure Bot Permissions</h4>
-                            <p className="text-sm text-zinc-400 mb-3">
-                              Add the following OAuth scopes to your bot:
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {['chat:write', 'users:read', 'users:read.email', 'channels:read', 'app_mentions:read'].map((scope) => (
-                                <span key={scope} className="px-2 py-1 bg-zinc-800 text-xs font-mono text-zinc-300 rounded">
-                                  {scope}
-                                </span>
-                              ))}
+                        {/* Commands */}
+                        <div>
+                          <h4 className="text-sm font-medium text-zinc-300 mb-3">Available Commands</h4>
+                          <div className="grid gap-3">
+                            <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Abeto help</code>
+                              <span className="text-sm text-zinc-400">Show all available commands</span>
+                            </div>
+                            <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Abeto my tasks</code>
+                              <span className="text-sm text-zinc-400">See your assigned tasks and their status</span>
+                            </div>
+                            <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Abeto projects</code>
+                              <span className="text-sm text-zinc-400">List active projects and their progress</span>
+                            </div>
+                            <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                              <code className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs font-mono rounded">@Abeto summary</code>
+                              <span className="text-sm text-zinc-400">Get a quick summary of what needs attention</span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Step 3 */}
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-semibold text-sm">
-                            3
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-white mb-2">Set Environment Variables</h4>
-                            <p className="text-sm text-zinc-400 mb-3">
-                              Add these environment variables to your Vercel deployment:
-                            </p>
-                            <div className="bg-zinc-800/50 rounded-lg p-4 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <code className="text-xs text-amber-400">SLACK_BOT_TOKEN</code>
-                                <span className="text-xs text-zinc-500">xoxb-...</span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <code className="text-xs text-amber-400">SLACK_SIGNING_SECRET</code>
-                                <span className="text-xs text-zinc-500">From app settings</span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <code className="text-xs text-amber-400">SLACK_CHANNEL_ID</code>
-                                <span className="text-xs text-zinc-500">C0123456789</span>
-                              </div>
+                        {/* Automatic Notifications */}
+                        <div>
+                          <h4 className="text-sm font-medium text-zinc-300 mb-3">Automatic Notifications</h4>
+                          <p className="text-sm text-zinc-400 mb-3">
+                            You&apos;ll automatically receive Slack notifications when:
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="flex items-center gap-2 p-3 bg-zinc-800/30 rounded-lg">
+                              <CheckSquare className="w-4 h-4 text-green-400" />
+                              <span className="text-sm text-zinc-300">You&apos;re assigned a new task</span>
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Step 4 */}
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-semibold text-sm">
-                            4
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-white mb-2">Configure Webhook URL</h4>
-                            <p className="text-sm text-zinc-400 mb-3">
-                              Set up Event Subscriptions with this Request URL:
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <code className="flex-1 px-3 py-2 bg-zinc-800/50 rounded-lg text-xs text-zinc-300 font-mono">
-                                https://your-domain.vercel.app/api/webhooks/slack
-                              </code>
-                              <button
-                                onClick={() => copyToClipboard('https://abeto-task-manager.vercel.app/api/webhooks/slack', 'slack-webhook')}
-                                className="p-2 text-zinc-400 hover:text-white transition-colors"
-                              >
-                                {copied === 'slack-webhook' ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                              </button>
+                            <div className="flex items-center gap-2 p-3 bg-zinc-800/30 rounded-lg">
+                              <MessageSquare className="w-4 h-4 text-blue-400" />
+                              <span className="text-sm text-zinc-300">Someone comments on your project</span>
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Step 5 */}
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center text-green-400 font-semibold text-sm">
-                            ✓
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-white mb-2">Install to Workspace</h4>
-                            <p className="text-sm text-zinc-400">
-                              Install the app to your Slack workspace and invite the bot to your preferred channel.
-                              You&apos;re all set!
-                            </p>
+                            <div className="flex items-center gap-2 p-3 bg-zinc-800/30 rounded-lg">
+                              <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                              <span className="text-sm text-zinc-300">A deadline is approaching</span>
+                            </div>
+                            <div className="flex items-center gap-2 p-3 bg-zinc-800/30 rounded-lg">
+                              <CheckCircle className="w-4 h-4 text-violet-400" />
+                              <span className="text-sm text-zinc-300">Reviews are needed</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* AI Companion Settings Preview */}
+                    {/* AI Companion via Slack */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="p-2 bg-amber-500/20 rounded-lg">
                           <Bot className="w-5 h-5 text-amber-400" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-white">AI Companion Notifications</h3>
-                          <p className="text-sm text-zinc-400">Coming soon - personalize your alerts</p>
+                          <h3 className="font-medium text-white">AI Companion via Slack</h3>
+                          <p className="text-sm text-zinc-400">Ask questions and get help directly in Slack</p>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 bg-zinc-800/50 rounded-lg opacity-60">
-                          <div className="flex items-center gap-3 mb-2">
-                            <Bell className="w-4 h-4 text-blue-400" />
+                      <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                        <p className="text-sm text-zinc-300 mb-3">
+                          Just mention <code className="px-1.5 py-0.5 bg-zinc-800 rounded text-amber-400">@Abeto</code> in any channel and ask anything:
+                        </p>
+                        <div className="space-y-2 text-sm text-zinc-400">
+                          <p>• &quot;What should I work on today?&quot;</p>
+                          <p>• &quot;Show me blocked tasks&quot;</p>
+                          <p>• &quot;What&apos;s the status of Project X?&quot;</p>
+                          <p>• &quot;Summarize this week&apos;s progress&quot;</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notification Preferences */}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-blue-500/20 rounded-lg">
+                          <Bell className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-white">Notification Preferences</h3>
+                          <p className="text-sm text-zinc-400">Coming soon - customize what you receive</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-60">
+                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-zinc-300">Daily Summary</span>
+                            <div className="w-10 h-6 bg-zinc-700 rounded-full relative">
+                              <div className="w-4 h-4 bg-zinc-500 rounded-full absolute left-1 top-1" />
+                            </div>
                           </div>
-                          <p className="text-xs text-zinc-500">Get a morning digest of your tasks and priorities</p>
+                          <p className="text-xs text-zinc-500">Morning digest of your tasks</p>
                         </div>
-                        <div className="p-4 bg-zinc-800/50 rounded-lg opacity-60">
-                          <div className="flex items-center gap-3 mb-2">
-                            <AlertTriangle className="w-4 h-4 text-yellow-400" />
-                            <span className="text-sm font-medium text-zinc-300">Deadline Alerts</span>
-                          </div>
-                          <p className="text-xs text-zinc-500">Reminders when deadlines are approaching</p>
-                        </div>
-                        <div className="p-4 bg-zinc-800/50 rounded-lg opacity-60">
-                          <div className="flex items-center gap-3 mb-2">
-                            <CheckSquare className="w-4 h-4 text-green-400" />
-                            <span className="text-sm font-medium text-zinc-300">Task Assignments</span>
-                          </div>
-                          <p className="text-xs text-zinc-500">Notify when you&apos;re assigned new tasks</p>
-                        </div>
-                        <div className="p-4 bg-zinc-800/50 rounded-lg opacity-60">
-                          <div className="flex items-center gap-3 mb-2">
-                            <BarChart3 className="w-4 h-4 text-purple-400" />
+                        <div className="p-4 bg-zinc-800/50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-zinc-300">Weekly Reports</span>
+                            <div className="w-10 h-6 bg-zinc-700 rounded-full relative">
+                              <div className="w-4 h-4 bg-zinc-500 rounded-full absolute left-1 top-1" />
+                            </div>
                           </div>
-                          <p className="text-xs text-zinc-500">Automated progress reports every week</p>
+                          <p className="text-xs text-zinc-500">Friday progress summaries</p>
                         </div>
                       </div>
 
                       <p className="text-xs text-zinc-500 mt-4 text-center">
-                        These settings will be available in a future update
+                        Preference settings will be available in a future update
                       </p>
                     </div>
                   </div>

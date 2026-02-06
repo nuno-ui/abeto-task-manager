@@ -484,23 +484,19 @@ export default function ReviewsPage() {
 
   // Keyboard shortcuts - defined later after handlers are created
 
-  // Load saved area from localStorage, or use preferred area from auth
+  // Load saved area from localStorage ONLY - don't auto-force preferredArea
+  // User should always be able to choose their perspective freely
   useEffect(() => {
     if (authLoading) return;
 
-    // If user has a preferred area from auth, use that
-    if (preferredArea) {
-      setReviewerArea(preferredArea);
-      localStorage.setItem('reviewerArea', preferredArea);
-      return;
-    }
-
-    // Otherwise, check localStorage
+    // Only load from localStorage - don't auto-set from preferredArea
+    // This allows user to freely switch perspectives without being forced
     const savedArea = localStorage.getItem('reviewerArea') as ReviewerArea | null;
     if (savedArea) {
       setReviewerArea(savedArea);
     }
-  }, [authLoading, preferredArea]);
+    // If no saved area, user will see the perspective selection screen
+  }, [authLoading]);
 
   // Fetch projects when area is selected and user is authenticated
   useEffect(() => {

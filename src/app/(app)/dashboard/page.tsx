@@ -18,7 +18,6 @@ import {
   Target,
   Bot,
 } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
 import { Badge, ProgressBar } from '@/components/ui';
 import { AIProjectCreator } from '@/components/projects/AIProjectCreator';
 import { TaskCompanion } from '@/components/ai/TaskCompanion';
@@ -143,7 +142,6 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-950">
-        <Header title="My Workspace" />
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 h-[600px] bg-zinc-900 rounded-2xl animate-pulse" />
@@ -159,8 +157,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950">
-      <Header title="My Workspace" />
-
       <div className="p-6 space-y-5">
         {/* Compact Welcome Bar */}
         <div className="flex items-center justify-between bg-gradient-to-r from-violet-900/30 via-blue-900/20 to-zinc-900 border border-violet-800/30 rounded-xl px-5 py-4">

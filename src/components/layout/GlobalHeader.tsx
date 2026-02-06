@@ -280,7 +280,7 @@ export function GlobalHeader() {
 
           {/* Slack */}
           <Link
-            href="/settings"
+            href="/settings?tab=slack"
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
             title="Slack Integration"
           >
