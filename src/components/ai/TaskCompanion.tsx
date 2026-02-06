@@ -531,11 +531,14 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
         setStep(2);
       } else {
         setTestResult('error');
-        setErrorMessage(data.error || 'Webhook test failed. Check the URL and try again.');
+        const errorMsg = data.error || 'Webhook test failed';
+        const details = data.details ? ` (${data.details})` : '';
+        setErrorMessage(`${errorMsg}${details}`);
       }
-    } catch {
+    } catch (err) {
       setTestResult('error');
-      setErrorMessage('Could not connect to Slack. Check the URL and try again.');
+      const errMsg = err instanceof Error ? err.message : 'Unknown error';
+      setErrorMessage(`Connection failed: ${errMsg}`);
     } finally {
       setIsTesting(false);
     }
