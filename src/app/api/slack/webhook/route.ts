@@ -13,6 +13,7 @@ const supabase = createClient(
 
 interface SlackEvent {
   type: string;
+  event_id?: string;
   event?: {
     type: string;
     text?: string;
@@ -250,32 +251,8 @@ async function sendSlackResponse(channel: string, text: string) {
   }
 }
 
-// Process message asynchronously (fire and forget)
-async function processSlackMessage(channel: string, cleanMessage: string) {
-  try {
-    console.log(`Processing Slack message: "${cleanMessage}" in channel ${channel}`);
-
-    // Fetch current tasks and projects
-    const { tasks, projects } = await fetchTasksAndProjects();
-    console.log(`Fetched ${tasks.length} tasks and ${projects.length} projects`);
-
-    // Generate AI response
-    const aiResponse = await generateAIResponse(cleanMessage, tasks, projects);
-    console.log(`Generated AI response: ${aiResponse.substring(0, 100)}...`);
-
-    // Send response using Slack Web API
-    await sendSlackResponse(channel, aiResponse);
-    console.log('Slack response sent successfully');
-  } catch (error) {
-    console.error('Error processing Slack message:', error);
-    // Try to send an error message to the channel
-    try {
-      await sendSlackResponse(channel, 'Sorry, I encountered an error processing your request. Please try again.');
-    } catch (sendError) {
-      console.error('Failed to send error message to Slack:', sendError);
-    }
-  }
-}
+// Track processed events to prevent duplicate processing (Slack retries)
+const processedEvents = new Set<string>();
 
 export async function POST(request: Request) {
   try {
@@ -293,6 +270,18 @@ export async function POST(request: Request) {
       const event = body.event;
       console.log('Event type:', event.type, 'User:', event.user, 'Channel:', event.channel);
 
+      // Deduplicate events using event_id or ts
+      const eventId = body.event_id || event.ts || '';
+      if (eventId && processedEvents.has(eventId)) {
+        console.log('Duplicate event, skipping:', eventId);
+        return NextResponse.json({ ok: true });
+      }
+      if (eventId) {
+        processedEvents.add(eventId);
+        // Clean up old events after 5 minutes
+        setTimeout(() => processedEvents.delete(eventId), 5 * 60 * 1000);
+      }
+
       // Ignore bot messages to prevent loops
       if (event.bot_id || event.subtype === 'bot_message') {
         console.log('Ignoring bot message');
@@ -309,11 +298,30 @@ export async function POST(request: Request) {
         console.log('Clean message:', cleanMessage);
 
         if (cleanMessage && event.channel) {
-          // IMPORTANT: Respond to Slack immediately to prevent retries (3s timeout)
-          // Process the message asynchronously
-          processSlackMessage(event.channel, cleanMessage);
+          try {
+            console.log(`Processing Slack message: "${cleanMessage}" in channel ${event.channel}`);
 
-          // Return immediately - Slack requires response within 3 seconds
+            // Fetch current tasks and projects
+            const { tasks, projects } = await fetchTasksAndProjects();
+            console.log(`Fetched ${tasks.length} tasks and ${projects.length} projects`);
+
+            // Generate AI response
+            const aiResponse = await generateAIResponse(cleanMessage, tasks, projects);
+            console.log(`Generated AI response: ${aiResponse.substring(0, 100)}...`);
+
+            // Send response using Slack Web API
+            await sendSlackResponse(event.channel, aiResponse);
+            console.log('Slack response sent successfully');
+          } catch (processError) {
+            console.error('Error processing Slack message:', processError);
+            // Try to send an error message to the channel
+            try {
+              await sendSlackResponse(event.channel, 'Sorry, I encountered an error processing your request. Please try again.');
+            } catch (sendError) {
+              console.error('Failed to send error message to Slack:', sendError);
+            }
+          }
+
           return NextResponse.json({ ok: true });
         }
       }
