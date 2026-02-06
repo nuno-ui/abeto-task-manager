@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, LayoutGrid, List, Sparkles, RefreshCw, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Plus, Search, Filter, LayoutGrid, List, Sparkles, RefreshCw, Lightbulb, ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ProjectForm } from '@/components/projects/ProjectForm';
 import { AIProjectCreator } from '@/components/projects/AIProjectCreator';
@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client';
 import { slugify } from '@/lib/utils';
 import type { Project, Team, Pillar, CreateProjectInput } from '@/types/database';
 
-export default function ProjectsPage() {
+function ProjectsPageContent() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [pillars, setPillars] = useState<Pillar[]>([]);
@@ -26,10 +26,23 @@ export default function ProjectsPage() {
   const [pillarFilter, setPillarFilter] = useState('all');
   const [showPredicted, setShowPredicted] = useState(true);
   const [refreshingPredicted, setRefreshingPredicted] = useState(false);
+  const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title' | 'priority' | 'progress'>('updated');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Handle URL params for create/ai modals
+  useEffect(() => {
+    if (searchParams.get('create') === 'true') {
+      setShowCreateModal(true);
+    }
+    if (searchParams.get('ai') === 'true') {
+      setShowAICreator(true);
+    }
+  }, [searchParams]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -106,9 +119,45 @@ export default function ProjectsPage() {
     return true;
   });
 
-  // Separate regular projects from predicted projects
-  const filteredProjects = allFilteredProjects.filter(p => !p.is_predicted);
-  const predictedProjects = allFilteredProjects.filter(p => p.is_predicted);
+  // Sort function
+  const sortProjects = (projectList: Project[]) => {
+    return [...projectList].sort((a, b) => {
+      let comparison = 0;
+      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+
+      switch (sortBy) {
+        case 'title':
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case 'created':
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+        case 'updated':
+          comparison = new Date(a.updated_at || a.created_at).getTime() - new Date(b.updated_at || b.created_at).getTime();
+          break;
+        case 'priority':
+          comparison = (priorityOrder[a.priority as keyof typeof priorityOrder] || 0) -
+                       (priorityOrder[b.priority as keyof typeof priorityOrder] || 0);
+          break;
+        case 'progress':
+          comparison = (a.progress_percentage || 0) - (b.progress_percentage || 0);
+          break;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  // Separate regular projects from predicted projects and sort
+  const filteredProjects = sortProjects(allFilteredProjects.filter(p => !p.is_predicted));
+  const predictedProjects = sortProjects(allFilteredProjects.filter(p => p.is_predicted));
+
+  const sortOptions = [
+    { value: 'updated', label: 'Last Updated' },
+    { value: 'created', label: 'Date Created' },
+    { value: 'title', label: 'Title' },
+    { value: 'priority', label: 'Priority' },
+    { value: 'progress', label: 'Progress' },
+  ];
 
   // Handle refresh predicted projects (placeholder for AI regeneration)
   const handleRefreshPredicted = async () => {
@@ -143,21 +192,6 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen">
-      <Header
-        title="Projects"
-        onCreateNew={() => setShowCreateModal(true)}
-        createLabel="New Project"
-        extraActions={
-          <button
-            onClick={() => setShowAICreator(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-sm font-medium text-white transition-colors"
-          >
-            <Sparkles className="w-4 h-4" />
-            New with AI
-          </button>
-        }
-      />
-
       <div className="p-6 space-y-6">
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-4">
@@ -168,7 +202,7 @@ export default function ProjectsPage() {
               placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
@@ -176,7 +210,7 @@ export default function ProjectsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               {statusOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -188,7 +222,7 @@ export default function ProjectsPage() {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               {priorityOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -200,7 +234,7 @@ export default function ProjectsPage() {
             <select
               value={pillarFilter}
               onChange={(e) => setPillarFilter(e.target.value)}
-              className="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               {pillarOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -208,6 +242,29 @@ export default function ProjectsPage() {
                 </option>
               ))}
             </select>
+
+            {/* Sort dropdown */}
+            <div className="flex items-center gap-1 border-l border-zinc-700 pl-2 ml-2">
+              <ArrowUpDown className="w-4 h-4 text-zinc-500" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="px-2 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              >
+                {sortOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="p-2 text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+              >
+                {sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-1 ml-auto">
@@ -362,5 +419,24 @@ export default function ProjectsPage() {
         onProjectCreated={fetchData}
       />
     </div>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-10 bg-zinc-800 rounded-lg w-1/3" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-48 bg-zinc-800 rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </div>
+    }>
+      <ProjectsPageContent />
+    </Suspense>
   );
 }

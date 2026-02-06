@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Header } from '@/components/layout/Header';
 import { TaskCard } from '@/components/tasks/TaskCard';
 import { Badge } from '@/components/ui';
-import { ChevronDown, ChevronUp, X, Filter, Layers } from 'lucide-react';
+import { ChevronDown, ChevronUp, X, Filter, Layers, ArrowUpDown } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -66,6 +65,8 @@ function TasksPageContent() {
   const [loading, setLoading] = useState(true);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [chartDistribution, setChartDistribution] = useState<'phase' | 'status' | 'difficulty' | 'ai_potential'>('phase');
+  const [sortBy, setSortBy] = useState<'title' | 'phase' | 'status' | 'difficulty' | 'project'>('phase');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Initialize filters from URL params
   const [filters, setFilters] = useState<Filters>({
@@ -126,9 +127,22 @@ function TasksPageContent() {
     }
   };
 
-  // Filter tasks client-side
+  // Sort options for tasks
+  const sortOptions = [
+    { value: 'phase', label: 'Phase' },
+    { value: 'status', label: 'Status' },
+    { value: 'title', label: 'Title' },
+    { value: 'difficulty', label: 'Difficulty' },
+    { value: 'project', label: 'Project' },
+  ];
+
+  // Filter and sort tasks client-side
   const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
+    const phaseOrder = ['discovery', 'planning', 'development', 'testing', 'training', 'rollout', 'monitoring'];
+    const statusOrder = ['not_started', 'in_progress', 'blocked', 'in_review', 'completed'];
+    const difficultyOrder = ['easy', 'medium', 'hard'];
+
+    const filtered = tasks.filter(task => {
       if (filters.phase !== 'all' && task.phase !== filters.phase) return false;
       if (filters.status !== 'all' && task.status !== filters.status) return false;
       if (filters.difficulty !== 'all' && task.difficulty !== filters.difficulty) return false;
@@ -138,7 +152,29 @@ function TasksPageContent() {
       if (filters.project_id !== 'all' && task.project?.id !== filters.project_id) return false;
       return true;
     });
-  }, [tasks, filters]);
+
+    return filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'title':
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case 'phase':
+          comparison = phaseOrder.indexOf(a.phase) - phaseOrder.indexOf(b.phase);
+          break;
+        case 'status':
+          comparison = statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+          break;
+        case 'difficulty':
+          comparison = difficultyOrder.indexOf(a.difficulty) - difficultyOrder.indexOf(b.difficulty);
+          break;
+        case 'project':
+          comparison = (a.project?.title || '').localeCompare(b.project?.title || '');
+          break;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [tasks, filters, sortBy, sortOrder]);
 
   // Group tasks by phase
   const tasksByPhase = useMemo(() => {
@@ -214,8 +250,6 @@ function TasksPageContent() {
 
   return (
     <div className="min-h-screen">
-      <Header title="All Tasks" />
-
       <div className="p-6 space-y-6">
         {/* Task Distribution Stats */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
@@ -443,7 +477,7 @@ function TasksPageContent() {
             <select
               value={filters.phase}
               onChange={(e) => updateFilter('phase', e.target.value)}
-              className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
             >
               <option value="all">All Phases</option>
               {phases.map(phase => (
@@ -457,7 +491,7 @@ function TasksPageContent() {
             <select
               value={filters.status}
               onChange={(e) => updateFilter('status', e.target.value)}
-              className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
             >
               {statusOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -468,7 +502,7 @@ function TasksPageContent() {
             <select
               value={filters.pillar_id}
               onChange={(e) => updateFilter('pillar_id', e.target.value)}
-              className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
             >
               <option value="all">All Pillars</option>
               {pillars.map(pillar => (
@@ -484,6 +518,27 @@ function TasksPageContent() {
               {showAdvancedFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               More Filters
             </button>
+
+            {/* Sorting */}
+            <div className="flex items-center gap-1 border-l border-zinc-700 pl-3 ml-auto">
+              <ArrowUpDown className="w-4 h-4 text-zinc-500" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+              >
+                {sortOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+              >
+                {sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+            </div>
 
             {/* Clear All */}
             {activeFilterCount > 0 && (
@@ -504,7 +559,7 @@ function TasksPageContent() {
               <select
                 value={filters.difficulty}
                 onChange={(e) => updateFilter('difficulty', e.target.value)}
-                className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               >
                 {difficultyOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -515,7 +570,7 @@ function TasksPageContent() {
               <select
                 value={filters.ai_potential}
                 onChange={(e) => updateFilter('ai_potential', e.target.value)}
-                className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               >
                 {aiPotentialOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -526,7 +581,7 @@ function TasksPageContent() {
               <select
                 value={filters.owner_team_id}
                 onChange={(e) => updateFilter('owner_team_id', e.target.value)}
-                className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               >
                 <option value="all">All Teams</option>
                 {teams.map(team => (
@@ -538,7 +593,7 @@ function TasksPageContent() {
               <select
                 value={filters.project_id}
                 onChange={(e) => updateFilter('project_id', e.target.value)}
-                className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               >
                 <option value="all">All Projects</option>
                 {projects.map(project => (
@@ -640,13 +695,10 @@ function TasksPageContent() {
 export default function TasksPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen">
-        <Header title="Tasks" />
-        <div className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-10 bg-zinc-800 rounded w-full" />
-            <div className="h-64 bg-zinc-800 rounded" />
-          </div>
+      <div className="min-h-screen p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-10 bg-zinc-800 rounded w-full" />
+          <div className="h-64 bg-zinc-800 rounded" />
         </div>
       </div>
     }>
