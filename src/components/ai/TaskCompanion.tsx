@@ -500,19 +500,45 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
 // Slack Setup Modal Component
 function SlackSetupModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(1);
-  const [channelName, setChannelName] = useState('task-companion');
-  const [isCreating, setIsCreating] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
   const [webhookUrl, setWebhookUrl] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleCreateChannel = async () => {
-    setIsCreating(true);
+  const handleTestWebhook = async () => {
+    if (!webhookUrl.trim() || !webhookUrl.startsWith('https://hooks.slack.com/')) {
+      setTestResult('error');
+      setErrorMessage('Please enter a valid Slack webhook URL');
+      return;
+    }
 
-    // Simulate API call - in production this would create the Slack channel
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    setIsTesting(true);
+    setTestResult(null);
+    setErrorMessage('');
 
-    setIsComplete(true);
-    setIsCreating(false);
+    try {
+      // Test the webhook by sending a test message
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: '🤖 *Task Companion Connected!*\n\nYour Abeto Task Manager is now linked to this channel.\n\nTo complete setup, add this webhook URL to your Vercel environment variables:\n`SLACK_WEBHOOK_URL`\n\nThen you can mention @task-companion to ask questions!'
+        }),
+      });
+
+      if (response.ok) {
+        setTestResult('success');
+        setStep(2);
+      } else {
+        setTestResult('error');
+        setErrorMessage('Webhook test failed. Check the URL and try again.');
+      }
+    } catch {
+      setTestResult('error');
+      setErrorMessage('Could not connect to Slack. Check the URL and try again.');
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   return (
@@ -539,158 +565,141 @@ function SlackSetupModal({ onClose }: { onClose: () => void }) {
 
         {/* Content */}
         <div className="p-6">
-          {!isComplete ? (
-            <>
-              {step === 1 && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-zinc-800/50 rounded-lg">
-                    <h3 className="font-medium text-white mb-2">What you'll get:</h3>
-                    <ul className="space-y-2 text-sm text-zinc-300">
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        Same AI-powered task assistance in Slack
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        Real-time alerts for overdue and critical tasks
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        Daily task summaries and recommendations
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        Ask questions about projects and tasks
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      Slack Channel Name
-                    </label>
-                    <div className="flex items-center">
-                      <span className="px-3 py-2 bg-zinc-800 border border-r-0 border-zinc-700 rounded-l-lg text-zinc-500 text-sm">
-                        #
-                      </span>
-                      <input
-                        type="text"
-                        value={channelName}
-                        onChange={(e) => setChannelName(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                        className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-r-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                        placeholder="task-companion"
-                      />
-                    </div>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      This channel will be created in your Slack workspace
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setStep(2)}
-                    className="w-full py-3 bg-[#4A154B] hover:bg-[#3a1139] text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    Continue with Slack
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-
-              {step === 2 && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-blue-900/20 border border-blue-900/30 rounded-lg">
-                    <h3 className="font-medium text-blue-300 mb-2 flex items-center gap-2">
-                      <Lightbulb className="w-4 h-4" />
-                      Quick Setup Option
-                    </h3>
-                    <p className="text-sm text-blue-200/80">
-                      If you have a Slack Incoming Webhook URL, paste it below. Otherwise, we'll guide you through creating one.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      Slack Webhook URL (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={webhookUrl}
-                      onChange={(e) => setWebhookUrl(e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                      placeholder="https://hooks.slack.com/services/..."
-                    />
-                  </div>
-
-                  <div className="p-4 bg-zinc-800/50 rounded-lg">
-                    <h4 className="text-sm font-medium text-white mb-2">To create a webhook:</h4>
-                    <ol className="space-y-2 text-sm text-zinc-400">
-                      <li className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-zinc-700 text-zinc-300 text-xs flex items-center justify-center flex-shrink-0">1</span>
-                        Go to <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline">api.slack.com/apps</a>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-zinc-700 text-zinc-300 text-xs flex items-center justify-center flex-shrink-0">2</span>
-                        Create a new app or select existing
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-zinc-700 text-zinc-300 text-xs flex items-center justify-center flex-shrink-0">3</span>
-                        Enable "Incoming Webhooks" and create one
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-zinc-700 text-zinc-300 text-xs flex items-center justify-center flex-shrink-0">4</span>
-                        Copy the webhook URL and paste above
-                      </li>
-                    </ol>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setStep(1)}
-                      className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-medium rounded-lg transition-colors"
-                    >
-                      Back
-                    </button>
-                    <button
-                      onClick={handleCreateChannel}
-                      disabled={isCreating}
-                      className="flex-1 py-3 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                      {isCreating ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Connecting...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          Complete Setup
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-6">
-              <div className="w-16 h-16 rounded-full bg-green-900/30 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-8 h-8 text-green-400" />
+          {step === 1 && (
+            <div className="space-y-4">
+              <div className="p-4 bg-zinc-800/50 rounded-lg">
+                <h3 className="font-medium text-white mb-2">What you'll get:</h3>
+                <ul className="space-y-2 text-sm text-zinc-300">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    AI-powered task assistance in Slack
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    Ask about tasks, projects, and deadlines
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    Get recommendations on what to work on
+                  </li>
+                </ul>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Connected!</h3>
-              <p className="text-zinc-400 mb-6">
-                Task Companion is now available in <strong className="text-white">#{channelName}</strong>
-              </p>
-              <div className="p-4 bg-zinc-800/50 rounded-lg text-left mb-6">
-                <p className="text-sm text-zinc-300 mb-2">Try these commands in Slack:</p>
+
+              <div className="p-4 bg-amber-900/20 border border-amber-800/30 rounded-lg">
+                <h4 className="text-sm font-medium text-amber-300 mb-2 flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4" />
+                  Setup Required
+                </h4>
+                <p className="text-sm text-amber-200/80">
+                  You'll need to create a Slack Incoming Webhook first. Follow the steps below.
+                </p>
+              </div>
+
+              <div className="p-4 bg-zinc-800/50 rounded-lg">
+                <h4 className="text-sm font-medium text-white mb-3">Create a Slack Webhook:</h4>
+                <ol className="space-y-3 text-sm text-zinc-400">
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">1</span>
+                    <span>Go to <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline">api.slack.com/apps</a> and create a new app</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">2</span>
+                    <span>Select <strong className="text-zinc-300">"From scratch"</strong>, name it "Task Companion"</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">3</span>
+                    <span>Go to <strong className="text-zinc-300">"Incoming Webhooks"</strong> → Turn it ON</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">4</span>
+                    <span>Click <strong className="text-zinc-300">"Add New Webhook to Workspace"</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center flex-shrink-0">5</span>
+                    <span>Choose a channel and copy the webhook URL</span>
+                  </li>
+                </ol>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Paste your Webhook URL here:
+                </label>
+                <input
+                  type="text"
+                  value={webhookUrl}
+                  onChange={(e) => {
+                    setWebhookUrl(e.target.value);
+                    setTestResult(null);
+                    setErrorMessage('');
+                  }}
+                  className={`w-full px-3 py-2 bg-zinc-800 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 ${
+                    testResult === 'error' ? 'border-red-500' : 'border-zinc-700'
+                  }`}
+                  placeholder="https://hooks.slack.com/services/T.../B.../..."
+                />
+                {testResult === 'error' && (
+                  <p className="text-xs text-red-400 mt-1">{errorMessage}</p>
+                )}
+              </div>
+
+              <button
+                onClick={handleTestWebhook}
+                disabled={isTesting || !webhookUrl.trim()}
+                className="w-full py-3 bg-[#4A154B] hover:bg-[#3a1139] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                {isTesting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Testing connection...
+                  </>
+                ) : (
+                  <>
+                    <Slack className="w-4 h-4" />
+                    Test & Connect
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <div className="text-center py-4">
+                <div className="w-16 h-16 rounded-full bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-green-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Test Message Sent!</h3>
+                <p className="text-zinc-400">
+                  Check your Slack channel for the confirmation message.
+                </p>
+              </div>
+
+              <div className="p-4 bg-amber-900/20 border border-amber-800/30 rounded-lg">
+                <h4 className="text-sm font-medium text-amber-300 mb-2 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Final Step (Admin Required)
+                </h4>
+                <p className="text-sm text-amber-200/80 mb-3">
+                  To enable full Slack integration, add this webhook URL as an environment variable in Vercel:
+                </p>
+                <div className="bg-zinc-900 rounded p-2 font-mono text-xs text-zinc-300 break-all">
+                  SLACK_WEBHOOK_URL={webhookUrl}
+                </div>
+              </div>
+
+              <div className="p-4 bg-zinc-800/50 rounded-lg">
+                <p className="text-sm text-zinc-300 mb-2">Once configured, try in Slack:</p>
                 <ul className="space-y-1 text-sm text-zinc-400 font-mono">
                   <li>@task-companion what should I work on?</li>
-                  <li>@task-companion show my alerts</li>
+                  <li>@task-companion show blocked tasks</li>
                   <li>@task-companion project status</li>
                 </ul>
               </div>
+
               <button
                 onClick={onClose}
-                className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg transition-colors"
+                className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg transition-colors"
               >
                 Done
               </button>
