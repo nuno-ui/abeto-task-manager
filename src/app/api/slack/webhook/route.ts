@@ -53,6 +53,8 @@ interface TaskSummary {
   is_foundational: boolean;
   project: { title: string; slug: string } | null;
   owner_team: string | null;
+  assignee_id: string | null;
+  assignee_name: string | null;
 }
 
 interface ProjectSummary {
@@ -72,9 +74,66 @@ function handleVerification(body: SlackEvent) {
   return NextResponse.json({ challenge: body.challenge });
 }
 
+// Get Slack user info and map to Abeto user
+interface SlackUserInfo {
+  slackUserId: string;
+  slackUserName: string;
+  slackEmail?: string;
+  abetoUser?: {
+    id: string;
+    full_name: string;
+    email: string;
+    team_name?: string;
+  };
+}
+
+async function getSlackUserInfo(slackUserId: string, botToken: string): Promise<SlackUserInfo> {
+  const result: SlackUserInfo = {
+    slackUserId,
+    slackUserName: 'User',
+  };
+
+  try {
+    // Fetch Slack user profile
+    const userResponse = await fetch(`https://slack.com/api/users.info?user=${slackUserId}`, {
+      headers: {
+        'Authorization': `Bearer ${botToken}`,
+      },
+    });
+    const userData = await userResponse.json();
+
+    if (userData.ok && userData.user) {
+      result.slackUserName = userData.user.real_name || userData.user.name || 'User';
+      result.slackEmail = userData.user.profile?.email;
+
+      // Try to find matching user in Abeto by email
+      if (result.slackEmail) {
+        const { data: abetoUser } = await getSupabaseClient()
+          .from('users')
+          .select('id, full_name, email, team:teams(name)')
+          .eq('email', result.slackEmail)
+          .single();
+
+        if (abetoUser) {
+          result.abetoUser = {
+            id: abetoUser.id,
+            full_name: abetoUser.full_name || result.slackUserName,
+            email: abetoUser.email,
+            team_name: (abetoUser.team as { name: string } | null)?.name,
+          };
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching Slack user info:', error);
+  }
+
+  return result;
+}
+
 // Fetch tasks and projects from database
 async function fetchTasksAndProjects() {
-  // Fetch all tasks with project info
+  // Fetch all tasks with project info and assignee
   const { data: tasks, error: tasksError } = await getSupabaseClient()
     .from('tasks')
     .select(`
@@ -90,8 +149,10 @@ async function fetchTasksAndProjects() {
       due_date,
       is_critical_path,
       is_foundational,
+      assignee_id,
       project:projects(id, title, slug),
-      owner_team:teams(name)
+      owner_team:teams(name),
+      assignee:users!assignee_id(id, full_name)
     `)
     .order('created_at', { ascending: false });
 
@@ -137,6 +198,8 @@ async function fetchTasksAndProjects() {
       slug: (task.project as { title: string; slug: string }).slug,
     } : null,
     owner_team: task.owner_team ? (task.owner_team as { name: string }).name : null,
+    assignee_id: task.assignee_id as string | null,
+    assignee_name: task.assignee ? (task.assignee as { full_name: string }).full_name : null,
   }));
 
   // Transform project data
@@ -157,8 +220,20 @@ async function fetchTasksAndProjects() {
 async function generateAIResponse(
   message: string,
   tasks: TaskSummary[],
-  projects: ProjectSummary[]
+  projects: ProjectSummary[],
+  userInfo?: SlackUserInfo
 ) {
+  const now = new Date();
+
+  // Filter tasks assigned to this user if we know who they are
+  const userAssignedTasks = userInfo?.abetoUser?.id
+    ? tasks.filter(t => t.assignee_id === userInfo.abetoUser!.id)
+    : [];
+
+  const userTeamTasks = userInfo?.abetoUser?.team_name
+    ? tasks.filter(t => t.owner_team === userInfo.abetoUser!.team_name)
+    : [];
+
   const taskStats = {
     total: tasks.length,
     notStarted: tasks.filter(t => t.status === 'not_started').length,
@@ -167,18 +242,60 @@ async function generateAIResponse(
     blocked: tasks.filter(t => t.status === 'blocked').length,
     overdue: tasks.filter(t => {
       if (!t.due_date) return false;
-      return new Date(t.due_date) < new Date();
+      return new Date(t.due_date) < now;
     }).length,
     criticalPath: tasks.filter(t => t.is_critical_path).length,
     highAIPotential: tasks.filter(t => t.ai_potential === 'high').length,
   };
 
+  // User-specific stats
+  const userStats = userInfo?.abetoUser ? {
+    assignedTotal: userAssignedTasks.length,
+    assignedInProgress: userAssignedTasks.filter(t => t.status === 'in_progress').length,
+    assignedOverdue: userAssignedTasks.filter(t => {
+      if (!t.due_date || t.status === 'completed') return false;
+      return new Date(t.due_date) < now;
+    }).length,
+    teamTotal: userTeamTasks.length,
+    teamBlocked: userTeamTasks.filter(t => t.status === 'blocked').length,
+  } : null;
+
+  const userName = userInfo?.abetoUser?.full_name || userInfo?.slackUserName || 'there';
+  const userTeam = userInfo?.abetoUser?.team_name;
+
   const systemPrompt = `You are the Task Companion, an AI assistant for Abeto's task management system integrated with Slack. Abeto is a solar installation lead generation company in Spain building AI-powered automation tools.
 
-## Your Role
-Help team members understand their tasks, prioritize work, and track progress through Slack.
+## Current User
+- Name: ${userName}
+${userTeam ? `- Team: ${userTeam}` : '- Team: Not specified'}
+${userStats ? `
+### ${userName}'s Personal Tasks
+- Assigned to ${userName}: ${userStats.assignedTotal} tasks
+- Currently working on: ${userStats.assignedInProgress} in progress
+- Overdue: ${userStats.assignedOverdue} tasks need attention!
+${userTeam ? `
+### ${userTeam} Team Tasks
+- Total team tasks: ${userStats.teamTotal}
+- Blocked: ${userStats.teamBlocked}` : ''}
+` : '- Note: User not found in system - showing all tasks'}
 
-## Current Task Statistics
+${userAssignedTasks.length > 0 ? `
+### Tasks Assigned to ${userName}
+${userAssignedTasks.slice(0, 10).map(t => `
+- *${t.title}* (${t.status})
+  - Project: ${t.project?.title || 'None'}
+  - Priority: ${t.priority}
+  - Due: ${t.due_date || 'No due date'}
+  ${t.status === 'blocked' ? '⚠️ BLOCKED' : ''}
+  ${t.due_date && new Date(t.due_date) < now && t.status !== 'completed' ? '🚨 OVERDUE' : ''}
+`).join('\n')}
+` : ''}
+
+## Your Role
+Help ${userName} understand their tasks, prioritize work, and track progress through Slack.
+When ${userName} asks "what should I work on", prioritize THEIR assigned tasks first, then team tasks.
+
+## Overall System Statistics
 - Total tasks: ${taskStats.total}
 - Not started: ${taskStats.notStarted}
 - In progress: ${taskStats.inProgress}
@@ -190,27 +307,29 @@ Help team members understand their tasks, prioritize work, and track progress th
 
 ## All Tasks (Top 50)
 ${tasks.slice(0, 50).map(t => `
-- **${t.title}** (${t.status})
+- *${t.title}* (${t.status}) ${t.assignee_name ? `[Assigned: ${t.assignee_name}]` : '[Unassigned]'}
   - Project: ${t.project?.title || 'None'}
   - Priority: ${t.priority}
-  - AI Potential: ${t.ai_potential}
+  - Team: ${t.owner_team || 'None'}
   - Due: ${t.due_date || 'No due date'}
   - Critical Path: ${t.is_critical_path ? 'Yes' : 'No'}
 `).join('\n')}
 
 ## All Projects (Top 20)
 ${projects.slice(0, 20).map(p => `
-- **${p.title}** (${p.status})
+- *${p.title}* (${p.status})
   - Priority: ${p.priority}
   - Progress: ${p.progress_percentage}%
 `).join('\n')}
 
 ## Response Guidelines for Slack
-1. Keep responses concise (Slack has message limits)
-2. Use Slack formatting: *bold*, _italic_, \`code\`, bullet points
-3. Be actionable - suggest specific tasks to work on
-4. Mention overdue or critical tasks proactively
-5. Keep it friendly and professional`;
+1. Address ${userName} by name when appropriate
+2. Prioritize ${userName}'s assigned tasks when giving recommendations
+3. Keep responses concise (Slack has message limits)
+4. Use Slack formatting: *bold*, _italic_, \`code\`, bullet points
+5. Be actionable - suggest specific tasks to work on
+6. Mention overdue or critical tasks proactively
+7. Keep it friendly and professional`;
 
   const response = await getAnthropicClient().messages.create({
     model: 'claude-sonnet-4-20250514',
@@ -313,12 +432,30 @@ export async function POST(request: Request) {
           try {
             console.log(`Processing Slack message: "${cleanMessage}" in channel ${event.channel}`);
 
+            // Get bot token for API calls
+            let botToken = process.env.SLACK_BOT_TOKEN;
+            if (!botToken) {
+              const { data: settings } = await getSupabaseClient()
+                .from('app_settings')
+                .select('value')
+                .eq('key', 'slack_bot_token')
+                .single();
+              botToken = settings?.value;
+            }
+
+            // Get user info from Slack and map to Abeto user
+            let userInfo: SlackUserInfo | undefined;
+            if (event.user && botToken) {
+              userInfo = await getSlackUserInfo(event.user, botToken);
+              console.log(`User info: ${userInfo.slackUserName} (${userInfo.abetoUser?.full_name || 'not in system'})`);
+            }
+
             // Fetch current tasks and projects
             const { tasks, projects } = await fetchTasksAndProjects();
             console.log(`Fetched ${tasks.length} tasks and ${projects.length} projects`);
 
-            // Generate AI response
-            const aiResponse = await generateAIResponse(cleanMessage, tasks, projects);
+            // Generate AI response with user context
+            const aiResponse = await generateAIResponse(cleanMessage, tasks, projects, userInfo);
             console.log(`Generated AI response: ${aiResponse.substring(0, 100)}...`);
 
             // Send response using Slack Web API

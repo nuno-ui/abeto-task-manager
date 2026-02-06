@@ -56,12 +56,32 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
   const [userName, setUserName] = useState('there');
+  const [userArea, setUserArea] = useState<string>('all');
   const [pendingReviews, setPendingReviews] = useState(0);
 
   useEffect(() => {
     fetchDashboardData();
-    setUserName('Nuno');
+    fetchUserInfo();
   }, []);
+
+  const fetchUserInfo = async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user?.full_name) {
+          // Get first name only
+          const firstName = data.user.full_name.split(' ')[0];
+          setUserName(firstName);
+        }
+        if (data.preferredArea) {
+          setUserArea(data.preferredArea);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -193,7 +213,7 @@ export default function DashboardPage() {
             <TaskCompanion
               tasks={tasks}
               projects={projects}
-              userArea="all"
+              userArea={userArea}
               userName={userName}
             />
           </div>
