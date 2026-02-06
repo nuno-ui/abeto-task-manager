@@ -268,7 +268,7 @@ export function ReviewerIdentification({
                 {isRecommended && !isSelected && (
                   <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-amber-500/20 rounded-full">
                     <Star className="w-3 h-3 text-amber-500" fill="currentColor" />
-                    <span className="text-xs text-amber-400 font-medium">Your Role</span>
+                    <span className="text-xs text-amber-400 font-medium">Recommended</span>
                   </div>
                 )}
 

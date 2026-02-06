@@ -160,10 +160,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      <div className="p-6 space-y-5">
+    <div className="h-screen bg-zinc-950 overflow-hidden flex flex-col">
+      <div className="p-4 space-y-4 flex-1 overflow-hidden flex flex-col">
         {/* Compact Welcome Bar */}
-        <div className="flex items-center justify-between bg-gradient-to-r from-violet-900/30 via-blue-900/20 to-zinc-900 border border-violet-800/30 rounded-xl px-5 py-4">
+        <div className="flex items-center justify-between bg-gradient-to-r from-violet-900/30 via-blue-900/20 to-zinc-900 border border-violet-800/30 rounded-xl px-4 py-3 flex-shrink-0">
           <div className="flex items-center gap-4">
             {/* Robot Icon */}
             <div className="relative flex-shrink-0">
@@ -207,9 +207,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-hidden">
           {/* Task Companion - Main Feature */}
-          <div className="lg:col-span-2 h-[calc(100vh-220px)] min-h-[550px]">
+          <div className="lg:col-span-2 min-h-0 overflow-hidden">
             <TaskCompanion
               tasks={tasks}
               projects={projects}
@@ -220,9 +220,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Right Sidebar */}
-          <div className="space-y-4">
+          <div className="space-y-3 overflow-y-auto pr-1 min-h-0">
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <Link
                 href="/projects"
                 className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 hover:border-violet-700/50 transition-all group"
@@ -272,8 +272,8 @@ export default function DashboardPage() {
 
             {/* Needs Attention */}
             {(overdueTasks > 0 || stats.blockedTasks > 0 || criticalTasks > 0 || pendingReviews > 0) && (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 space-y-1.5">
+                <h3 className="text-xs font-semibold text-white flex items-center gap-2 mb-2">
                   <AlertTriangle className="w-4 h-4 text-orange-400" />
                   Needs Attention
                 </h3>
@@ -330,7 +330,7 @@ export default function DashboardPage() {
 
             {/* AI Opportunities */}
             {highAIPotential > 0 && (
-              <div className="bg-gradient-to-br from-violet-900/30 to-zinc-900 border border-violet-800/30 rounded-xl p-4">
+              <div className="bg-gradient-to-br from-violet-900/30 to-zinc-900 border border-violet-800/30 rounded-xl p-3">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-violet-400" />
@@ -348,9 +348,9 @@ export default function DashboardPage() {
 
             {/* Active Projects */}
             {priorityProjects.length > 0 && (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-semibold text-white flex items-center gap-2">
                     <Target className="w-4 h-4 text-blue-400" />
                     Active Projects
                   </h3>
@@ -381,8 +381,8 @@ export default function DashboardPage() {
             )}
 
             {/* This Week */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3">
+              <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-blue-400" />
                 This Week
               </h3>

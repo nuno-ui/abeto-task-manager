@@ -820,13 +820,15 @@ export default function ReviewsPage() {
   // Show identification screen if no area selected
   if (!reviewerArea) {
     return (
-      <div className="min-h-screen p-6 max-w-4xl mx-auto">
-        <ReviewerIdentification
-          currentArea={reviewerArea}
-          onSelectArea={handleSelectArea}
-          preferredArea={preferredArea}
-          userName={user?.full_name || user?.email}
-        />
+      <div className="h-screen overflow-hidden p-6">
+        <div className="h-full overflow-y-auto max-w-4xl mx-auto">
+          <ReviewerIdentification
+            currentArea={reviewerArea}
+            onSelectArea={handleSelectArea}
+            preferredArea={preferredArea}
+            userName={user?.full_name || user?.email}
+          />
+        </div>
       </div>
     );
   }
@@ -875,8 +877,8 @@ export default function ReviewsPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="p-6 space-y-6">
+    <div className="h-screen overflow-hidden flex flex-col">
+      <div className="p-4 flex-1 overflow-hidden flex flex-col space-y-3">
         {/* Progress with gamification */}
         <ReviewProgress
           totalProjects={stats.totalProjects}
@@ -933,9 +935,9 @@ export default function ReviewsPage() {
 
         {/* Current Project Review Card */}
         {currentProject && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex-1 flex flex-col min-h-0">
             {/* Project Header */}
-            <div className="p-6 border-b border-zinc-800">
+            <div className="p-4 border-b border-zinc-800 flex-shrink-0">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -976,34 +978,27 @@ export default function ReviewsPage() {
               </div>
             </div>
 
-            {/* Review Flow Guide Banner */}
+            {/* Review Flow Guide Banner - Compact */}
             {!sessionId && (
-              <div className="mx-6 mt-6 mb-0 bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-                <h4 className="text-sm font-medium text-blue-400 mb-2 flex items-center gap-2">
-                  <Info className="w-4 h-4" />
-                  Review Flow Guide
-                </h4>
-                <ol className="text-sm text-zinc-400 space-y-1.5 list-decimal list-inside">
-                  <li>
-                    <strong className="text-zinc-300">Read Project Info</strong> - Understand the project context, goals, and scope
-                  </li>
-                  <li>
-                    <strong className="text-zinc-300">Review Tasks</strong> - Examine tasks, especially those related to your area ({reviewerArea.replace('_', '/')})
-                  </li>
-                  <li>
-                    <strong className="text-zinc-300">Complete Your Review</strong> - Answer the review questions and submit your assessment
-                  </li>
-                </ol>
+              <div className="mx-4 mt-3 mb-0 bg-blue-500/10 border border-blue-500/30 rounded-lg px-4 py-2 flex-shrink-0">
+                <div className="flex items-center gap-4 text-xs text-zinc-400">
+                  <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                  <span><strong className="text-zinc-300">1.</strong> Read Info</span>
+                  <span className="text-zinc-600">→</span>
+                  <span><strong className="text-zinc-300">2.</strong> Review Tasks</span>
+                  <span className="text-zinc-600">→</span>
+                  <span><strong className="text-zinc-300">3.</strong> Complete Review</span>
+                </div>
               </div>
             )}
 
             {/* Split-Panel Content - Info/Tasks on Left, Review on Right */}
-            <div className="p-6">
-              <div className="flex gap-6">
+            <div className="p-4 flex-1 min-h-0 overflow-hidden">
+              <div className="flex gap-4 h-full">
                 {/* LEFT PANEL - Project Info / Tasks (switchable) */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 flex flex-col">
                   {/* Left Panel Tab Navigation */}
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex gap-2 mb-3 flex-shrink-0">
                     <button
                       onClick={() => setLeftPanel('info')}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -1029,7 +1024,7 @@ export default function ReviewsPage() {
                   </div>
 
                   {/* Left Panel Content */}
-                  <div className="bg-zinc-800/30 rounded-xl p-4 max-h-[600px] overflow-y-auto">
+                  <div className="bg-zinc-800/30 rounded-xl p-4 flex-1 overflow-y-auto min-h-0">
                     {leftPanel === 'info' && (
                       <ProjectReviewInfo project={currentProject} />
                     )}
@@ -1048,18 +1043,18 @@ export default function ReviewsPage() {
                 </div>
 
                 {/* RIGHT PANEL - Review Form (always visible) */}
-                <div className="w-96 flex-shrink-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-zinc-400 uppercase flex items-center gap-2">
-                      <Star className="w-4 h-4" />
+                <div className="w-80 flex-shrink-0 flex flex-col">
+                  <div className="flex items-center justify-between mb-3 flex-shrink-0">
+                    <h3 className="text-xs font-medium text-zinc-400 uppercase flex items-center gap-2">
+                      <Star className="w-3 h-3" />
                       Your Review
                     </h3>
                     <span className="text-xs text-zinc-500">
-                      {Object.keys(reviewAnswers).length} of {REVIEW_QUESTIONS[reviewerArea].length} answered
+                      {Object.keys(reviewAnswers).length}/{REVIEW_QUESTIONS[reviewerArea].length}
                     </span>
                   </div>
 
-                  <div className="bg-zinc-800/30 rounded-xl p-4 max-h-[600px] overflow-y-auto space-y-3">
+                  <div className="bg-zinc-800/30 rounded-xl p-3 flex-1 overflow-y-auto space-y-2 min-h-0">
                     {/* Review Questions */}
                     {REVIEW_QUESTIONS[reviewerArea].map((question) => (
                       <ReviewQuestionCard
@@ -1118,7 +1113,7 @@ export default function ReviewsPage() {
             </div>
 
             {/* Actions Footer */}
-            <div className="p-6 border-t border-zinc-800 bg-zinc-950/50">
+            <div className="p-4 border-t border-zinc-800 bg-zinc-950/50 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <button
