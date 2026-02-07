@@ -444,7 +444,7 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[520px] bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+    <div className="flex flex-col h-full max-h-[560px] bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800 bg-gradient-to-r from-violet-900/20 to-blue-900/20">
         <div className="flex items-center gap-3">

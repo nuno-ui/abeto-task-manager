@@ -527,12 +527,15 @@ export default function ReviewsPage() {
   };
 
   const handleSelectArea = async (area: ReviewerArea) => {
+    // Prevent double-clicks or rapid clicking
+    if (showOnboarding) return;
+
     // Check if user has seen onboarding for this area
     const onboardingKey = `reviewOnboarding_${area}`;
     const hasSeenOnboarding = localStorage.getItem(onboardingKey);
 
     if (!hasSeenOnboarding) {
-      // Show onboarding modal
+      // Show onboarding modal - set both states together
       setPendingArea(area);
       setShowOnboarding(true);
     } else {
@@ -820,8 +823,8 @@ export default function ReviewsPage() {
   // Show identification screen if no area selected
   if (!reviewerArea) {
     return (
-      <div className="h-screen overflow-hidden p-6">
-        <div className="h-full overflow-y-auto max-w-4xl mx-auto">
+      <div className="min-h-screen p-6 overflow-y-auto">
+        <div className="max-w-4xl mx-auto pb-8">
           <ReviewerIdentification
             currentArea={reviewerArea}
             onSelectArea={handleSelectArea}
