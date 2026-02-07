@@ -1024,6 +1024,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               deliverables: editingTask.deliverables || [],
               demo_link: editingTask.demo_link || undefined,
               google_drive_folder_url: editingTask.google_drive_folder_url || undefined,
+              agent_tool_name: editingTask.agent_tool_name || undefined,
+              agent_tool_signature: editingTask.agent_tool_signature || undefined,
+              agent_tool_description: editingTask.agent_tool_description || undefined,
             }}
             teams={teams}
             users={users}
