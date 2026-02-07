@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
   Shield,
   Heart,
+  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Reviews', href: '/reviews', icon: ClipboardCheck },
   { name: 'Activity', href: '/activity', icon: Activity },
   { name: 'Team', href: '/team', icon: Users },
+  { name: 'Vision', href: '/vision', icon: Eye },
   { name: 'Health', href: '/settings', icon: Heart },
 ];
 
