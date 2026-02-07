@@ -179,34 +179,56 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
     };
 
     // Build a COMPACT welcome message (to fit without scrolling)
-    let content = `Hey ${userName}! 👋 `;
+    let content = `Hey ${userName}! 👋\n\n`;
 
-    // Compact summary line
-    const summaryParts: string[] = [];
+    // Always show team overview first
+    content += `📊 **${activeProjects.length} active projects** with **${totalTasks.length} open tasks**`;
 
+    // User-specific info if available
     if (userId && myActiveTasks.length > 0) {
-      summaryParts.push(`**${myActiveTasks.length} task${myActiveTasks.length !== 1 ? 's' : ''}** assigned to you`);
+      content += `\n👤 **${myActiveTasks.length}** assigned to you`;
+      if (myInProgress.length > 0) {
+        content += ` (${myInProgress.length} in progress)`;
+      }
     }
+
+    // Alerts on same line to save space
+    const alertParts: string[] = [];
     if (myOverdue.length > 0) {
-      summaryParts.push(`🚨 ${myOverdue.length} overdue`);
+      alertParts.push(`🚨 ${myOverdue.length} overdue`);
+    } else if (userId) {
+      // Check team overdue if no personal overdue
+      const teamOverdue = tasks.filter(t => {
+        if (!t.due_date || t.status === 'completed' || t.status === 'cancelled') return false;
+        return new Date(t.due_date) < now;
+      });
+      if (teamOverdue.length > 0) {
+        alertParts.push(`🚨 ${teamOverdue.length} team overdue`);
+      }
     }
     if (myBlocked.length > 0) {
-      summaryParts.push(`⚠️ ${myBlocked.length} blocked`);
+      alertParts.push(`⚠️ ${myBlocked.length} blocked`);
+    } else if (blockedTasks.length > 0) {
+      alertParts.push(`⚠️ ${blockedTasks.length} blocked`);
+    }
+    if (alertParts.length > 0) {
+      content += `\n${alertParts.join(' • ')}`;
     }
 
-    if (summaryParts.length > 0) {
-      content += summaryParts.join(' • ');
-    } else {
-      content += `**${activeProjects.length} projects** • **${totalTasks.length} tasks** active`;
-    }
-
-    // Add one-liner about reviews if needed
+    // Reviews and AI opportunities on one line
+    const extraInfo: string[] = [];
     if (projectsNeedingReview.length > 0) {
-      content += `\n📋 ${projectsNeedingReview.length} project${projectsNeedingReview.length !== 1 ? 's' : ''} need review`;
+      extraInfo.push(`📋 ${projectsNeedingReview.length} need review`);
+    }
+    if (highAIPotentialTasks.length > 0) {
+      extraInfo.push(`✨ ${highAIPotentialTasks.length} AI-ready`);
+    }
+    if (extraInfo.length > 0) {
+      content += `\n${extraInfo.join(' • ')}`;
     }
 
-    // Fun fact - compact version
-    content += `\n\n💡 *${todaysFact.fact.length > 80 ? todaysFact.fact.substring(0, 77) + '...' : todaysFact.fact}*`;
+    // Fun fact - more compact
+    content += `\n\n💡 *${todaysFact.fact.length > 70 ? todaysFact.fact.substring(0, 67) + '...' : todaysFact.fact}*`;
 
     const welcomeMessage: Message = {
       id: 'welcome',
@@ -422,7 +444,7 @@ export function TaskCompanion({ tasks, projects, userArea = 'all', userName = 't
   };
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+    <div className="flex flex-col h-full max-h-[520px] bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800 bg-gradient-to-r from-violet-900/20 to-blue-900/20">
         <div className="flex items-center gap-3">
