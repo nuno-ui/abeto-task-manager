@@ -537,6 +537,89 @@ export default function VisionPage() {
                   so we can build better agents. Pricing should just enable us to cover costs and build the Cortex as fast as possible.
                 </p>
               </div>
+
+              {/* Solar Industry Advantage - Our Privileged Position */}
+              <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-600/40 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-amber-400" />
+                  Our Solar Industry Advantage
+                </h3>
+                <p className="text-amber-100 mb-6 text-lg">
+                  Generic AI tools will emerge. Our moat is <strong>building from inside the spinal cord</strong> of the solar industry.
+                </p>
+
+                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                  <div className="bg-black/20 rounded-lg p-4 border border-amber-500/20">
+                    <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                      <Target className="w-4 h-4 text-amber-400" />
+                      Day-One Sales Access
+                    </h4>
+                    <p className="text-sm text-zinc-300">
+                      We're embedded with SDRs making real calls to real installers. Every conversation trains our AI on what actually converts.
+                    </p>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-4 border border-amber-500/20">
+                    <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                      <Database className="w-4 h-4 text-amber-400" />
+                      Proprietary Workflow Data
+                    </h4>
+                    <p className="text-sm text-zinc-300">
+                      We know how installers actually work — their quirks, bottlenecks, decision patterns. This can't be scraped from the web.
+                    </p>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-4 border border-amber-500/20">
+                    <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-amber-400" />
+                      Domain-Specific Intelligence
+                    </h4>
+                    <p className="text-sm text-zinc-300">
+                      Solar permits, utility rebates, panel specifications, installer certifications — deep knowledge generic AIs don't have.
+                    </p>
+                  </div>
+                  <div className="bg-black/20 rounded-lg p-4 border border-amber-500/20">
+                    <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-amber-400" />
+                      Compounding Advantage
+                    </h4>
+                    <p className="text-sm text-zinc-300">
+                      Each installer interaction makes our agents smarter. Our knowledge base grows daily. Competitors start from zero.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                  <p className="text-amber-200 text-sm">
+                    <strong className="text-amber-300">The Flywheel:</strong> Better AI → More installer value → More data access → Better AI → Unbeatable defensibility.
+                    Generic tools can't replicate years of accumulated solar industry intelligence.
+                  </p>
+                </div>
+              </div>
+
+              {/* Energy Transition Context */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-emerald-400" />
+                  Riding the Energy Transition Wave
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-zinc-800/50 rounded-lg">
+                    <p className="text-3xl font-bold text-emerald-400">$500B+</p>
+                    <p className="text-xs text-zinc-400 mt-1">US residential solar market by 2030</p>
+                  </div>
+                  <div className="text-center p-4 bg-zinc-800/50 rounded-lg">
+                    <p className="text-3xl font-bold text-emerald-400">50,000+</p>
+                    <p className="text-xs text-zinc-400 mt-1">SME solar installers in the US alone</p>
+                  </div>
+                  <div className="text-center p-4 bg-zinc-800/50 rounded-lg">
+                    <p className="text-3xl font-bold text-emerald-400">3x</p>
+                    <p className="text-xs text-zinc-400 mt-1">Projected growth in installer workforce</p>
+                  </div>
+                </div>
+                <p className="text-zinc-400 mt-4 text-sm">
+                  The solar industry is exploding but drowning in operational chaos. Installers need AI-powered efficiency
+                  to scale. We're the ones who understand their world intimately enough to deliver it.
+                </p>
+              </div>
             </div>
           )}
 
