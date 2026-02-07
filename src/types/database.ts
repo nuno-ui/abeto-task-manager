@@ -40,6 +40,10 @@ export type DataMoatType =
 
 export type DefensibilityScore = 1 | 2 | 3 | 4 | 5;
 
+// Vision Alignment
+export type VisionAlignment = 'strong' | 'moderate' | 'weak' | 'misaligned';
+export type VisionCategory = 'thesis' | 'principle' | 'pillar' | 'imperative' | 'pattern';
+
 // Agentification Profile for Projects
 export interface AgentificationProfile {
   // Agent Identity
@@ -112,6 +116,22 @@ export interface Pillar {
   icon: string | null;
   order_index: number;
   created_at: string;
+}
+
+// Vision Document - Strategic vision knowledge base accessible to agents
+export interface VisionDocument {
+  id: string;
+  slug: string;
+  title: string;
+  category: VisionCategory;
+  content: string;
+  summary: string | null;
+  order_index: number;
+  parent_slug: string | null;
+  metadata: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Project {
@@ -238,6 +258,13 @@ export interface Project {
   // Implementation Readiness
   agent_tools_defined: boolean;
   agent_ui_parity_possible: boolean;
+
+  // =============================================================================
+  // VISION ALIGNMENT FIELDS
+  // Connects project to strategic vision
+  // =============================================================================
+  vision_alignment: VisionAlignment | null;
+  vision_alignment_reason: string | null;
 
   // Joined
   pillar?: Pillar;
@@ -466,6 +493,10 @@ export interface CreateProjectInput {
   agent_defensibility_score?: DefensibilityScore;
   agent_tools_defined?: boolean;
   agent_ui_parity_possible?: boolean;
+
+  // Vision alignment
+  vision_alignment?: VisionAlignment;
+  vision_alignment_reason?: string;
 }
 
 export interface UpdateProjectInput extends Partial<CreateProjectInput> {

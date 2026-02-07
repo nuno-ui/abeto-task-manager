@@ -26,74 +26,31 @@ import {
   RefreshCw,
   ArrowUpRight,
   Loader2,
+  Settings,
+  BookOpen,
+  Gauge,
+  Building2,
+  Cpu,
+  Network,
+  FileCode,
+  Puzzle,
+  CircleDot,
+  Activity,
 } from 'lucide-react';
-import { Project, Pillar, AgentRole, AutonomyLevel, DataMoatType } from '@/types/database';
+import { Project, Pillar, AgentRole, VisionDocument, VisionAlignment } from '@/types/database';
 
-type TabId = 'thesis' | 'stack' | 'principles' | 'pillars';
+type TabId = 'thesis' | 'pillars' | 'stack' | 'principles' | 'alignment';
 
 interface ProjectWithPillar extends Project {
   pillar?: Pillar;
 }
 
-interface StackLayerProject {
-  id: string;
-  title: string;
-  slug: string;
-  agent_role: AgentRole;
-  agent_autonomy_target: AutonomyLevel;
-  agent_data_moat: DataMoatType;
-  agent_generates_proprietary_data: boolean;
-  agent_cortex_feeds: string[];
-  agent_cortex_consumes: string[];
-  status: string;
-  priority: string;
-}
-
-const agentNativePrinciples = [
-  {
-    id: 'parity',
-    name: 'Parity',
-    description: 'Agents must accomplish whatever users can do through the interface.',
-    detail: 'If the UI supports an action, the agent needs tools to achieve that outcome. No second-class citizens.',
-    icon: GitMerge,
-  },
-  {
-    id: 'granularity',
-    name: 'Granularity',
-    description: 'Tools should be atomic primitives, not bundles of decision logic.',
-    detail: 'The agent makes the decisions; prompts describe the outcome. Keep tools simple and composable.',
-    icon: Workflow,
-  },
-  {
-    id: 'composability',
-    name: 'Composability',
-    description: 'New features emerge by writing new prompts, not shipping code.',
-    detail: 'With atomic tools and parity established, capabilities multiply through combination.',
-    icon: Layers,
-  },
-  {
-    id: 'emergence',
-    name: 'Emergent Capability',
-    description: 'Agents accomplish unanticipated tasks by combining tools creatively.',
-    detail: 'This reveals latent user demands that traditional product development would never discover.',
-    icon: Sparkles,
-  },
-  {
-    id: 'improvement',
-    name: 'Continuous Improvement',
-    description: 'Applications improve through accumulated context and refined prompts.',
-    detail: 'No code updates needed. The system learns and adapts through use.',
-    icon: TrendingUp,
-  },
-];
-
-const valueShifts = [
-  { from: 'Per-seat pricing', to: 'Outcome-based pricing', example: '$5 per contract reviewed, $2 per ticket resolved' },
-  { from: 'UI as the product', to: 'Execution as the product', example: "Don't show a dashboard — do the work" },
-  { from: 'Feature roadmaps', to: 'Emergent capabilities', example: 'Discover what users need through agent behavior' },
-  { from: 'Switching costs', to: 'Data ownership', example: 'The moat is the data, not the interface' },
-  { from: 'Headcount growth', to: 'Agent efficiency', example: '10 agents do the work of 100 employees' },
-];
+const alignmentColors: Record<VisionAlignment, { bg: string; text: string; border: string }> = {
+  strong: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+  moderate: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' },
+  weak: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30' },
+  misaligned: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30' },
+};
 
 const roleColors: Record<AgentRole, string> = {
   orchestrator: 'violet',
@@ -115,9 +72,10 @@ const roleLabels: Record<AgentRole, string> = {
 
 export default function VisionPage() {
   const [activeTab, setActiveTab] = useState<TabId>('thesis');
-  const [expandedPrinciple, setExpandedPrinciple] = useState<string | null>(null);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [projects, setProjects] = useState<ProjectWithPillar[]>([]);
+  const [visionDocs, setVisionDocs] = useState<VisionDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedPillar, setExpandedPillar] = useState<string | null>(null);
 
@@ -128,9 +86,10 @@ export default function VisionPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [pillarsRes, projectsRes] = await Promise.all([
+      const [pillarsRes, projectsRes, visionRes] = await Promise.all([
         fetch('/api/pillars'),
         fetch('/api/projects'),
+        fetch('/api/vision'),
       ]);
 
       if (pillarsRes.ok) {
@@ -142,6 +101,11 @@ export default function VisionPage() {
         const projectsData = await projectsRes.json();
         setProjects(projectsData.projects || projectsData || []);
       }
+
+      if (visionRes.ok) {
+        const visionData = await visionRes.json();
+        setVisionDocs(visionData || []);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -149,31 +113,33 @@ export default function VisionPage() {
     }
   };
 
-  // Group projects by stack layer based on agent_role
-  const getStackLayers = () => {
+  // Get vision documents by category
+  const getDocsByCategory = (category: string) => visionDocs.filter(d => d.category === category);
+
+  // Statistics calculations
+  const getStats = () => {
     const agentProjects = projects.filter(p => p.agent_can_be_agent && p.agent_role !== 'not_agent');
-    const dataProjects = projects.filter(p => p.agent_generates_proprietary_data || p.agent_data_moat !== 'none');
-    const orchestrators = agentProjects.filter(p => p.agent_role === 'orchestrator');
-    const specialists = agentProjects.filter(p => p.agent_role === 'specialist');
-    const enablers = agentProjects.filter(p => p.agent_role === 'enabler');
-    const dataCollectors = agentProjects.filter(p => p.agent_role === 'data_collector');
-    const interfaces = agentProjects.filter(p => p.agent_role === 'interface');
-    const traditional = projects.filter(p => !p.agent_can_be_agent || p.agent_role === 'not_agent');
+    const dataProjects = projects.filter(p => p.agent_generates_proprietary_data || (p.agent_data_moat && p.agent_data_moat !== 'none'));
 
     return {
-      orchestrators,
-      specialists,
-      dataCollectors,
-      interfaces,
-      enablers,
-      dataProjects,
-      traditional,
       total: projects.length,
       agentReady: agentProjects.length,
+      dataProjects: dataProjects.length,
+      orchestrators: projects.filter(p => p.agent_role === 'orchestrator'),
+      specialists: projects.filter(p => p.agent_role === 'specialist'),
+      dataCollectors: projects.filter(p => p.agent_role === 'data_collector'),
+      enablers: projects.filter(p => p.agent_role === 'enabler'),
+      interfaces: projects.filter(p => p.agent_role === 'interface'),
+      traditional: projects.filter(p => !p.agent_can_be_agent || p.agent_role === 'not_agent'),
+      strongAlignment: projects.filter(p => p.vision_alignment === 'strong'),
+      moderateAlignment: projects.filter(p => p.vision_alignment === 'moderate'),
+      weakAlignment: projects.filter(p => p.vision_alignment === 'weak'),
+      misaligned: projects.filter(p => p.vision_alignment === 'misaligned'),
+      unassessed: projects.filter(p => !p.vision_alignment),
     };
   };
 
-  const stackData = getStackLayers();
+  const stats = getStats();
 
   // Group projects by pillar
   const getProjectsByPillar = () => {
@@ -198,9 +164,10 @@ export default function VisionPage() {
 
   const tabs = [
     { id: 'thesis' as TabId, label: 'The Thesis', icon: Lightbulb },
+    { id: 'pillars' as TabId, label: 'Three Pillars', icon: Building2 },
     { id: 'stack' as TabId, label: 'Agent Stack', icon: Bot },
     { id: 'principles' as TabId, label: 'Agent-Native', icon: Sparkles },
-    { id: 'pillars' as TabId, label: 'Strategic Pillars', icon: Layers },
+    { id: 'alignment' as TabId, label: 'Alignment', icon: Target },
   ];
 
   if (loading) {
@@ -211,19 +178,35 @@ export default function VisionPage() {
     );
   }
 
+  const coreThesis = visionDocs.find(d => d.slug === 'core-thesis');
+  const strategicImperative = visionDocs.find(d => d.slug === 'strategic-imperative');
+  const principles = getDocsByCategory('principle');
+  const patterns = getDocsByCategory('pattern');
+  const valueShifts = getDocsByCategory('imperative');
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-blue-500/20 border border-violet-500/30">
-              <Eye className="w-8 h-8 text-violet-400" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-blue-500/20 border border-violet-500/30">
+                <Eye className="w-8 h-8 text-violet-400" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Strategic Vision</h1>
+                <p className="text-zinc-400">Building for the agent-native future</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Strategic Vision</h1>
-              <p className="text-zinc-400">Building for the agent-native future</p>
-            </div>
+            <Link
+              href="/api/vision/summary"
+              target="_blank"
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors text-sm"
+            >
+              <FileCode className="w-4 h-4" />
+              API for Agents
+            </Link>
           </div>
 
           {/* Quote banner */}
@@ -233,35 +216,42 @@ export default function VisionPage() {
             </p>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          {/* Quick Stats - Updated to show alignment */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3">
               <div className="flex items-center gap-2 text-zinc-400 mb-1">
                 <Target className="w-4 h-4" />
-                <span className="text-xs">Total Projects</span>
+                <span className="text-xs">Projects</span>
               </div>
-              <p className="text-2xl font-bold text-white">{stackData.total}</p>
+              <p className="text-2xl font-bold text-white">{stats.total}</p>
             </div>
-            <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4">
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
+              <div className="flex items-center gap-2 text-emerald-400 mb-1">
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="text-xs">Strong Align</span>
+              </div>
+              <p className="text-2xl font-bold text-emerald-400">{stats.strongAlignment.length}</p>
+            </div>
+            <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-3">
               <div className="flex items-center gap-2 text-violet-400 mb-1">
                 <Bot className="w-4 h-4" />
                 <span className="text-xs">Agent-Ready</span>
               </div>
-              <p className="text-2xl font-bold text-violet-400">{stackData.agentReady}</p>
+              <p className="text-2xl font-bold text-violet-400">{stats.agentReady}</p>
             </div>
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
-              <div className="flex items-center gap-2 text-emerald-400 mb-1">
+            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-3">
+              <div className="flex items-center gap-2 text-cyan-400 mb-1">
                 <Database className="w-4 h-4" />
                 <span className="text-xs">Data Moat</span>
               </div>
-              <p className="text-2xl font-bold text-emerald-400">{stackData.dataProjects.length}</p>
+              <p className="text-2xl font-bold text-cyan-400">{stats.dataProjects}</p>
             </div>
-            <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-4">
-              <div className="flex items-center gap-2 text-zinc-400 mb-1">
-                <Layers className="w-4 h-4" />
-                <span className="text-xs">Pillars</span>
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3">
+              <div className="flex items-center gap-2 text-yellow-400 mb-1">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-xs">Unassessed</span>
               </div>
-              <p className="text-2xl font-bold text-white">{pillars.length}</p>
+              <p className="text-2xl font-bold text-yellow-400">{stats.unassessed.length}</p>
             </div>
           </div>
         </div>
@@ -292,15 +282,44 @@ export default function VisionPage() {
           {/* THE THESIS */}
           {activeTab === 'thesis' && (
             <div className="space-y-8">
+              {/* The Problem */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-400" />
+                  The Problem We're Solving
+                </h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <Database className="w-6 h-6 text-red-400 mb-2" />
+                    <h3 className="font-semibold text-white mb-1">Data in Silos</h3>
+                    <p className="text-sm text-zinc-400">Zoho, Sheets, WhatsApp, Aircall — information scattered everywhere.</p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <Target className="w-6 h-6 text-red-400 mb-2" />
+                    <h3 className="font-semibold text-white mb-1">SDRs Flying Blind</h3>
+                    <p className="text-sm text-zinc-400">No way to know which lead to call next or which installer is available.</p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <Gauge className="w-6 h-6 text-red-400 mb-2" />
+                    <h3 className="font-semibold text-white mb-1">Can't Measure What Works</h3>
+                    <p className="text-sm text-zinc-400">Spending on ads without knowing which campaigns actually convert.</p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <Activity className="w-6 h-6 text-red-400 mb-2" />
+                    <h3 className="font-semibold text-white mb-1">Manual Doesn't Scale</h3>
+                    <p className="text-sm text-zinc-400">More leads = more chaos. Growth is limited by operational capacity.</p>
+                  </div>
+                </div>
+              </div>
+
               {/* The Thin Middle Squeeze */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                 <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-amber-400" />
+                  <Layers className="w-5 h-5 text-amber-400" />
                   The Thin Middle Squeeze
                 </h2>
                 <p className="text-zinc-400 mb-6">
-                  Value is getting sucked upward into the agent layer and downward into the data layer.
-                  Everything in the thin middle gets crushed.
+                  {coreThesis?.summary || 'Value moves to agent layer (execution) and data layer (proprietary data). The UI/SaaS "thin middle" gets crushed.'}
                 </p>
 
                 {/* Stack Visualization */}
@@ -317,7 +336,7 @@ export default function VisionPage() {
                           <p className="text-sm text-zinc-400 mt-1">AI agents that execute workflows autonomously.</p>
                           <div className="mt-3 p-2 bg-violet-500/10 border border-violet-500/20 rounded-lg">
                             <span className="text-xs text-violet-300">
-                              <strong>Abeto:</strong> {stackData.orchestrators.length} orchestrators, {stackData.specialists.length} specialists, {stackData.dataCollectors.length} data collectors
+                              <strong>Abeto:</strong> {stats.orchestrators.length} orchestrators, {stats.specialists.length} specialists, {stats.dataCollectors.length} data collectors, {stats.interfaces.length} interfaces
                             </span>
                           </div>
                         </div>
@@ -336,7 +355,7 @@ export default function VisionPage() {
                         <div>
                           <h3 className="font-semibold text-white">UI/SaaS Layer</h3>
                           <p className="text-sm text-zinc-400 mt-1">The "thin middle" getting squeezed from both directions.</p>
-                          <p className="text-xs text-red-300 mt-2">Traditional dashboards and workflows become shells.</p>
+                          <p className="text-xs text-red-300 mt-2">Traditional dashboards and workflows become shells for agent actions.</p>
                         </div>
                       </div>
                       <span className="px-2 py-1 rounded text-xs font-medium bg-red-500/20 text-red-400">↓ Squeezed</span>
@@ -355,7 +374,7 @@ export default function VisionPage() {
                           <p className="text-sm text-zinc-400 mt-1">The canonical data that agents need to act on.</p>
                           <div className="mt-3 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                             <span className="text-xs text-emerald-300">
-                              <strong>Cortex:</strong> {stackData.dataProjects.length} projects feeding proprietary data
+                              <strong>Cortex:</strong> {stats.dataProjects} projects feeding proprietary data
                             </span>
                           </div>
                         </div>
@@ -373,23 +392,53 @@ export default function VisionPage() {
                   The Value Shift
                 </h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {valueShifts.map((shift, index) => (
-                    <div key={index} className="bg-zinc-800/50 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-red-400 line-through text-sm">{shift.from}</span>
-                        <ArrowRight className="w-3 h-3 text-zinc-500" />
-                        <span className="text-emerald-400 font-medium text-sm">{shift.to}</span>
-                      </div>
-                      <p className="text-xs text-zinc-500">{shift.example}</p>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-red-400 line-through text-sm">Per-seat pricing</span>
+                      <ArrowRight className="w-3 h-3 text-zinc-500" />
+                      <span className="text-emerald-400 font-medium text-sm">Outcome-based</span>
                     </div>
-                  ))}
+                    <p className="text-xs text-zinc-500">$5 per contract reviewed, $2 per ticket resolved</p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-red-400 line-through text-sm">UI as product</span>
+                      <ArrowRight className="w-3 h-3 text-zinc-500" />
+                      <span className="text-emerald-400 font-medium text-sm">Execution as product</span>
+                    </div>
+                    <p className="text-xs text-zinc-500">Don't show a dashboard — do the work</p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-red-400 line-through text-sm">Feature roadmaps</span>
+                      <ArrowRight className="w-3 h-3 text-zinc-500" />
+                      <span className="text-emerald-400 font-medium text-sm">Emergent capabilities</span>
+                    </div>
+                    <p className="text-xs text-zinc-500">Discover needs through agent behavior</p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-red-400 line-through text-sm">Switching costs</span>
+                      <ArrowRight className="w-3 h-3 text-zinc-500" />
+                      <span className="text-emerald-400 font-medium text-sm">Data ownership</span>
+                    </div>
+                    <p className="text-xs text-zinc-500">The moat is the data, not the interface</p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-red-400 line-through text-sm">Headcount growth</span>
+                      <ArrowRight className="w-3 h-3 text-zinc-500" />
+                      <span className="text-emerald-400 font-medium text-sm">Agent efficiency</span>
+                    </div>
+                    <p className="text-xs text-zinc-500">10 agents do the work of 100 employees</p>
+                  </div>
                 </div>
               </div>
 
               {/* Strategic Imperative */}
               <div className="bg-gradient-to-r from-blue-900/20 to-cyan-900/20 border border-blue-700/30 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-blue-400" />
+                  <Target className="w-5 h-5 text-blue-400" />
                   Strategic Imperative
                 </h3>
                 <p className="text-zinc-300 mb-4">
@@ -404,9 +453,172 @@ export default function VisionPage() {
             </div>
           )}
 
+          {/* THREE PILLARS */}
+          {activeTab === 'pillars' && (
+            <div className="space-y-6">
+              {/* Intro */}
+              <div className="bg-gradient-to-r from-violet-900/20 to-purple-900/20 border border-violet-700/30 rounded-xl p-6">
+                <h2 className="text-xl font-bold text-white mb-2">The Three Pillars of Scalable Growth</h2>
+                <p className="text-zinc-400">
+                  Build in order. Each layer enables the next. You can't scale chaos.
+                </p>
+              </div>
+
+              {/* Pillar 1: Data Foundation */}
+              <div className="bg-zinc-900 border-l-4 border-emerald-500 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-emerald-500/20">
+                    <Database className="w-8 h-8 text-emerald-400" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-xl font-bold text-white">1. Data Foundation</h3>
+                      <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium rounded">Building Now</span>
+                    </div>
+                    <p className="text-zinc-400 mb-4">
+                      <strong>What:</strong> Reliable APIs, unified data layer, quality monitoring<br />
+                      <strong>Why:</strong> Every AI feature, every dashboard, every automation depends on this. No foundation = no building.
+                    </p>
+                    <div className="bg-zinc-800/50 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-zinc-300">
+                        <span className="text-emerald-400">💡 Example:</span> Without knowing which installer is available and their performance history, we can't route leads intelligently.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-zinc-500">
+                        {pillarData.grouped[pillars.find(p => p.name.toLowerCase().includes('data'))?.id || '']?.length || 0} projects assigned
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pillar 2: Knowledge Generation */}
+              <div className="bg-zinc-900 border-l-4 border-violet-500 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-violet-500/20">
+                    <Brain className="w-8 h-8 text-violet-400" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-xl font-bold text-white">2. Knowledge Generation</h3>
+                      <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-medium rounded">Next Phase</span>
+                    </div>
+                    <p className="text-zinc-400 mb-4">
+                      <strong>What:</strong> Tools that CREATE data while doing their job<br />
+                      <strong>Why:</strong> The more leads we generate, the more data we have, the smarter our systems become. Growth feeds intelligence.
+                    </p>
+                    <div className="bg-zinc-800/50 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-zinc-300">
+                        <span className="text-violet-400">💡 Example:</span> SDR Portal captures call outcomes → AI learns which questions close deals → Future calls improve.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-zinc-500">
+                        {pillarData.grouped[pillars.find(p => p.name.toLowerCase().includes('knowledge'))?.id || '']?.length || 0} projects assigned
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pillar 3: Human Empowerment */}
+              <div className="bg-zinc-900 border-l-4 border-amber-500 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-amber-500/20">
+                    <Users className="w-8 h-8 text-amber-400" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-xl font-bold text-white">3. Human Empowerment</h3>
+                      <span className="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs font-medium rounded">The Goal</span>
+                    </div>
+                    <p className="text-zinc-400 mb-4">
+                      <strong>What:</strong> AI copilots that amplify human capability<br />
+                      <strong>Why:</strong> SDRs focus on relationships, not data entry. Managers see trends, not spreadsheets. Humans do what humans do best.
+                    </p>
+                    <div className="bg-zinc-800/50 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-zinc-300">
+                        <span className="text-amber-400">💡 Example:</span> Cortex summarizes 10 WhatsApp messages into 2-line context before the call. SDR walks in prepared.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-zinc-500">
+                        {pillarData.grouped[pillars.find(p => p.name.toLowerCase().includes('human'))?.id || '']?.length || 0} projects assigned
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dependency Flow */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Network className="w-5 h-5 text-blue-400" />
+                  Why Order Matters
+                </h3>
+                <p className="text-zinc-400 mb-4">Each tool depends on the one before it. Skip a step and nothing works.</p>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-center">
+                      <Database className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
+                      <p className="text-sm text-emerald-400 font-medium">Unified Data Layer</p>
+                      <p className="text-xs text-zinc-500">The source of truth</p>
+                    </div>
+                    <div className="text-center text-zinc-500">↓</div>
+                    <div className="bg-zinc-800 rounded-lg p-2 text-center text-xs text-zinc-400">
+                      Reporting Hub • SDR Portal • Campaign OS
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-3 text-center">
+                      <Brain className="w-5 h-5 text-violet-400 mx-auto mb-1" />
+                      <p className="text-sm text-violet-400 font-medium">AI Cortex</p>
+                      <p className="text-xs text-zinc-500">The shared brain</p>
+                    </div>
+                    <div className="text-center text-zinc-500">↓</div>
+                    <div className="bg-zinc-800 rounded-lg p-2 text-center text-xs text-zinc-400">
+                      AI Optimization • Auto-allocate • Predictions
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-center">
+                      <Users className="w-5 h-5 text-amber-400 mx-auto mb-1" />
+                      <p className="text-sm text-amber-400 font-medium">Human + AI</p>
+                      <p className="text-xs text-zinc-500">Amplified capability</p>
+                    </div>
+                    <div className="text-center text-zinc-500">↓</div>
+                    <div className="bg-zinc-800 rounded-lg p-2 text-center text-xs text-zinc-400">
+                      3x productivity • Zero burnout • Full context
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Manage Pillars Link */}
+              <div className="flex justify-end">
+                <Link
+                  href="/settings?tab=pillars"
+                  className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm"
+                >
+                  <Settings className="w-4 h-4" />
+                  Manage Pillars
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* AGENT STACK */}
           {activeTab === 'stack' && (
             <div className="space-y-6">
+              {/* Intro */}
+              <div className="bg-gradient-to-r from-violet-900/20 to-purple-900/20 border border-violet-700/30 rounded-xl p-6">
+                <h2 className="text-xl font-bold text-white mb-2">The Agent Stack</h2>
+                <p className="text-zinc-400">
+                  Projects organized by their role in the agent architecture. Each type serves a specific function in the agent-native system.
+                </p>
+              </div>
+
               {/* Orchestrators */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -418,12 +630,12 @@ export default function VisionPage() {
                     <p className="text-sm text-zinc-400">Control and coordinate other agents (e.g., Cortex)</p>
                   </div>
                   <span className="ml-auto px-3 py-1 bg-violet-500/20 text-violet-400 rounded-full text-sm font-medium">
-                    {stackData.orchestrators.length}
+                    {stats.orchestrators.length}
                   </span>
                 </div>
-                {stackData.orchestrators.length > 0 ? (
+                {stats.orchestrators.length > 0 ? (
                   <div className="grid gap-2">
-                    {stackData.orchestrators.map(p => (
+                    {stats.orchestrators.map(p => (
                       <Link
                         key={p.id}
                         href={`/projects/${p.slug}`}
@@ -450,12 +662,12 @@ export default function VisionPage() {
                     <p className="text-sm text-zinc-400">Do one thing well (e.g., Quote Generator, Lead Scorer)</p>
                   </div>
                   <span className="ml-auto px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
-                    {stackData.specialists.length}
+                    {stats.specialists.length}
                   </span>
                 </div>
-                {stackData.specialists.length > 0 ? (
+                {stats.specialists.length > 0 ? (
                   <div className="grid md:grid-cols-2 gap-2">
-                    {stackData.specialists.map(p => (
+                    {stats.specialists.map(p => (
                       <Link
                         key={p.id}
                         href={`/projects/${p.slug}`}
@@ -482,12 +694,12 @@ export default function VisionPage() {
                     <p className="text-sm text-zinc-400">Gather data for Cortex (building the moat)</p>
                   </div>
                   <span className="ml-auto px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-sm font-medium">
-                    {stackData.dataCollectors.length}
+                    {stats.dataCollectors.length}
                   </span>
                 </div>
-                {stackData.dataCollectors.length > 0 ? (
+                {stats.dataCollectors.length > 0 ? (
                   <div className="grid md:grid-cols-2 gap-2">
-                    {stackData.dataCollectors.map(p => (
+                    {stats.dataCollectors.map(p => (
                       <Link
                         key={p.id}
                         href={`/projects/${p.slug}`}
@@ -499,7 +711,7 @@ export default function VisionPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-zinc-500 text-sm">No data collector projects defined yet</p>
+                  <p className="text-zinc-500 text-sm">No data collector projects defined yet — <span className="text-emerald-400">critical for building the data moat!</span></p>
                 )}
               </div>
 
@@ -514,12 +726,12 @@ export default function VisionPage() {
                     <p className="text-sm text-zinc-400">Infrastructure that enables other agents (APIs, data layers)</p>
                   </div>
                   <span className="ml-auto px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-sm font-medium">
-                    {stackData.enablers.length}
+                    {stats.enablers.length}
                   </span>
                 </div>
-                {stackData.enablers.length > 0 ? (
+                {stats.enablers.length > 0 ? (
                   <div className="grid md:grid-cols-2 gap-2">
-                    {stackData.enablers.map(p => (
+                    {stats.enablers.map(p => (
                       <Link
                         key={p.id}
                         href={`/projects/${p.slug}`}
@@ -546,12 +758,12 @@ export default function VisionPage() {
                     <p className="text-sm text-zinc-400">Human-agent interaction points (portals, dashboards)</p>
                   </div>
                   <span className="ml-auto px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full text-sm font-medium">
-                    {stackData.interfaces.length}
+                    {stats.interfaces.length}
                   </span>
                 </div>
-                {stackData.interfaces.length > 0 ? (
+                {stats.interfaces.length > 0 ? (
                   <div className="grid md:grid-cols-2 gap-2">
-                    {stackData.interfaces.map(p => (
+                    {stats.interfaces.map(p => (
                       <Link
                         key={p.id}
                         href={`/projects/${p.slug}`}
@@ -567,8 +779,8 @@ export default function VisionPage() {
                 )}
               </div>
 
-              {/* Traditional (not yet agent-ified) */}
-              {stackData.traditional.length > 0 && (
+              {/* Not Yet Agent-Ready */}
+              {stats.traditional.length > 0 && (
                 <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 opacity-75">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 rounded-lg bg-zinc-700">
@@ -579,11 +791,11 @@ export default function VisionPage() {
                       <p className="text-sm text-zinc-400">Projects that need agentification planning</p>
                     </div>
                     <span className="ml-auto px-3 py-1 bg-zinc-700 text-zinc-400 rounded-full text-sm font-medium">
-                      {stackData.traditional.length}
+                      {stats.traditional.length}
                     </span>
                   </div>
                   <p className="text-sm text-zinc-500">
-                    {stackData.traditional.length} projects need agent role assignment.{' '}
+                    {stats.traditional.length} projects need agent role assignment.{' '}
                     <Link href="/projects" className="text-violet-400 hover:underline">
                       Review projects →
                     </Link>
@@ -604,22 +816,40 @@ export default function VisionPage() {
                 </p>
               </div>
 
+              {/* Principles */}
               <div className="space-y-3">
-                {agentNativePrinciples.map((principle) => {
-                  const isExpanded = expandedPrinciple === principle.id;
+                {[
+                  { id: 'parity', name: 'Parity', icon: GitMerge, color: 'violet',
+                    summary: 'Agents must accomplish whatever users can do through the interface.',
+                    detail: 'If the UI supports an action, the agent needs tools to achieve that outcome. No second-class citizens. The test: Pick any UI action. Can the agent accomplish it?' },
+                  { id: 'granularity', name: 'Granularity', icon: Puzzle, color: 'blue',
+                    summary: 'Tools should be atomic primitives, not bundles of decision logic.',
+                    detail: 'The agent makes the decisions; prompts describe the outcome. Keep tools simple and composable. The test: To change behavior, do you edit prompts or refactor code?' },
+                  { id: 'composability', name: 'Composability', icon: Layers, color: 'cyan',
+                    summary: 'New features emerge by writing new prompts, not shipping code.',
+                    detail: 'With atomic tools and parity established, capabilities multiply through combination. Want a "weekly review" feature? That\'s just a prompt describing the outcome.' },
+                  { id: 'emergence', name: 'Emergent Capability', icon: Sparkles, color: 'amber',
+                    summary: 'Agents accomplish unanticipated tasks by combining tools creatively.',
+                    detail: 'This reveals latent user demands that traditional product development would never discover. You\'re creating a capable foundation and learning from what emerges.' },
+                  { id: 'improvement', name: 'Continuous Improvement', icon: TrendingUp, color: 'emerald',
+                    summary: 'Applications improve through accumulated context and refined prompts.',
+                    detail: 'No code updates needed. Accumulated context persists across sessions. Prompts can be refined at developer and user levels. The system learns through use.' },
+                ].map((principle) => {
+                  const isExpanded = expandedSection === principle.id;
+                  const Icon = principle.icon;
                   return (
                     <div key={principle.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
                       <button
-                        onClick={() => setExpandedPrinciple(isExpanded ? null : principle.id)}
+                        onClick={() => setExpandedSection(isExpanded ? null : principle.id)}
                         className="w-full p-4 flex items-center justify-between hover:bg-zinc-800/50 transition-colors"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="p-2 rounded-lg bg-violet-500/20">
-                            <principle.icon className="w-5 h-5 text-violet-400" />
+                          <div className={`p-2 rounded-lg bg-${principle.color}-500/20`}>
+                            <Icon className={`w-5 h-5 text-${principle.color}-400`} />
                           </div>
                           <div className="text-left">
                             <h3 className="font-semibold text-white">{principle.name}</h3>
-                            <p className="text-sm text-zinc-400">{principle.description}</p>
+                            <p className="text-sm text-zinc-400">{principle.summary}</p>
                           </div>
                         </div>
                         {isExpanded ? <ChevronUp className="w-5 h-5 text-zinc-400" /> : <ChevronDown className="w-5 h-5 text-zinc-400" />}
@@ -636,24 +866,36 @@ export default function VisionPage() {
                 })}
               </div>
 
-              {/* Implementation Notes */}
+              {/* Implementation Patterns */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">Key Implementation Patterns</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-zinc-800/50 rounded-lg p-4">
-                    <h4 className="font-medium text-white mb-2">Shared Workspace</h4>
+                    <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+                      <CircleDot className="w-4 h-4 text-violet-400" />
+                      Shared Workspace
+                    </h4>
                     <p className="text-sm text-zinc-400">Agents and users work in the same data space. Transparency enables agents to build on user-created content.</p>
                   </div>
                   <div className="bg-zinc-800/50 rounded-lg p-4">
-                    <h4 className="font-medium text-white mb-2">Context Management</h4>
+                    <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-blue-400" />
+                      Context Management
+                    </h4>
                     <p className="text-sm text-zinc-400">Maintain persistent state through context files that agents read and update across sessions.</p>
                   </div>
                   <div className="bg-zinc-800/50 rounded-lg p-4">
-                    <h4 className="font-medium text-white mb-2">Atomic Tools</h4>
+                    <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+                      <Cpu className="w-4 h-4 text-cyan-400" />
+                      Atomic Tools
+                    </h4>
                     <p className="text-sm text-zinc-400">Tools are simple primitives. The agent decides how to combine them to achieve outcomes.</p>
                   </div>
                   <div className="bg-zinc-800/50 rounded-lg p-4">
-                    <h4 className="font-medium text-white mb-2">Explicit Completion</h4>
+                    <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      Explicit Completion
+                    </h4>
                     <p className="text-sm text-zinc-400">Agents must declare "I'm done" rather than relying on heuristic detection.</p>
                   </div>
                 </div>
@@ -661,124 +903,187 @@ export default function VisionPage() {
             </div>
           )}
 
-          {/* STRATEGIC PILLARS */}
-          {activeTab === 'pillars' && (
+          {/* ALIGNMENT */}
+          {activeTab === 'alignment' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-white">Strategic Pillars</h2>
-                  <p className="text-sm text-zinc-400">Projects organized by business objectives</p>
-                </div>
-                <Link
-                  href="/settings?tab=pillars"
-                  className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Manage Pillars
-                </Link>
+              {/* Intro */}
+              <div className="bg-gradient-to-r from-emerald-900/20 to-green-900/20 border border-emerald-700/30 rounded-xl p-6">
+                <h2 className="text-xl font-bold text-white mb-2">Vision Alignment</h2>
+                <p className="text-zinc-400">
+                  How well each project contributes to the strategic vision. A project is vision-aligned if it:
+                  (1) builds agent capability, (2) collects proprietary data, or (3) enables human-agent collaboration.
+                </p>
               </div>
 
-              {pillars.length === 0 ? (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center">
-                  <Layers className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                  <p className="text-zinc-400 mb-4">No strategic pillars defined yet</p>
-                  <Link
-                    href="/settings?tab=pillars"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
-                  >
-                    Create Pillars
-                  </Link>
+              {/* Alignment Summary */}
+              <div className="grid md:grid-cols-4 gap-4">
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    <span className="text-emerald-400 font-medium">Strong</span>
+                  </div>
+                  <p className="text-3xl font-bold text-white">{stats.strongAlignment.length}</p>
+                  <p className="text-xs text-zinc-500 mt-1">Core to the vision</p>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {pillars.map(pillar => {
-                    const pillarProjects = pillarData.grouped[pillar.id] || [];
-                    const isExpanded = expandedPillar === pillar.id;
-                    const agentReadyCount = pillarProjects.filter(p => p.agent_can_be_agent && p.agent_role !== 'not_agent').length;
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CircleDot className="w-5 h-5 text-blue-400" />
+                    <span className="text-blue-400 font-medium">Moderate</span>
+                  </div>
+                  <p className="text-3xl font-bold text-white">{stats.moderateAlignment.length}</p>
+                  <p className="text-xs text-zinc-500 mt-1">Supports the vision</p>
+                </div>
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                    <span className="text-yellow-400 font-medium">Weak</span>
+                  </div>
+                  <p className="text-3xl font-bold text-white">{stats.weakAlignment.length}</p>
+                  <p className="text-xs text-zinc-500 mt-1">Tangential</p>
+                </div>
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                    <span className="text-red-400 font-medium">Misaligned</span>
+                  </div>
+                  <p className="text-3xl font-bold text-white">{stats.misaligned.length}</p>
+                  <p className="text-xs text-zinc-500 mt-1">Reconsider priority</p>
+                </div>
+              </div>
 
-                    return (
-                      <div
-                        key={pillar.id}
-                        className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden"
-                        style={{ borderLeftColor: pillar.color, borderLeftWidth: '4px' }}
+              {/* Strongly Aligned Projects */}
+              {stats.strongAlignment.length > 0 && (
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    Strongly Aligned Projects
+                  </h3>
+                  <div className="space-y-2">
+                    {stats.strongAlignment.map(p => (
+                      <Link
+                        key={p.id}
+                        href={`/projects/${p.slug}`}
+                        className="flex items-center justify-between p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 transition-colors"
                       >
-                        <button
-                          onClick={() => setExpandedPillar(isExpanded ? null : pillar.id)}
-                          className="w-full p-4 flex items-center justify-between hover:bg-zinc-800/30 transition-colors"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: pillar.color + '20' }}>
-                              <Layers className="w-5 h-5" style={{ color: pillar.color }} />
-                            </div>
-                            <div className="text-left">
-                              <h3 className="font-semibold text-white">{pillar.name}</h3>
-                              {pillar.description && (
-                                <p className="text-sm text-zinc-400">{pillar.description}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <p className="text-sm text-white">{pillarProjects.length} projects</p>
-                              <p className="text-xs text-violet-400">{agentReadyCount} agent-ready</p>
-                            </div>
-                            {isExpanded ? <ChevronUp className="w-5 h-5 text-zinc-400" /> : <ChevronDown className="w-5 h-5 text-zinc-400" />}
-                          </div>
-                        </button>
-                        {isExpanded && pillarProjects.length > 0 && (
-                          <div className="px-4 pb-4">
-                            <div className="grid gap-2">
-                              {pillarProjects.map(project => (
-                                <Link
-                                  key={project.id}
-                                  href={`/projects/${project.slug}`}
-                                  className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-white">{project.title}</span>
-                                    {project.agent_can_be_agent && project.agent_role !== 'not_agent' && (
-                                      <span
-                                        className={`px-2 py-0.5 text-xs rounded-full bg-${roleColors[project.agent_role]}-500/20 text-${roleColors[project.agent_role]}-400`}
-                                      >
-                                        {roleLabels[project.agent_role]}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-xs ${
-                                      project.status === 'in_progress' ? 'text-yellow-400' :
-                                      project.status === 'completed' ? 'text-green-400' : 'text-zinc-500'
-                                    }`}>
-                                      {project.status}
-                                    </span>
-                                    <ArrowUpRight className="w-4 h-4 text-zinc-500" />
-                                  </div>
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {/* Unassigned Projects */}
-                  {pillarData.unassigned.length > 0 && (
-                    <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 opacity-75">
-                      <div className="flex items-center gap-3 mb-4">
-                        <AlertTriangle className="w-5 h-5 text-yellow-400" />
                         <div>
-                          <h3 className="font-bold text-white">Unassigned to Pillars</h3>
-                          <p className="text-sm text-zinc-400">{pillarData.unassigned.length} projects need pillar assignment</p>
+                          <span className="text-white">{p.title}</span>
+                          {p.vision_alignment_reason && (
+                            <p className="text-xs text-zinc-400 mt-1">{p.vision_alignment_reason}</p>
+                          )}
                         </div>
-                      </div>
-                      <Link href="/projects" className="text-sm text-violet-400 hover:underline">
-                        Review and assign →
+                        <ArrowUpRight className="w-4 h-4 text-emerald-400" />
                       </Link>
-                    </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Unassessed Projects */}
+              {stats.unassessed.length > 0 && (
+                <div className="bg-zinc-900 border border-yellow-500/30 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                    Needs Assessment ({stats.unassessed.length})
+                  </h3>
+                  <p className="text-zinc-400 mb-4 text-sm">
+                    These projects haven't been evaluated for vision alignment yet. Review each project and assign an alignment score.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                    {stats.unassessed.slice(0, 20).map(p => (
+                      <Link
+                        key={p.id}
+                        href={`/projects/${p.slug}`}
+                        className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
+                      >
+                        <span className="text-white text-sm truncate">{p.title}</span>
+                        <ArrowUpRight className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+                      </Link>
+                    ))}
+                  </div>
+                  {stats.unassessed.length > 20 && (
+                    <p className="text-sm text-zinc-500 mt-3">
+                      And {stats.unassessed.length - 20} more...{' '}
+                      <Link href="/projects" className="text-violet-400 hover:underline">View all</Link>
+                    </p>
                   )}
                 </div>
               )}
+
+              {/* Misaligned Projects */}
+              {stats.misaligned.length > 0 && (
+                <div className="bg-zinc-900 border border-red-500/30 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                    Misaligned Projects
+                  </h3>
+                  <p className="text-zinc-400 mb-4 text-sm">
+                    These projects may not contribute to the strategic vision. Consider deprioritizing or reframing them.
+                  </p>
+                  <div className="space-y-2">
+                    {stats.misaligned.map(p => (
+                      <Link
+                        key={p.id}
+                        href={`/projects/${p.slug}`}
+                        className="flex items-center justify-between p-3 bg-red-500/5 border border-red-500/20 rounded-lg hover:bg-red-500/10 transition-colors"
+                      >
+                        <div>
+                          <span className="text-white">{p.title}</span>
+                          {p.vision_alignment_reason && (
+                            <p className="text-xs text-zinc-400 mt-1">{p.vision_alignment_reason}</p>
+                          )}
+                        </div>
+                        <ArrowUpRight className="w-4 h-4 text-red-400" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Guidance */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-amber-400" />
+                  Alignment Criteria
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                    <h4 className="font-medium text-emerald-400 mb-2">Strong Alignment</h4>
+                    <ul className="text-sm text-zinc-400 space-y-1">
+                      <li>• Directly builds agent capability</li>
+                      <li>• Collects proprietary data for Cortex</li>
+                      <li>• Enables data foundation</li>
+                      <li>• Creates defensible moat</li>
+                    </ul>
+                  </div>
+                  <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-400 mb-2">Moderate Alignment</h4>
+                    <ul className="text-sm text-zinc-400 space-y-1">
+                      <li>• Supports human-agent collaboration</li>
+                      <li>• Improves operational efficiency</li>
+                      <li>• Generates useful analytics</li>
+                      <li>• Can be agent-ified later</li>
+                    </ul>
+                  </div>
+                  <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4">
+                    <h4 className="font-medium text-yellow-400 mb-2">Weak Alignment</h4>
+                    <ul className="text-sm text-zinc-400 space-y-1">
+                      <li>• Pure UI/dashboard project</li>
+                      <li>• Doesn't generate learning data</li>
+                      <li>• No path to agentification</li>
+                      <li>• Limited defensibility</li>
+                    </ul>
+                  </div>
+                  <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4">
+                    <h4 className="font-medium text-red-400 mb-2">Misaligned</h4>
+                    <ul className="text-sm text-zinc-400 space-y-1">
+                      <li>• Works against agent architecture</li>
+                      <li>• Builds non-defensible features</li>
+                      <li>• Adds complexity without value</li>
+                      <li>• Should be reconsidered</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
