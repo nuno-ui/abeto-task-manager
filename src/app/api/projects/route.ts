@@ -100,6 +100,26 @@ export async function POST(request: Request) {
     if (body.data_status !== undefined) projectData.data_status = body.data_status;
     if (body.next_milestone !== undefined) projectData.next_milestone = body.next_milestone;
 
+    // Agentification fields
+    if (body.agent_can_be_agent !== undefined) projectData.agent_can_be_agent = body.agent_can_be_agent;
+    if (body.agent_role !== undefined) projectData.agent_role = body.agent_role;
+    if (body.agent_name !== undefined) projectData.agent_name = body.agent_name;
+    if (body.agent_tools_provided !== undefined) projectData.agent_tools_provided = body.agent_tools_provided;
+    if (body.agent_tools_required !== undefined) projectData.agent_tools_required = body.agent_tools_required;
+    if (body.agent_autonomous_outcomes !== undefined) projectData.agent_autonomous_outcomes = body.agent_autonomous_outcomes;
+    if (body.agent_autonomy_current !== undefined) projectData.agent_autonomy_current = body.agent_autonomy_current;
+    if (body.agent_autonomy_target !== undefined) projectData.agent_autonomy_target = body.agent_autonomy_target;
+    if (body.agent_cortex_feeds !== undefined) projectData.agent_cortex_feeds = body.agent_cortex_feeds;
+    if (body.agent_cortex_consumes !== undefined) projectData.agent_cortex_consumes = body.agent_cortex_consumes;
+    if (body.agent_delegates_to !== undefined) projectData.agent_delegates_to = body.agent_delegates_to;
+    if (body.agent_called_by !== undefined) projectData.agent_called_by = body.agent_called_by;
+    if (body.agent_shares_context_with !== undefined) projectData.agent_shares_context_with = body.agent_shares_context_with;
+    if (body.agent_generates_proprietary_data !== undefined) projectData.agent_generates_proprietary_data = body.agent_generates_proprietary_data;
+    if (body.agent_data_moat !== undefined) projectData.agent_data_moat = body.agent_data_moat;
+    if (body.agent_defensibility_score !== undefined) projectData.agent_defensibility_score = body.agent_defensibility_score;
+    if (body.agent_tools_defined !== undefined) projectData.agent_tools_defined = body.agent_tools_defined;
+    if (body.agent_ui_parity_possible !== undefined) projectData.agent_ui_parity_possible = body.agent_ui_parity_possible;
+
     const { data: project, error } = await supabase
       .from('projects')
       .insert(projectData)

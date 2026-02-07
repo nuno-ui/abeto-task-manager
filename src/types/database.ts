@@ -12,6 +12,70 @@ export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 export type AIPotential = 'none' | 'high' | 'medium' | 'low';
 
 // =============================================================================
+// AGENTIFICATION TYPES
+// Based on Agent-Native Architecture principles
+// =============================================================================
+
+export type AgentRole =
+  | 'orchestrator'      // Controls other agents (e.g., Cortex)
+  | 'specialist'        // Does one thing well (e.g., Quote Generator)
+  | 'data_collector'    // Gathers data for Cortex (e.g., Installer Feedback)
+  | 'interface'         // Human-agent interaction (e.g., SDR Portal)
+  | 'enabler'           // Enables other agents (e.g., Unified Data Layer)
+  | 'not_agent';        // Traditional software
+
+export type AutonomyLevel =
+  | 'manual'            // Humans do everything
+  | 'assisted'          // AI assists humans
+  | 'autonomous'        // AI does most, humans review
+  | 'fully_autonomous'; // AI does everything autonomously
+
+export type DataMoatType =
+  | 'workflow_patterns'    // How installers work
+  | 'customer_insights'    // Customer behavior/preferences
+  | 'market_intelligence'  // Pricing, competition
+  | 'performance_data'     // What works/doesn't
+  | 'relationship_data'    // Connections, history
+  | 'none';                // No data moat
+
+export type DefensibilityScore = 1 | 2 | 3 | 4 | 5;
+
+// Agentification Profile for Projects
+export interface AgentificationProfile {
+  // Agent Identity
+  can_be_agent: boolean;
+  role: AgentRole;
+  name: string | null;
+
+  // Atomic Tools (Granularity Principle)
+  tools_provided: string[];
+  tools_required: string[];
+
+  // Autonomous Outcomes
+  autonomous_outcomes: string[];
+  autonomy_current: AutonomyLevel;
+  autonomy_target: AutonomyLevel;
+
+  // Cortex Connection
+  cortex_feeds: string[];
+  cortex_consumes: string[];
+
+  // Composability
+  delegates_to: string[];
+  called_by: string[];
+  shares_context_with: string[];
+
+  // Strategic Value
+  generates_proprietary_data: boolean;
+  data_moat: DataMoatType;
+  defensibility_score: DefensibilityScore;
+
+  // Implementation Readiness
+  tools_defined: boolean;
+  ui_parity_possible: boolean;
+}
+
+// =============================================================================
 // TABLE TYPES
 // =============================================================================
 
@@ -138,6 +202,43 @@ export interface Project {
   // AI Predicted Project Flag
   is_predicted: boolean;
 
+  // =============================================================================
+  // AGENTIFICATION FIELDS
+  // Agent-Native Architecture profile
+  // =============================================================================
+
+  // Agent Identity
+  agent_can_be_agent: boolean;
+  agent_role: AgentRole;
+  agent_name: string | null;
+
+  // Atomic Tools (Granularity Principle)
+  agent_tools_provided: string[];
+  agent_tools_required: string[];
+
+  // Autonomous Outcomes
+  agent_autonomous_outcomes: string[];
+  agent_autonomy_current: AutonomyLevel;
+  agent_autonomy_target: AutonomyLevel;
+
+  // Cortex Connection (The Shared Brain)
+  agent_cortex_feeds: string[];
+  agent_cortex_consumes: string[];
+
+  // Composability (Agent Relationships)
+  agent_delegates_to: string[];
+  agent_called_by: string[];
+  agent_shares_context_with: string[];
+
+  // Strategic Value (Data Defensibility)
+  agent_generates_proprietary_data: boolean;
+  agent_data_moat: DataMoatType;
+  agent_defensibility_score: DefensibilityScore;
+
+  // Implementation Readiness
+  agent_tools_defined: boolean;
+  agent_ui_parity_possible: boolean;
+
   // Joined
   pillar?: Pillar;
   owner_team?: Team;
@@ -186,6 +287,11 @@ export interface Task {
   // Google Drive Integration
   google_drive_folder_url: string | null;
   google_drive_folder_id: string | null;
+
+  // Agentification - Task-level tool definition
+  agent_tool_name: string | null;
+  agent_tool_signature: string | null;
+  agent_tool_description: string | null;
 
   created_at: string;
   updated_at: string;
@@ -340,6 +446,26 @@ export interface CreateProjectInput {
 
   // AI Predicted Project Flag
   is_predicted?: boolean;
+
+  // Agentification fields
+  agent_can_be_agent?: boolean;
+  agent_role?: AgentRole;
+  agent_name?: string;
+  agent_tools_provided?: string[];
+  agent_tools_required?: string[];
+  agent_autonomous_outcomes?: string[];
+  agent_autonomy_current?: AutonomyLevel;
+  agent_autonomy_target?: AutonomyLevel;
+  agent_cortex_feeds?: string[];
+  agent_cortex_consumes?: string[];
+  agent_delegates_to?: string[];
+  agent_called_by?: string[];
+  agent_shares_context_with?: string[];
+  agent_generates_proprietary_data?: boolean;
+  agent_data_moat?: DataMoatType;
+  agent_defensibility_score?: DefensibilityScore;
+  agent_tools_defined?: boolean;
+  agent_ui_parity_possible?: boolean;
 }
 
 export interface UpdateProjectInput extends Partial<CreateProjectInput> {
@@ -376,6 +502,10 @@ export interface CreateTaskInput {
   deliverables?: string[];
   demo_link?: string;
   google_drive_folder_url?: string;
+  // Agentification - Task-level tool definition
+  agent_tool_name?: string;
+  agent_tool_signature?: string;
+  agent_tool_description?: string;
 }
 
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {

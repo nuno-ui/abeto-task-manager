@@ -26,6 +26,7 @@ import { TaskCard } from '@/components/tasks/TaskCard';
 import { TaskForm } from '@/components/tasks/TaskForm';
 import { CommentList } from '@/components/comments/CommentList';
 import { ProjectForm } from '@/components/projects/ProjectForm';
+import { AgentProfile } from '@/components/projects/AgentProfile';
 import { Badge, Button, Modal, ProgressBar, Avatar } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { formatDate } from '@/lib/utils';
@@ -931,6 +932,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
               </div>
             )}
+
+            {/* Agent Profile */}
+            <AgentProfile project={project} />
           </div>
         )}
 
