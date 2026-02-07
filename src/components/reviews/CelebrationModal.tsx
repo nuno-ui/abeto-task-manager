@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Trophy, PartyPopper, Star, ArrowRight, RotateCcw } from 'lucide-react';
+import { Trophy, PartyPopper, Star, ArrowRight } from 'lucide-react';
 
 interface CelebrationModalProps {
   isOpen: boolean;
@@ -12,7 +12,6 @@ interface CelebrationModalProps {
     commentCount: number;
   };
   onContinue: () => void;
-  onSwitchArea: () => void;
 }
 
 export function CelebrationModal({
@@ -20,7 +19,6 @@ export function CelebrationModal({
   onClose,
   stats,
   onContinue,
-  onSwitchArea,
 }: CelebrationModalProps) {
   const [confetti, setConfetti] = useState<{ id: number; left: number; delay: number; color: string }[]>([]);
 
@@ -66,12 +64,12 @@ export function CelebrationModal({
         </div>
 
         <h2 className="text-3xl font-bold text-white mb-2">
-          Review Complete!
+          All Done!
           <PartyPopper className="inline-block ml-2 w-8 h-8 text-yellow-400" />
         </h2>
 
         <p className="text-zinc-400 mb-6">
-          You&apos;ve reviewed all projects from this perspective. Great work!
+          You&apos;ve reviewed all available projects. Great work!
         </p>
 
         {/* Stats summary */}
@@ -104,23 +102,14 @@ export function CelebrationModal({
           )}
         </div>
 
-        {/* Action buttons */}
-        <div className="space-y-3">
-          <button
-            onClick={onSwitchArea}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Review from Another Perspective
-          </button>
-          <button
-            onClick={onClose}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
-          >
-            <ArrowRight className="w-4 h-4" />
-            Return to Dashboard
-          </button>
-        </div>
+        {/* Action button */}
+        <button
+          onClick={onClose}
+          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-lg transition-colors"
+        >
+          <ArrowRight className="w-4 h-4" />
+          Return to Dashboard
+        </button>
       </div>
 
       <style jsx>{`

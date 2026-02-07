@@ -9,8 +9,8 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, serviceRoleKey);
 }
 
-// GET: Fetch projects pending review for a reviewer by area
-// Also returns review progress stats
+// GET: Fetch projects pending review for a reviewer
+// Simplified: No longer filters by reviewer_area - projects need 3 reviews from anyone
 export async function GET(request: Request) {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -20,7 +20,6 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const reviewerArea = searchParams.get('reviewer_area');
     const reviewerId = searchParams.get('reviewer_id');
 
     const supabase = getSupabaseAdmin();
@@ -47,26 +46,28 @@ export async function GET(request: Request) {
       .select('*')
       .order('order_index');
 
-    // Fetch review status for all projects
-    const { data: reviewStatuses } = await supabase
-      .from('project_review_status')
-      .select('*');
+    // Fetch all completed review sessions to count reviews per project
+    const { data: allSessions } = await supabase
+      .from('project_review_sessions')
+      .select('project_id, reviewer_id, status')
+      .eq('status', 'completed');
+
+    // Count completed reviews per project
+    const reviewCountMap = new Map<string, number>();
+    (allSessions || []).forEach(session => {
+      const count = reviewCountMap.get(session.project_id) || 0;
+      reviewCountMap.set(session.project_id, count + 1);
+    });
 
     // Fetch existing review sessions for this reviewer (if specified)
     let reviewSessions: any[] = [];
-    if (reviewerId && reviewerArea) {
+    if (reviewerId) {
       const { data: sessions } = await supabase
         .from('project_review_sessions')
         .select('*')
-        .eq('reviewer_id', reviewerId)
-        .eq('reviewer_area', reviewerArea);
+        .eq('reviewer_id', reviewerId);
       reviewSessions = sessions || [];
     }
-
-    // Map review status to projects
-    const reviewStatusMap = new Map(
-      (reviewStatuses || []).map(rs => [rs.project_id, rs])
-    );
 
     // Map review sessions to projects (for this reviewer)
     const sessionMap = new Map(
@@ -81,20 +82,18 @@ export async function GET(request: Request) {
       tasksByProject.set(task.project_id, existing);
     });
 
-    // Enrich projects
+    // Enrich projects with simplified review status
     const enrichedProjects = (projects || []).map(project => {
-      const reviewStatus = reviewStatusMap.get(project.id);
       const session = sessionMap.get(project.id);
       const projectTasks = tasksByProject.get(project.id) || [];
+      const reviewCount = reviewCountMap.get(project.id) || 0;
 
       return {
         ...project,
         tasks: projectTasks,
-        review_status: reviewStatus || {
-          management_reviewed: false,
-          operations_sales_reviewed: false,
-          product_tech_reviewed: false,
-          all_reviewed: false,
+        review_status: {
+          review_count: reviewCount,
+          all_reviewed: reviewCount >= 3,
           alignment_score: null,
         },
         my_review_session: session || null,
@@ -129,6 +128,7 @@ export async function GET(request: Request) {
 }
 
 // POST: Create or start a review session
+// Simplified: No longer requires reviewer_area
 export async function POST(request: Request) {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -140,19 +140,18 @@ export async function POST(request: Request) {
     const body = await request.json();
     const supabase = getSupabaseAdmin();
 
-    if (!body.project_id || !body.reviewer_id || !body.reviewer_area) {
+    if (!body.project_id || !body.reviewer_id) {
       return NextResponse.json({
-        error: 'project_id, reviewer_id, and reviewer_area are required'
+        error: 'project_id and reviewer_id are required'
       }, { status: 400 });
     }
 
-    // Check if session already exists
+    // Check if session already exists for this reviewer and project
     const { data: existing } = await supabase
       .from('project_review_sessions')
       .select('*')
       .eq('project_id', body.project_id)
       .eq('reviewer_id', body.reviewer_id)
-      .eq('reviewer_area', body.reviewer_area)
       .single();
 
     if (existing) {
@@ -177,11 +176,11 @@ export async function POST(request: Request) {
       return NextResponse.json(existing);
     }
 
-    // Create new session
+    // Create new session (reviewer_area is optional/null now)
     const sessionData = {
       project_id: body.project_id,
       reviewer_id: body.reviewer_id,
-      reviewer_area: body.reviewer_area,
+      reviewer_area: body.reviewer_area || null, // Optional for backward compat
       status: 'in_progress',
       started_at: new Date().toISOString(),
     };

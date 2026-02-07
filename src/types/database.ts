@@ -431,6 +431,7 @@ export interface SortOption {
 // REVIEW SYSTEM TYPES
 // =============================================================================
 
+// Simplified: ReviewerArea kept for backward compatibility but not enforced
 export type ReviewerArea = 'management' | 'operations_sales' | 'product_tech';
 export type ReviewSessionStatus = 'pending' | 'in_progress' | 'completed';
 
@@ -438,7 +439,7 @@ export interface ProjectReviewSession {
   id: string;
   project_id: string;
   reviewer_id: string;
-  reviewer_area: ReviewerArea;
+  reviewer_area?: ReviewerArea | null; // Optional - kept for backward compatibility
   status: ReviewSessionStatus;
   started_at: string | null;
   completed_at: string | null;
@@ -457,7 +458,6 @@ export interface ReviewFeedback {
   current_value: string | null;
   proposed_value: string | null;
   comment: string | null;
-  is_area_specific: boolean;
   created_at: string;
 }
 
@@ -476,20 +476,21 @@ export interface ReviewComment {
 export interface ProjectReviewStatus {
   id: string;
   project_id: string;
-  management_reviewed: boolean;
-  operations_sales_reviewed: boolean;
-  product_tech_reviewed: boolean;
-  all_reviewed: boolean;
+  review_count: number; // Simplified: just count total reviews (need 3)
+  all_reviewed: boolean; // True when review_count >= 3
   alignment_score: number | null;
   created_at: string;
   updated_at: string;
+  // Backward compat - kept but deprecated
+  management_reviewed?: boolean;
+  operations_sales_reviewed?: boolean;
+  product_tech_reviewed?: boolean;
 }
 
 // Review Input Types
 export interface CreateReviewSessionInput {
   project_id: string;
   reviewer_id: string;
-  reviewer_area: ReviewerArea;
 }
 
 export interface CreateReviewFeedbackInput {
@@ -498,7 +499,6 @@ export interface CreateReviewFeedbackInput {
   current_value?: string;
   proposed_value?: string;
   comment?: string;
-  is_area_specific?: boolean;
 }
 
 export interface CreateReviewCommentInput {
