@@ -36,10 +36,95 @@ import {
   Puzzle,
   CircleDot,
   Activity,
+  MessageSquare,
+  Send,
+  ThumbsUp,
+  ThumbsDown,
+  LinkIcon,
+  Newspaper,
+  Globe,
+  TrendingDown,
+  Quote,
 } from 'lucide-react';
 import { Project, Pillar, AgentRole, VisionDocument, VisionAlignment } from '@/types/database';
 
-type TabId = 'thesis' | 'pillars' | 'stack' | 'principles' | 'alignment';
+type TabId = 'thesis' | 'pillars' | 'stack' | 'principles' | 'alignment' | 'research' | 'feedback';
+
+// Industry Research Resources
+const RESEARCH_RESOURCES = [
+  {
+    title: 'Agentic AI Strategy',
+    source: 'Deloitte Insights',
+    url: 'https://www.deloitte.com/us/en/insights/topics/technology-management/tech-trends/2026/agentic-ai-strategy.html',
+    excerpt: 'Getting the fundamentals right—from microservice-based agent architectures to silicon-workforce management—can prepare enterprises for an agent-native business environment.',
+    category: 'strategy',
+    date: '2026',
+  },
+  {
+    title: '5 Key Trends Shaping Agentic Development',
+    source: 'The New Stack',
+    url: 'https://thenewstack.io/5-key-trends-shaping-agentic-development-in-2026/',
+    excerpt: 'The agentic AI field is going through its microservices revolution. Just as monolithic applications gave way to distributed service architectures, single all-purpose agents are being replaced by orchestrated teams of specialized agents.',
+    category: 'technology',
+    date: '2026',
+  },
+  {
+    title: 'The Data Moat is the Only Moat',
+    source: 'Brim Labs',
+    url: 'https://brimlabs.ai/blog/the-data-moat-is-the-only-moat-why-proprietary-data-pipelines-define-the-next-generation-of-ai-startups/',
+    excerpt: 'Proprietary data pipelines define the next generation of AI startups. The best moats are data moats, where each incremental customer, data point, or interaction makes the product better.',
+    category: 'strategy',
+    date: '2025',
+  },
+  {
+    title: 'AI Agents Are Becoming Operating Systems',
+    source: 'Klizos',
+    url: 'https://klizos.com/ai-agents-are-becoming-operating-systems-in-2026/',
+    excerpt: 'By 2026, AI agents will no longer sit at the edges of applications as optional features. They will sit at the center of the software ecosystem, orchestrating workflows and managing interactions.',
+    category: 'architecture',
+    date: '2026',
+  },
+  {
+    title: 'Vertical SaaS: Transforming Industry-Specific Opportunities',
+    source: 'Qubit Capital',
+    url: 'https://qubit.capital/blog/rise-vertical-saas-sector-specific-opportunities',
+    excerpt: 'Vertical SaaS 2.0 will offer "compound workflows"—integrated platforms solving multiple, interconnected problems for a single industry.',
+    category: 'vertical',
+    date: '2026',
+  },
+  {
+    title: 'The Next Big Shift in Solar: AI Assistants',
+    source: 'Solar Power World',
+    url: 'https://www.solarpowerworldonline.com/2025/09/the-next-big-shift-in-the-solar-industry-ai-assistants/',
+    excerpt: 'Solar AI assistants are no longer experimental — they are already streamlining critical workflows from site analysis to customer support.',
+    category: 'solar',
+    date: '2025',
+  },
+  {
+    title: 'Will AI Agents Replace SaaS?',
+    source: 'Glean',
+    url: 'https://www.glean.com/perspectives/will-ai-agents-replace-saas-tools-as-the-new-operating-layer-of-work',
+    excerpt: 'AI agents transforming from supplementary features to the primary interface for enterprise software—a shift that challenges the traditional SaaS business model.',
+    category: 'disruption',
+    date: '2025',
+  },
+  {
+    title: 'AI Agents + Data Moats = Premium Valuation',
+    source: 'Agile Growth Labs',
+    url: 'https://www.agilegrowthlabs.com/blog/playbook-ai-agents-data-moats-premium-valuation-multiple',
+    excerpt: 'AI agents and data moats create a feedback loop: AI agents generate valuable data, and data moats enhance AI performance, leading to faster growth and higher investor confidence.',
+    category: 'investment',
+    date: '2025',
+  },
+];
+
+// Key industry statistics
+const INDUSTRY_STATS = [
+  { label: 'Agentic AI Market by 2030', value: '$52B', change: '+566%', source: 'Industry analysts' },
+  { label: 'Enterprise Apps with AI Agents by 2026', value: '40%', change: 'from 5%', source: 'Gartner' },
+  { label: 'Multi-agent System Inquiries', value: '1,445%', change: 'Q1 2024 → Q2 2025', source: 'Gartner' },
+  { label: 'Business Software with Agentic AI by 2028', value: '33%', change: 'from <1%', source: 'Gartner' },
+];
 
 interface ProjectWithPillar extends Project {
   pillar?: Pillar;
@@ -168,6 +253,8 @@ export default function VisionPage() {
     { id: 'stack' as TabId, label: 'Agent Stack', icon: Bot },
     { id: 'principles' as TabId, label: 'Agent-Native', icon: Sparkles },
     { id: 'alignment' as TabId, label: 'Alignment', icon: Target },
+    { id: 'research' as TabId, label: 'Industry Research', icon: Newspaper },
+    { id: 'feedback' as TabId, label: 'Feedback', icon: MessageSquare },
   ];
 
   if (loading) {
@@ -1081,6 +1168,313 @@ export default function VisionPage() {
                       <li>• Adds complexity without value</li>
                       <li>• Should be reconsidered</li>
                     </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* INDUSTRY RESEARCH */}
+          {activeTab === 'research' && (
+            <div className="space-y-6">
+              {/* Intro */}
+              <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border border-blue-700/30 rounded-xl p-6">
+                <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                  <Globe className="w-6 h-6 text-blue-400" />
+                  Industry Research & Trends
+                </h2>
+                <p className="text-zinc-400">
+                  Curated research validating our strategic direction. The agentic AI revolution isn't coming — it's here.
+                  Gartner predicts 40% of enterprise applications will embed AI agents by end of 2026.
+                </p>
+              </div>
+
+              {/* Key Statistics */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  Key Industry Statistics
+                </h3>
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {INDUSTRY_STATS.map((stat, index) => (
+                    <div key={index} className="bg-zinc-800/50 rounded-lg p-4">
+                      <p className="text-3xl font-bold text-white mb-1">{stat.value}</p>
+                      <p className="text-sm text-zinc-400">{stat.label}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs text-emerald-400">{stat.change}</span>
+                        <span className="text-xs text-zinc-500">• {stat.source}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Key Insight Banner */}
+              <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-600/30 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <Quote className="w-8 h-8 text-amber-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-amber-100 text-lg italic mb-2">
+                      "A three-tier ecosystem is forming around agentic AI: Tier 1 hyperscalers providing infrastructure,
+                      Tier 2 established vendors embedding agents into existing platforms, and an emerging Tier 3 of
+                      'agent-native' startups building with agent-first architectures from the ground up."
+                    </p>
+                    <p className="text-amber-400 text-sm font-medium">— Industry Analysis, 2026</p>
+                    <p className="text-zinc-400 text-sm mt-2">
+                      <strong>Abeto is Tier 3</strong> — we're not adding AI to existing software. We're building agent-native from day one.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Research Articles */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-violet-400" />
+                  Research & Articles
+                </h3>
+                <div className="space-y-4">
+                  {RESEARCH_RESOURCES.map((resource, index) => (
+                    <a
+                      key={index}
+                      href={resource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block bg-zinc-800/50 rounded-lg p-4 hover:bg-zinc-800 transition-colors group"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              resource.category === 'strategy' ? 'bg-violet-500/20 text-violet-400' :
+                              resource.category === 'technology' ? 'bg-blue-500/20 text-blue-400' :
+                              resource.category === 'solar' ? 'bg-amber-500/20 text-amber-400' :
+                              resource.category === 'vertical' ? 'bg-cyan-500/20 text-cyan-400' :
+                              resource.category === 'disruption' ? 'bg-red-500/20 text-red-400' :
+                              resource.category === 'investment' ? 'bg-emerald-500/20 text-emerald-400' :
+                              'bg-zinc-500/20 text-zinc-400'
+                            }`}>
+                              {resource.category}
+                            </span>
+                            <span className="text-xs text-zinc-500">{resource.date}</span>
+                          </div>
+                          <h4 className="font-medium text-white group-hover:text-violet-400 transition-colors">
+                            {resource.title}
+                          </h4>
+                          <p className="text-sm text-zinc-500 mt-1">{resource.source}</p>
+                          <p className="text-sm text-zinc-400 mt-2">{resource.excerpt}</p>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-zinc-500 group-hover:text-violet-400 flex-shrink-0" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* Relevance to Abeto */}
+              <div className="bg-zinc-900 border border-emerald-500/30 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-emerald-400" />
+                  Why This Validates Our Vision
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                    <h4 className="font-medium text-white mb-2">We're Building Tier 3</h4>
+                    <p className="text-sm text-zinc-400">
+                      While others retrofit AI onto existing software, we're building agent-native from the ground up.
+                      Our architecture assumes agents as primary actors, not add-ons.
+                    </p>
+                  </div>
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                    <h4 className="font-medium text-white mb-2">Data Moat Focus is Correct</h4>
+                    <p className="text-sm text-zinc-400">
+                      Industry consensus: "The best moats are data moats." Our Cortex strategy — collecting proprietary
+                      installer workflow data — creates compounding defensibility.
+                    </p>
+                  </div>
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                    <h4 className="font-medium text-white mb-2">Vertical SaaS 2.0 = Us</h4>
+                    <p className="text-sm text-zinc-400">
+                      The industry predicts "compound workflows" for vertical SaaS — integrated platforms solving multiple
+                      problems for one industry. That's exactly what we're building for solar installers.
+                    </p>
+                  </div>
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                    <h4 className="font-medium text-white mb-2">Multi-Agent is the Future</h4>
+                    <p className="text-sm text-zinc-400">
+                      1,445% surge in multi-agent system inquiries. Our orchestrator/specialist/enabler architecture
+                      is aligned with where the industry is heading — coordinated agent teams, not monolithic AI.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* FEEDBACK TAB */}
+          {activeTab === 'feedback' && (
+            <div className="space-y-6">
+              {/* Intro */}
+              <div className="bg-gradient-to-r from-violet-900/20 to-purple-900/20 border border-violet-700/30 rounded-xl p-6">
+                <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                  <MessageSquare className="w-6 h-6 text-violet-400" />
+                  Shape Our Vision
+                </h2>
+                <p className="text-zinc-400">
+                  Our vision isn't set in stone. Challenge our assumptions, suggest improvements, share articles,
+                  or propose alternative directions. The best ideas win.
+                </p>
+              </div>
+
+              {/* How to Contribute */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                  <div className="p-2 rounded-lg bg-emerald-500/20 w-fit mb-3">
+                    <ThumbsUp className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <h3 className="font-semibold text-white mb-2">Support an Idea</h3>
+                  <p className="text-sm text-zinc-400">
+                    See something that resonates? Leave a comment supporting the direction with your reasoning.
+                  </p>
+                </div>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                  <div className="p-2 rounded-lg bg-red-500/20 w-fit mb-3">
+                    <ThumbsDown className="w-5 h-5 text-red-400" />
+                  </div>
+                  <h3 className="font-semibold text-white mb-2">Challenge an Assumption</h3>
+                  <p className="text-sm text-zinc-400">
+                    Think we're wrong about something? Challenge our assumptions with evidence or alternative views.
+                  </p>
+                </div>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                  <div className="p-2 rounded-lg bg-blue-500/20 w-fit mb-3">
+                    <LinkIcon className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <h3 className="font-semibold text-white mb-2">Share Resources</h3>
+                  <p className="text-sm text-zinc-400">
+                    Found a relevant article, research, or case study? Share it so we can incorporate the insights.
+                  </p>
+                </div>
+              </div>
+
+              {/* Discussion Areas */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-amber-400" />
+                  Open Questions for Discussion
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    {
+                      topic: 'Agent Autonomy Level',
+                      question: 'How autonomous should our agents be? Full autonomy with human oversight, or human-in-the-loop for key decisions?',
+                      status: 'open',
+                    },
+                    {
+                      topic: 'Data Moat vs Workflow Lock-in',
+                      question: 'Should we prioritize proprietary data collection or deep workflow integration? Can we do both equally well?',
+                      status: 'open',
+                    },
+                    {
+                      topic: 'Pricing Model',
+                      question: 'Outcome-based pricing ($X per lead qualified) vs. subscription? What aligns incentives best?',
+                      status: 'open',
+                    },
+                    {
+                      topic: 'Build vs Buy for AI Infrastructure',
+                      question: 'Should we build our own agent orchestration or use existing platforms like LangChain, AutoGPT?',
+                      status: 'open',
+                    },
+                  ].map((item, index) => (
+                    <div key={index} className="bg-zinc-800/50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-white">{item.topic}</span>
+                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-400">
+                          {item.status}
+                        </span>
+                      </div>
+                      <p className="text-sm text-zinc-400">{item.question}</p>
+                      <Link
+                        href="/activity"
+                        className="inline-flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300 mt-2"
+                      >
+                        View discussion <ArrowUpRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Submit Feedback Form Placeholder */}
+              <div className="bg-zinc-900 border border-violet-500/30 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Send className="w-5 h-5 text-violet-400" />
+                  Submit Feedback
+                </h3>
+                <p className="text-zinc-400 mb-4 text-sm">
+                  Use the comment system on any project or task to share your thoughts. All vision-related comments
+                  are reviewed by leadership and incorporated into our strategic planning.
+                </p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <h4 className="font-medium text-white mb-2">💡 Suggestion</h4>
+                    <p className="text-xs text-zinc-400 mb-3">For new ideas or improvements to the vision</p>
+                    <p className="text-xs text-zinc-500">
+                      Add a comment with <span className="text-violet-400">[SUGGESTION]</span> prefix
+                    </p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <h4 className="font-medium text-white mb-2">🔍 Challenge</h4>
+                    <p className="text-xs text-zinc-400 mb-3">For questioning assumptions or approaches</p>
+                    <p className="text-xs text-zinc-500">
+                      Add a comment with <span className="text-red-400">[CHALLENGE]</span> prefix
+                    </p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <h4 className="font-medium text-white mb-2">📚 Resource</h4>
+                    <p className="text-xs text-zinc-400 mb-3">For sharing relevant articles or research</p>
+                    <p className="text-xs text-zinc-500">
+                      Add a comment with <span className="text-blue-400">[RESOURCE]</span> prefix
+                    </p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <h4 className="font-medium text-white mb-2">❓ Question</h4>
+                    <p className="text-xs text-zinc-400 mb-3">For clarification or understanding</p>
+                    <p className="text-xs text-zinc-500">
+                      Add a comment with <span className="text-amber-400">[QUESTION]</span> prefix
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 p-4 bg-violet-500/10 border border-violet-500/20 rounded-lg">
+                  <p className="text-sm text-violet-300">
+                    <strong>Coming soon:</strong> Direct feedback submission form and vision discussion board.
+                    For now, use the Activity page or project comments to share your thoughts.
+                  </p>
+                </div>
+              </div>
+
+              {/* Recent Feedback */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-cyan-400" />
+                  How Feedback Shapes Our Vision
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span className="text-zinc-400">All feedback is reviewed within 48 hours</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span className="text-zinc-400">Valid challenges trigger strategic review sessions</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span className="text-zinc-400">Accepted suggestions are tracked as vision updates</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span className="text-zinc-400">Contributors are credited in quarterly vision reviews</span>
                   </div>
                 </div>
               </div>
