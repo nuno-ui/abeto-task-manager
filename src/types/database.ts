@@ -668,3 +668,49 @@ export interface CreateReviewCommentInput {
   task_id?: string;
   content: string;
 }
+
+// =============================================================================
+// VISION FEEDBACK
+// =============================================================================
+
+export type VisionFeedbackType = 'suggestion' | 'challenge' | 'resource' | 'question';
+export type VisionFeedbackStatus = 'pending' | 'reviewed' | 'accepted' | 'declined' | 'implemented';
+export type VisionFeedbackTopic =
+  | 'agent_autonomy'
+  | 'data_moat'
+  | 'pricing_model'
+  | 'build_vs_buy'
+  | 'three_pillars'
+  | 'human_empowerment'
+  | 'general';
+
+export interface VisionFeedback {
+  id: string;
+  type: VisionFeedbackType;
+  topic: VisionFeedbackTopic;
+  title: string;
+  content: string;
+  resource_url: string | null;
+  author_id: string | null;
+  author_name: string | null;
+  author_email: string | null;
+  status: VisionFeedbackStatus;
+  admin_response: string | null;
+  is_anonymous: boolean;
+  upvotes: number;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  author?: User;
+}
+
+export interface CreateVisionFeedbackInput {
+  type: VisionFeedbackType;
+  topic: VisionFeedbackTopic;
+  title: string;
+  content: string;
+  resource_url?: string;
+  author_name?: string;
+  author_email?: string;
+  is_anonymous?: boolean;
+}

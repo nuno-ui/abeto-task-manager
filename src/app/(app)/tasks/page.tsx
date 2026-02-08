@@ -251,6 +251,14 @@ function TasksPageContent() {
   return (
     <div className="min-h-screen">
       <div className="p-6 space-y-6">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-white">Tasks</h1>
+          <p className="text-sm text-zinc-400 mt-1">
+            View and manage tasks across all projects
+          </p>
+        </div>
+
         {/* Task Distribution Stats */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">

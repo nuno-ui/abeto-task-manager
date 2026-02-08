@@ -23,14 +23,14 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 const navigation = [
-  { name: 'My Workspace', href: '/dashboard', icon: Home },
-  { name: 'Projects', href: '/projects', icon: FolderKanban },
-  { name: 'Tasks', href: '/tasks', icon: ListTodo },
-  { name: 'Reviews', href: '/reviews', icon: ClipboardCheck },
-  { name: 'Activity', href: '/activity', icon: Activity },
-  { name: 'Team', href: '/team', icon: Users },
-  { name: 'Vision', href: '/vision', icon: Eye },
-  { name: 'Health', href: '/settings', icon: Heart },
+  { name: 'My Workspace', href: '/dashboard', icon: Home, description: 'Your personalized dashboard' },
+  { name: 'Projects', href: '/projects', icon: FolderKanban, description: 'All projects and initiatives' },
+  { name: 'Tasks', href: '/tasks', icon: ListTodo, description: 'View and manage tasks' },
+  { name: 'Reviews', href: '/reviews', icon: ClipboardCheck, description: 'Review pending projects' },
+  { name: 'Activity', href: '/activity', icon: Activity, description: 'Recent team activity' },
+  { name: 'Team', href: '/team', icon: Users, description: 'Team members and roles' },
+  { name: 'Vision', href: '/vision', icon: Eye, description: 'Strategic vision and alignment' },
+  { name: 'Health', href: '/settings', icon: Heart, description: 'System health and settings' },
 ];
 
 const adminNavigation = [
@@ -108,14 +108,14 @@ export function Sidebar() {
               key={item.name}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+                'flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200',
                 isActive
-                  ? 'bg-blue-600/20 text-blue-400'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                  ? 'bg-blue-600/20 text-blue-400 border-l-2 border-blue-500 ml-0.5'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/70 hover:translate-x-0.5'
               )}
-              title={collapsed ? item.name : undefined}
+              title={collapsed ? item.name : (item as any).description}
             >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
+              <item.icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-blue-400')} />
               {!collapsed && <span>{item.name}</span>}
             </Link>
           );

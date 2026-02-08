@@ -264,6 +264,14 @@ export default function ActivityPage() {
       <Header title="Activity" />
 
       <div className="p-6 space-y-6">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-white">Activity</h1>
+          <p className="text-sm text-zinc-400 mt-1">
+            Track recent activity, review progress, and team updates
+          </p>
+        </div>
+
         {/* Review Status Dashboard */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">

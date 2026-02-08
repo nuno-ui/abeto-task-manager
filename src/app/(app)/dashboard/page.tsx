@@ -179,9 +179,15 @@ export default function DashboardPage() {
                 {getGreeting()}, {userName}!
               </h1>
               <p className="text-sm text-zinc-400">
-                Your Task Companion is ready to help
-                {(overdueTasks > 0 || pendingReviews > 0 || crossTeamBlockers > 0) && (
-                  <span className="text-orange-400"> • {overdueTasks + pendingReviews + crossTeamBlockers} items need attention</span>
+                {stats.activeProjects > 0 ? (
+                  <>
+                    {stats.activeProjects} active project{stats.activeProjects !== 1 ? 's' : ''} with {tasksInProgress} task{tasksInProgress !== 1 ? 's' : ''} in progress
+                    {(overdueTasks > 0 || pendingReviews > 0 || crossTeamBlockers > 0) && (
+                      <span className="text-orange-400"> • {overdueTasks + pendingReviews + crossTeamBlockers} need attention</span>
+                    )}
+                  </>
+                ) : (
+                  'Your Task Companion is ready to help you get started'
                 )}
               </p>
             </div>

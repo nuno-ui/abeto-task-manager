@@ -193,6 +193,32 @@ function ProjectsPageContent() {
   return (
     <div className="min-h-screen">
       <div className="p-6 space-y-6">
+        {/* Page Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Projects</h1>
+            <p className="text-sm text-zinc-400 mt-1">
+              Manage and track all your automation initiatives
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus className="w-4 h-4" />
+              New Project
+            </Button>
+            <Button
+              onClick={() => setShowAICreator(true)}
+              className="bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500"
+            >
+              <Sparkles className="w-4 h-4" />
+              Create with AI
+            </Button>
+          </div>
+        </div>
+
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative flex-1 min-w-[200px] max-w-md">

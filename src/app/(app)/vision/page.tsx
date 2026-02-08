@@ -46,7 +46,7 @@ import {
   TrendingDown,
   Quote,
 } from 'lucide-react';
-import { Project, Pillar, AgentRole, VisionDocument, VisionAlignment } from '@/types/database';
+import { Project, Pillar, AgentRole, VisionDocument, VisionAlignment, VisionFeedback, VisionFeedbackType, VisionFeedbackTopic } from '@/types/database';
 
 type TabId = 'thesis' | 'pillars' | 'stack' | 'principles' | 'alignment' | 'research' | 'feedback';
 
@@ -161,12 +161,41 @@ export default function VisionPage() {
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [projects, setProjects] = useState<ProjectWithPillar[]>([]);
   const [visionDocs, setVisionDocs] = useState<VisionDocument[]>([]);
+  const [visionFeedback, setVisionFeedback] = useState<VisionFeedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedPillar, setExpandedPillar] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
+    fetchFeedback();
   }, []);
+
+  const fetchFeedback = async () => {
+    try {
+      const response = await fetch('/api/vision/feedback?limit=20');
+      if (response.ok) {
+        const data = await response.json();
+        setVisionFeedback(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+    }
+  };
+
+  const handleUpvote = async (id: string) => {
+    try {
+      const response = await fetch('/api/vision/feedback', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (response.ok) {
+        fetchFeedback();
+      }
+    } catch (error) {
+      console.error('Error upvoting:', error);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -1488,55 +1517,13 @@ export default function VisionPage() {
                 </div>
               </div>
 
-              {/* Submit Feedback Form Placeholder */}
-              <div className="bg-zinc-900 border border-violet-500/30 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Send className="w-5 h-5 text-violet-400" />
-                  Submit Feedback
-                </h3>
-                <p className="text-zinc-400 mb-4 text-sm">
-                  Use the comment system on any project or task to share your thoughts. All vision-related comments
-                  are reviewed by leadership and incorporated into our strategic planning.
-                </p>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-zinc-800/50 rounded-lg p-4">
-                    <h4 className="font-medium text-white mb-2">💡 Suggestion</h4>
-                    <p className="text-xs text-zinc-400 mb-3">For new ideas or improvements to the vision</p>
-                    <p className="text-xs text-zinc-500">
-                      Add a comment with <span className="text-violet-400">[SUGGESTION]</span> prefix
-                    </p>
-                  </div>
-                  <div className="bg-zinc-800/50 rounded-lg p-4">
-                    <h4 className="font-medium text-white mb-2">🔍 Challenge</h4>
-                    <p className="text-xs text-zinc-400 mb-3">For questioning assumptions or approaches</p>
-                    <p className="text-xs text-zinc-500">
-                      Add a comment with <span className="text-red-400">[CHALLENGE]</span> prefix
-                    </p>
-                  </div>
-                  <div className="bg-zinc-800/50 rounded-lg p-4">
-                    <h4 className="font-medium text-white mb-2">📚 Resource</h4>
-                    <p className="text-xs text-zinc-400 mb-3">For sharing relevant articles or research</p>
-                    <p className="text-xs text-zinc-500">
-                      Add a comment with <span className="text-blue-400">[RESOURCE]</span> prefix
-                    </p>
-                  </div>
-                  <div className="bg-zinc-800/50 rounded-lg p-4">
-                    <h4 className="font-medium text-white mb-2">❓ Question</h4>
-                    <p className="text-xs text-zinc-400 mb-3">For clarification or understanding</p>
-                    <p className="text-xs text-zinc-500">
-                      Add a comment with <span className="text-amber-400">[QUESTION]</span> prefix
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4 p-4 bg-violet-500/10 border border-violet-500/20 rounded-lg">
-                  <p className="text-sm text-violet-300">
-                    <strong>Coming soon:</strong> Direct feedback submission form and vision discussion board.
-                    For now, use the Activity page or project comments to share your thoughts.
-                  </p>
-                </div>
-              </div>
+              {/* Submit Feedback Form */}
+              <VisionFeedbackForm onSubmitSuccess={() => fetchFeedback()} />
 
               {/* Recent Feedback */}
+              <VisionFeedbackList feedback={visionFeedback} onUpvote={handleUpvote} />
+
+              {/* How Feedback Works */}
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <Activity className="w-5 h-5 text-cyan-400" />
@@ -1564,6 +1551,452 @@ export default function VisionPage() {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// VISION FEEDBACK FORM COMPONENT
+// =============================================================================
+
+interface VisionFeedbackFormProps {
+  onSubmitSuccess: () => void;
+}
+
+function VisionFeedbackForm({ onSubmitSuccess }: VisionFeedbackFormProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [type, setType] = useState<VisionFeedbackType>('suggestion');
+  const [topic, setTopic] = useState<VisionFeedbackTopic>('general');
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [resourceUrl, setResourceUrl] = useState('');
+  const [authorName, setAuthorName] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const feedbackTypes = [
+    { id: 'suggestion' as const, label: '💡 Suggestion', description: 'New ideas or improvements', color: 'violet' },
+    { id: 'challenge' as const, label: '🔍 Challenge', description: 'Question assumptions', color: 'red' },
+    { id: 'resource' as const, label: '📚 Resource', description: 'Share articles/research', color: 'blue' },
+    { id: 'question' as const, label: '❓ Question', description: 'Ask for clarification', color: 'amber' },
+  ];
+
+  const topics = [
+    { id: 'general' as const, label: 'General Vision' },
+    { id: 'agent_autonomy' as const, label: 'Agent Autonomy' },
+    { id: 'data_moat' as const, label: 'Data Moat Strategy' },
+    { id: 'pricing_model' as const, label: 'Pricing Model' },
+    { id: 'build_vs_buy' as const, label: 'Build vs Buy' },
+    { id: 'three_pillars' as const, label: 'Three Pillars' },
+    { id: 'human_empowerment' as const, label: 'Human Empowerment' },
+  ];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !content.trim()) return;
+
+    setSubmitting(true);
+    try {
+      const response = await fetch('/api/vision/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type,
+          topic,
+          title: title.trim(),
+          content: content.trim(),
+          resource_url: resourceUrl.trim() || undefined,
+          author_name: authorName.trim() || undefined,
+          is_anonymous: isAnonymous,
+        }),
+      });
+
+      if (response.ok) {
+        setSubmitted(true);
+        setTitle('');
+        setContent('');
+        setResourceUrl('');
+        onSubmitSuccess();
+        setTimeout(() => {
+          setSubmitted(false);
+          setIsOpen(false);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getTypeColor = (t: VisionFeedbackType) => {
+    switch (t) {
+      case 'suggestion': return 'violet';
+      case 'challenge': return 'red';
+      case 'resource': return 'blue';
+      case 'question': return 'amber';
+    }
+  };
+
+  if (!isOpen) {
+    return (
+      <div className="bg-gradient-to-r from-violet-900/30 to-blue-900/20 border border-violet-500/30 rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-violet-500/20">
+              <Send className="w-5 h-5 text-violet-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">Share Your Feedback</h3>
+              <p className="text-sm text-zinc-400">Help shape our strategic vision</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsOpen(true)}
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+          >
+            <MessageSquare className="w-4 h-4" />
+            Submit Feedback
+          </button>
+        </div>
+
+        {/* Quick type buttons */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {feedbackTypes.map((ft) => (
+            <button
+              key={ft.id}
+              onClick={() => {
+                setType(ft.id);
+                setIsOpen(true);
+              }}
+              className={`p-3 rounded-lg border text-left transition-all hover:scale-[1.02] ${
+                ft.color === 'violet' ? 'bg-violet-500/10 border-violet-500/30 hover:border-violet-400/50' :
+                ft.color === 'red' ? 'bg-red-500/10 border-red-500/30 hover:border-red-400/50' :
+                ft.color === 'blue' ? 'bg-blue-500/10 border-blue-500/30 hover:border-blue-400/50' :
+                'bg-amber-500/10 border-amber-500/30 hover:border-amber-400/50'
+              }`}
+            >
+              <p className="font-medium text-white text-sm">{ft.label}</p>
+              <p className="text-xs text-zinc-400 mt-1">{ft.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div className="bg-zinc-900 border border-emerald-500/30 rounded-xl p-8 text-center">
+        <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+        </div>
+        <h3 className="text-xl font-semibold text-white mb-2">Thank You!</h3>
+        <p className="text-zinc-400">Your feedback has been submitted and will be reviewed by leadership within 48 hours.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-zinc-900 border border-violet-500/30 rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Send className="w-5 h-5 text-violet-400" />
+          <h3 className="font-semibold text-white">Submit Vision Feedback</h3>
+        </div>
+        <button
+          onClick={() => setIsOpen(false)}
+          className="p-1 text-zinc-500 hover:text-white transition-colors"
+        >
+          <ChevronUp className="w-5 h-5" />
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* Type Selection */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-300 mb-2">Feedback Type</label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {feedbackTypes.map((ft) => (
+              <button
+                key={ft.id}
+                type="button"
+                onClick={() => setType(ft.id)}
+                className={`p-3 rounded-lg border text-left transition-all ${
+                  type === ft.id
+                    ? ft.color === 'violet' ? 'bg-violet-500/20 border-violet-500 ring-2 ring-violet-500/30' :
+                      ft.color === 'red' ? 'bg-red-500/20 border-red-500 ring-2 ring-red-500/30' :
+                      ft.color === 'blue' ? 'bg-blue-500/20 border-blue-500 ring-2 ring-blue-500/30' :
+                      'bg-amber-500/20 border-amber-500 ring-2 ring-amber-500/30'
+                    : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600'
+                }`}
+              >
+                <p className="font-medium text-white text-sm">{ft.label}</p>
+                <p className="text-xs text-zinc-400 mt-0.5">{ft.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Topic Selection */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-300 mb-2">Related Topic</label>
+          <select
+            value={topic}
+            onChange={(e) => setTopic(e.target.value as VisionFeedbackTopic)}
+            className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          >
+            {topics.map((t) => (
+              <option key={t.id} value={t.id}>{t.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Title */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-300 mb-2">Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={
+              type === 'suggestion' ? 'e.g., Add outcome-based pricing tier' :
+              type === 'challenge' ? 'e.g., Reconsidering full agent autonomy' :
+              type === 'resource' ? 'e.g., Research on AI agent adoption rates' :
+              'e.g., How do we measure data moat value?'
+            }
+            className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        {/* Content */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-300 mb-2">
+            {type === 'resource' ? 'Description & Key Insights' : 'Details'}
+          </label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={
+              type === 'suggestion' ? 'Describe your idea and why it would improve our vision...' :
+              type === 'challenge' ? 'What assumption are you questioning and why? Include any evidence...' :
+              type === 'resource' ? 'What are the key insights from this resource? How does it relate to our vision?' :
+              'What would you like clarified? What context would help you understand better?'
+            }
+            rows={4}
+            className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+            required
+          />
+        </div>
+
+        {/* Resource URL (only for resource type) */}
+        {type === 'resource' && (
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2">Resource URL</label>
+            <input
+              type="url"
+              value={resourceUrl}
+              onChange={(e) => setResourceUrl(e.target.value)}
+              placeholder="https://example.com/article"
+              className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            />
+          </div>
+        )}
+
+        {/* Author & Anonymous */}
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-zinc-300 mb-2">Your Name (optional)</label>
+            <input
+              type="text"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              placeholder="How should we credit you?"
+              disabled={isAnonymous}
+              className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent disabled:opacity-50"
+            />
+          </div>
+          <div className="pt-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+                className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-violet-600 focus:ring-violet-500"
+              />
+              <span className="text-sm text-zinc-400">Submit anonymously</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Submit */}
+        <div className="flex items-center justify-between pt-2">
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting || !title.trim() || !content.trim()}
+            className="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Submit Feedback
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// =============================================================================
+// VISION FEEDBACK LIST COMPONENT
+// =============================================================================
+
+interface VisionFeedbackListProps {
+  feedback: VisionFeedback[];
+  onUpvote: (id: string) => void;
+}
+
+function VisionFeedbackList({ feedback, onUpvote }: VisionFeedbackListProps) {
+  if (feedback.length === 0) {
+    return (
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center">
+        <MessageSquare className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-white mb-2">No Feedback Yet</h3>
+        <p className="text-zinc-400 text-sm">Be the first to share your thoughts on our strategic vision!</p>
+      </div>
+    );
+  }
+
+  const getTypeStyles = (type: VisionFeedbackType) => {
+    switch (type) {
+      case 'suggestion': return { bg: 'bg-violet-500/10', border: 'border-violet-500/30', icon: '💡', label: 'Suggestion' };
+      case 'challenge': return { bg: 'bg-red-500/10', border: 'border-red-500/30', icon: '🔍', label: 'Challenge' };
+      case 'resource': return { bg: 'bg-blue-500/10', border: 'border-blue-500/30', icon: '📚', label: 'Resource' };
+      case 'question': return { bg: 'bg-amber-500/10', border: 'border-amber-500/30', icon: '❓', label: 'Question' };
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending': return { bg: 'bg-zinc-500/20', text: 'text-zinc-400', label: 'Pending Review' };
+      case 'reviewed': return { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Reviewed' };
+      case 'accepted': return { bg: 'bg-emerald-500/20', text: 'text-emerald-400', label: 'Accepted' };
+      case 'declined': return { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Declined' };
+      case 'implemented': return { bg: 'bg-violet-500/20', text: 'text-violet-400', label: 'Implemented' };
+      default: return { bg: 'bg-zinc-500/20', text: 'text-zinc-400', label: status };
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+      <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+        <h3 className="font-semibold text-white flex items-center gap-2">
+          <Activity className="w-5 h-5 text-cyan-400" />
+          Recent Feedback ({feedback.length})
+        </h3>
+      </div>
+
+      <div className="divide-y divide-zinc-800">
+        {feedback.map((item) => {
+          const typeStyle = getTypeStyles(item.type);
+          const statusBadge = getStatusBadge(item.status);
+
+          return (
+            <div key={item.id} className={`p-4 ${typeStyle.bg} hover:bg-zinc-800/50 transition-colors`}>
+              <div className="flex items-start gap-4">
+                {/* Type Icon */}
+                <div className={`p-2 rounded-lg ${typeStyle.bg} border ${typeStyle.border}`}>
+                  <span className="text-lg">{typeStyle.icon}</span>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <div>
+                      <h4 className="font-medium text-white">{item.title}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-zinc-500">{typeStyle.label}</span>
+                        <span className="text-xs text-zinc-600">•</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${statusBadge.bg} ${statusBadge.text}`}>
+                          {statusBadge.label}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-zinc-500 whitespace-nowrap">{formatDate(item.created_at)}</span>
+                  </div>
+
+                  <p className="text-sm text-zinc-400 mb-3 line-clamp-2">{item.content}</p>
+
+                  {/* Resource URL */}
+                  {item.resource_url && (
+                    <a
+                      href={item.resource_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mb-3"
+                    >
+                      <LinkIcon className="w-3 h-3" />
+                      View Resource
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+
+                  {/* Admin Response */}
+                  {item.admin_response && (
+                    <div className="p-3 bg-violet-500/10 border border-violet-500/20 rounded-lg mb-3">
+                      <p className="text-xs font-medium text-violet-400 mb-1">Leadership Response:</p>
+                      <p className="text-sm text-zinc-300">{item.admin_response}</p>
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-500">
+                      {item.is_anonymous ? 'Anonymous' : (item.author_name || 'Team Member')}
+                    </span>
+                    <button
+                      onClick={() => onUpvote(item.id)}
+                      className="flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded transition-colors"
+                    >
+                      <ThumbsUp className="w-3 h-3 text-zinc-400" />
+                      <span className="text-xs text-zinc-400">{item.upvotes || 0}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

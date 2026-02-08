@@ -308,11 +308,13 @@ export default function TeamPage() {
       <Header title="Teams" />
 
       <div className="p-6">
-        {/* Header with Add Team button */}
+        {/* Page Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-white">Team Management</h2>
-            <p className="text-sm text-zinc-400">View projects, tasks, and manage team members</p>
+            <h1 className="text-2xl font-bold text-white">Team</h1>
+            <p className="text-sm text-zinc-400 mt-1">
+              Manage teams, members, and track team workload
+            </p>
           </div>
           <button
             onClick={() => setShowAddTeamModal(true)}

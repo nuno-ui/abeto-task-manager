@@ -308,7 +308,15 @@ function SettingsPageContent() {
 
   return (
     <div className="min-h-screen">
-      <div className="p-6">
+      <div className="p-6 space-y-6">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-white">Health & Settings</h1>
+          <p className="text-sm text-zinc-400 mt-1">
+            Monitor system health, configure settings, and manage integrations
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1">
@@ -1532,7 +1540,7 @@ LIMIT 50;`
                           Built with Next.js, TypeScript, Tailwind CSS, and Supabase
                         </p>
                         <p className="text-sm text-zinc-600 mt-2">
-                          © 2024 Abeto. All rights reserved.
+                          © 2025 Abeto. All rights reserved.
                         </p>
                       </div>
                     </div>
