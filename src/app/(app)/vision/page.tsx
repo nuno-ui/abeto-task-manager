@@ -118,13 +118,61 @@ const RESEARCH_RESOURCES = [
   },
 ];
 
-// Key industry statistics
+// Key industry statistics - European market focus
 const INDUSTRY_STATS = [
   { label: 'Agentic AI Market by 2030', value: '$52B', change: '+566%', source: 'Industry analysts' },
   { label: 'Enterprise Apps with AI Agents by 2026', value: '40%', change: 'from 5%', source: 'Gartner' },
   { label: 'Multi-agent System Inquiries', value: '1,445%', change: 'Q1 2024 → Q2 2025', source: 'Gartner' },
   { label: 'Business Software with Agentic AI by 2028', value: '33%', change: 'from <1%', source: 'Gartner' },
 ];
+
+// European Energy Market Statistics
+const EUROPEAN_ENERGY_STATS = {
+  solarMarket: {
+    totalCapacity: '338 GW', // EU cumulative solar capacity 2024
+    annual2024: '65.5 GW', // New installations in 2024
+    marketValue: '€118B', // 2024 market value
+    projected2033: '€895B', // Projected market by 2033
+    growth: '25.2%', // CAGR 2025-2033
+  },
+  installers: {
+    europeSMEs: '200,000+', // SME renewable installers in Europe
+    germanyInstallers: '6,300', // German solar installers
+    italyInstallers: '3,100', // Italian solar installers
+    ukInstallers: '2,900', // UK solar installers
+    workforceNeeded: '500,000', // Additional workers needed by 2030
+  },
+  countryCapacity: [
+    { country: 'Germany', capacity: '100 GW', flag: '🇩🇪', new2024: '16.1 GW' },
+    { country: 'Spain', capacity: '47 GW', flag: '🇪🇸', new2024: '9.3 GW' },
+    { country: 'Italy', capacity: '36 GW', flag: '🇮🇹', new2024: '6.4 GW' },
+    { country: 'Netherlands', capacity: '26 GW', flag: '🇳🇱', new2024: '3.0 GW' },
+    { country: 'France', capacity: '22 GW', flag: '🇫🇷', new2024: '+1.5 GW' },
+  ],
+  workforce: {
+    solarJobs2024: '865,000', // EU solar workforce
+    projected2029: '916,000+', // Projected workforce
+    annualGrowth: '5%', // Year-on-year growth
+  },
+  batteryStorage: {
+    installed2024: '21.9 GWh', // BESS installed in Europe 2024
+    totalFleet: '61.1 GWh', // Total battery fleet
+    marketSize: '€15.5B', // 2025 market size
+    projected2030: '€32.7B', // Projected 2030
+    residentialSystems: '1.8M', // Germany home battery systems
+  },
+  heatPumps: {
+    sales2024: '2.31M', // Heat pumps sold in Europe 2024
+    totalStock: '25.5M', // Total heat pumps installed
+    marketSize: '€19.3B', // 2024 market value
+    recovery2025: '+9%', // H1 2025 recovery
+  },
+  energyTransition: {
+    marketSize: '€545B', // 2024 energy transition market
+    projected2025: '€637B', // 2025 projected
+    cagr: '16.2%', // Growth rate
+  },
+};
 
 interface ProjectWithPillar extends Project {
   pillar?: Pillar;
@@ -551,30 +599,44 @@ export default function VisionPage() {
                 </div>
               </div>
 
-              {/* Strategic Imperative */}
-              <div className="bg-gradient-to-r from-blue-900/20 to-cyan-900/20 border border-blue-700/30 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  <Target className="w-5 h-5 text-blue-400" />
-                  Strategic Imperative
+              {/* Why Energy? Why Now? - The Strategic Context */}
+              <div className="bg-gradient-to-r from-emerald-900/30 to-blue-900/30 border border-emerald-600/40 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-emerald-400" />
+                  Why Energy? Why Now?
                 </h3>
-                <p className="text-zinc-300 mb-4">
-                  "We need to get access to the disparate data across SME installers as fast as we can to build the Cortex
-                  and enhance defensibility of our business."
-                </p>
-                <p className="text-blue-300 font-medium">
-                  The value is that we understand intimately the solar installer processes and workflows —
-                  so we can build better agents. Pricing should just enable us to cover costs and build the Cortex as fast as possible.
-                </p>
+
+                <div className="space-y-4 mb-6">
+                  <div className="bg-black/20 rounded-lg p-4 border-l-4 border-emerald-500">
+                    <h4 className="font-semibold text-emerald-300 mb-2">The Most Important Market</h4>
+                    <p className="text-sm text-zinc-300">
+                      Energy isn't just another vertical — it's fundamental infrastructure. People will <strong>always</strong> seek better energy products, better prices, and better service. Regardless of technology shifts (solar → batteries → hydrogen → whatever's next), the need for energy solutions and the installers who deliver them is permanent.
+                    </p>
+                  </div>
+
+                  <div className="bg-black/20 rounded-lg p-4 border-l-4 border-blue-500">
+                    <h4 className="font-semibold text-blue-300 mb-2">Our Strategic Focus</h4>
+                    <p className="text-sm text-zinc-300">
+                      We start with <strong>solar installers</strong> in Europe — the world's second-largest solar market. But we're building for all energy solution providers: batteries, heat pumps, EV charging, grid services. The operational challenges are the same. The data patterns are similar. Solar is our wedge into the entire energy ecosystem.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                  <p className="text-emerald-200 text-sm">
+                    <strong className="text-emerald-300">The Imperative:</strong> "We need to get access to the disparate data across SME energy installers as fast as we can to build the Cortex and enhance defensibility of our business." The value is that we understand intimately the installer processes and workflows — so we can build better agents. Pricing should enable us to cover costs and build the Cortex as fast as possible.
+                  </p>
+                </div>
               </div>
 
-              {/* Solar Industry Advantage - Our Privileged Position */}
+              {/* Our Unfair Advantage */}
               <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-600/40 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-amber-400" />
-                  Our Solar Industry Advantage
+                  <Shield className="w-5 h-5 text-amber-400" />
+                  Our Unfair Advantage
                 </h3>
                 <p className="text-amber-100 mb-6 text-lg">
-                  Generic AI tools will emerge. Our moat is <strong>building from inside the spinal cord</strong> of the solar industry.
+                  Generic AI tools will emerge. Our moat is <strong>building from inside the spinal cord</strong> of the energy installer industry.
                 </p>
 
                 <div className="grid md:grid-cols-2 gap-4 mb-6">
@@ -584,7 +646,7 @@ export default function VisionPage() {
                       Day-One Sales Access
                     </h4>
                     <p className="text-sm text-zinc-300">
-                      We're embedded with SDRs making real calls to real installers. Every conversation trains our AI on what actually converts.
+                      We're embedded with SDRs making real calls to real installers across Europe. Every conversation trains our AI on what actually converts in each market.
                     </p>
                   </div>
                   <div className="bg-black/20 rounded-lg p-4 border border-amber-500/20">
@@ -593,7 +655,7 @@ export default function VisionPage() {
                       Proprietary Workflow Data
                     </h4>
                     <p className="text-sm text-zinc-300">
-                      We know how installers actually work — their quirks, bottlenecks, decision patterns. This can't be scraped from the web.
+                      We know how 200,000+ European SME installers actually work — their quirks, bottlenecks, decision patterns. This can't be scraped from the web.
                     </p>
                   </div>
                   <div className="bg-black/20 rounded-lg p-4 border border-amber-500/20">
@@ -602,7 +664,7 @@ export default function VisionPage() {
                       Domain-Specific Intelligence
                     </h4>
                     <p className="text-sm text-zinc-300">
-                      Solar permits, utility rebates, panel specifications, installer certifications — deep knowledge generic AIs don't have.
+                      European solar regulations, country-specific rebates, panel specifications, installer certifications, grid connection rules — deep knowledge generic AIs don't have.
                     </p>
                   </div>
                   <div className="bg-black/20 rounded-lg p-4 border border-amber-500/20">
@@ -611,7 +673,7 @@ export default function VisionPage() {
                       Compounding Advantage
                     </h4>
                     <p className="text-sm text-zinc-300">
-                      Each installer interaction makes our agents smarter. Our knowledge base grows daily. Competitors start from zero.
+                      Each installer interaction makes our agents smarter. 865,000 solar workers in Europe. Our knowledge base grows daily. Competitors start from zero.
                     </p>
                   </div>
                 </div>
@@ -619,35 +681,90 @@ export default function VisionPage() {
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
                   <p className="text-amber-200 text-sm">
                     <strong className="text-amber-300">The Flywheel:</strong> Better AI → More installer value → More data access → Better AI → Unbeatable defensibility.
-                    Generic tools can't replicate years of accumulated solar industry intelligence.
+                    Generic tools can't replicate years of accumulated energy industry intelligence across 27 EU markets.
                   </p>
                 </div>
               </div>
 
-              {/* Energy Transition Context */}
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-emerald-400" />
-                  Riding the Energy Transition Wave
+              {/* European Energy Market - Our Focus */}
+              <div className="bg-gradient-to-br from-blue-900/20 to-emerald-900/20 border border-blue-600/30 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-blue-400" />
+                  The European Energy Opportunity
                 </h3>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-zinc-800/50 rounded-lg">
-                    <p className="text-3xl font-bold text-emerald-400">$500B+</p>
-                    <p className="text-xs text-zinc-400 mt-1">US residential solar market by 2030</p>
+                <p className="text-blue-200 text-sm mb-6">
+                  Energy is one of the most important markets in the world. Our focus: <strong>solar installers today, all energy solution providers tomorrow.</strong> People will always seek better energy products and prices — we're building the intelligence layer for whoever delivers them.
+                </p>
+
+                {/* European Solar Market Stats */}
+                <div className="grid md:grid-cols-4 gap-3 mb-6">
+                  <div className="text-center p-4 bg-black/30 rounded-lg border border-emerald-500/20">
+                    <p className="text-2xl font-bold text-emerald-400">{EUROPEAN_ENERGY_STATS.solarMarket.totalCapacity}</p>
+                    <p className="text-xs text-zinc-400 mt-1">EU Solar Capacity</p>
+                    <p className="text-xs text-emerald-400">+65.5 GW in 2024</p>
                   </div>
-                  <div className="text-center p-4 bg-zinc-800/50 rounded-lg">
-                    <p className="text-3xl font-bold text-emerald-400">50,000+</p>
-                    <p className="text-xs text-zinc-400 mt-1">SME solar installers in the US alone</p>
+                  <div className="text-center p-4 bg-black/30 rounded-lg border border-violet-500/20">
+                    <p className="text-2xl font-bold text-violet-400">{EUROPEAN_ENERGY_STATS.installers.europeSMEs}</p>
+                    <p className="text-xs text-zinc-400 mt-1">SME Installers</p>
+                    <p className="text-xs text-violet-400">Across Europe</p>
                   </div>
-                  <div className="text-center p-4 bg-zinc-800/50 rounded-lg">
-                    <p className="text-3xl font-bold text-emerald-400">3x</p>
-                    <p className="text-xs text-zinc-400 mt-1">Projected growth in installer workforce</p>
+                  <div className="text-center p-4 bg-black/30 rounded-lg border border-amber-500/20">
+                    <p className="text-2xl font-bold text-amber-400">{EUROPEAN_ENERGY_STATS.workforce.solarJobs2024}</p>
+                    <p className="text-xs text-zinc-400 mt-1">Solar Jobs in EU</p>
+                    <p className="text-xs text-amber-400">+5% YoY growth</p>
+                  </div>
+                  <div className="text-center p-4 bg-black/30 rounded-lg border border-cyan-500/20">
+                    <p className="text-2xl font-bold text-cyan-400">{EUROPEAN_ENERGY_STATS.energyTransition.marketSize}</p>
+                    <p className="text-xs text-zinc-400 mt-1">Energy Transition</p>
+                    <p className="text-xs text-cyan-400">+16.2% CAGR</p>
                   </div>
                 </div>
-                <p className="text-zinc-400 mt-4 text-sm">
-                  The solar industry is exploding but drowning in operational chaos. Installers need AI-powered efficiency
-                  to scale. We're the ones who understand their world intimately enough to deliver it.
-                </p>
+
+                {/* Country Breakdown */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-zinc-400 mb-3">Leading European Markets (2024)</h4>
+                  <div className="grid grid-cols-5 gap-2">
+                    {EUROPEAN_ENERGY_STATS.countryCapacity.map((country) => (
+                      <div key={country.country} className="text-center p-3 bg-zinc-800/50 rounded-lg">
+                        <span className="text-2xl">{country.flag}</span>
+                        <p className="text-xs text-white font-medium mt-1">{country.country}</p>
+                        <p className="text-sm text-emerald-400 font-bold">{country.capacity}</p>
+                        <p className="text-xs text-zinc-500">{country.new2024}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Beyond Solar - The Broader Energy Opportunity */}
+                <div className="bg-zinc-800/50 rounded-lg p-4 mb-4">
+                  <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    Beyond Solar: The Full Energy Ecosystem
+                  </h4>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    <div className="p-3 bg-black/30 rounded-lg">
+                      <p className="text-xs text-zinc-400">Battery Storage</p>
+                      <p className="text-lg font-bold text-emerald-400">{EUROPEAN_ENERGY_STATS.batteryStorage.totalFleet}</p>
+                      <p className="text-xs text-zinc-500">{EUROPEAN_ENERGY_STATS.batteryStorage.residentialSystems} home systems (DE)</p>
+                    </div>
+                    <div className="p-3 bg-black/30 rounded-lg">
+                      <p className="text-xs text-zinc-400">Heat Pumps</p>
+                      <p className="text-lg font-bold text-blue-400">{EUROPEAN_ENERGY_STATS.heatPumps.totalStock}</p>
+                      <p className="text-xs text-zinc-500">{EUROPEAN_ENERGY_STATS.heatPumps.sales2024} sold in 2024</p>
+                    </div>
+                    <div className="p-3 bg-black/30 rounded-lg">
+                      <p className="text-xs text-zinc-400">Workers Needed by 2030</p>
+                      <p className="text-lg font-bold text-amber-400">{EUROPEAN_ENERGY_STATS.installers.workforceNeeded}</p>
+                      <p className="text-xs text-zinc-500">Massive skills gap</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                  <p className="text-blue-200 text-sm">
+                    <strong className="text-blue-300">Why Energy Matters:</strong> The energy industry is experiencing unprecedented transformation. Solar today. Batteries, heat pumps, EV charging, and grid services tomorrow. The workflows, challenges, and data patterns are similar across all energy installers. <strong>Our deep solar expertise is the wedge into a €545B+ market.</strong>
+                  </p>
+                </div>
               </div>
             </div>
           )}
