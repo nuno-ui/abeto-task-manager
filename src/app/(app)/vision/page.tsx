@@ -116,6 +116,71 @@ const RESEARCH_RESOURCES = [
     category: 'investment',
     date: '2025',
   },
+  // European Energy Market Research
+  {
+    title: 'EU Market Outlook for Solar Power 2024-2028',
+    source: 'SolarPower Europe',
+    url: 'https://www.solarpowereurope.org/insights/outlooks/eu-market-outlook-for-solar-power-2024-2028/detail',
+    excerpt: 'Comprehensive analysis of the EU solar market with projections through 2028. The EU installed 65.5 GW in 2024, bringing total capacity to 338 GW. Market expected to continue strong growth.',
+    category: 'european-energy',
+    date: '2024',
+  },
+  {
+    title: 'European Battery Storage Market Outlook 2025-2029',
+    source: 'SolarPower Europe',
+    url: 'https://www.solarpowereurope.org/insights/outlooks/european-market-outlook-for-battery-storage-2025-2029',
+    excerpt: '21.9 GWh of battery storage installed in Europe in 2024, marking eleven consecutive years of record-breaking installations. Total European battery fleet now at 61.1 GWh.',
+    category: 'european-energy',
+    date: '2025',
+  },
+  {
+    title: 'European Solar Market 2024-2025: Balancing Growth and Challenges',
+    source: 'EUPD Research via PV Magazine',
+    url: 'https://www.pv-magazine.com/2025/01/10/european-solar-market-2024-2025-balancing-growth-challenges-and-opportunities/',
+    excerpt: 'Despite market challenges, European PV installations reached ~65 GWdc in 2024. EUPD forecasts 10% growth in 2025. Germany leads with 6,300 installers, followed by Italy (3,100) and UK (2,900).',
+    category: 'european-energy',
+    date: '2025',
+  },
+  {
+    title: 'European Residential Battery Storage: Strong Momentum in 2025',
+    source: 'EUPD Research',
+    url: 'https://eupd-group.com/european-residential-battery-storage-market-strong-momentum-continues-in-2025-eupd-research-highlights-strategic-growth-opportunities/',
+    excerpt: 'Over one million new residential storage systems expected in Europe in 2025. Germany has 1.8 million home systems with 79% of new PV installations including battery storage.',
+    category: 'european-energy',
+    date: '2025',
+  },
+  {
+    title: 'European Heat Pump Market Statistics 2024',
+    source: 'European Heat Pump Association (EHPA)',
+    url: 'https://www.ehpa.org/market-data/',
+    excerpt: '2.31 million heat pumps sold in Europe in 2024, bringing total stock to 25.5 million units. Market shows signs of recovery with +9% growth in H1 2025.',
+    category: 'european-energy',
+    date: '2024',
+  },
+  {
+    title: 'EU Solar Jobs Report 2024',
+    source: 'SolarPower Europe',
+    url: 'https://www.solarpowereurope.org/insights/outlooks/eu-solar-jobs-report-2024',
+    excerpt: 'EU solar sector employed 865,000 people in 2024, up 5% year-on-year. Industry needs 500,000 additional skilled workers by 2030 to meet deployment targets.',
+    category: 'european-energy',
+    date: '2024',
+  },
+  {
+    title: 'What\'s Slowing Down Solar Deployment in Europe',
+    source: 'AltEnergyMag',
+    url: 'https://www.altenergymag.com/article/2025/12/whats-slowing-down-solar-deployment-in-europe-and-how-to-fix-it/46467',
+    excerpt: 'Most European solar projects still rely on long subcontracting chains, leading to delays, miscommunication, and diluted accountability. Digitalization and AI offer solutions.',
+    category: 'european-energy',
+    date: '2025',
+  },
+  {
+    title: 'Europe Energy Transition Outlook 2025',
+    source: 'BloombergNEF',
+    url: 'https://about.bnef.com/energy-transition-investment/',
+    excerpt: 'European energy transition investment reached €545 billion in 2024, growing at 16.2% CAGR. Solar and wind continue to dominate, with battery storage seeing fastest growth.',
+    category: 'european-energy',
+    date: '2025',
+  },
 ];
 
 // Key industry statistics - European market focus
@@ -126,21 +191,27 @@ const INDUSTRY_STATS = [
   { label: 'Business Software with Agentic AI by 2028', value: '33%', change: 'from <1%', source: 'Gartner' },
 ];
 
-// European Energy Market Statistics
+// European Energy Market Statistics with Sources
 const EUROPEAN_ENERGY_STATS = {
   solarMarket: {
-    totalCapacity: '338 GW', // EU cumulative solar capacity 2024
-    annual2024: '65.5 GW', // New installations in 2024
-    marketValue: '€118B', // 2024 market value
-    projected2033: '€895B', // Projected market by 2033
-    growth: '25.2%', // CAGR 2025-2033
+    totalCapacity: '338 GW',
+    totalCapacitySource: 'https://www.solarpowereurope.org/insights/outlooks/eu-market-outlook-for-solar-power-2024-2028/detail',
+    annual2024: '65.5 GW',
+    annual2024Source: 'https://www.solarpowereurope.org/press-releases/new-report-eu-hits-2025-solar-target-but-market-contraction-puts-2030-goal-at-risk',
+    marketValue: '€118B',
+    marketValueSource: 'https://www.marketdataforecast.com/market-reports/europe-solar-photovoltaic-pv-market',
+    projected2033: '€895B',
+    growth: '25.2%',
   },
   installers: {
-    europeSMEs: '200,000+', // SME renewable installers in Europe
-    germanyInstallers: '6,300', // German solar installers
-    italyInstallers: '3,100', // Italian solar installers
-    ukInstallers: '2,900', // UK solar installers
-    workforceNeeded: '500,000', // Additional workers needed by 2030
+    europeSMEs: '200,000+',
+    europeSMEsSource: 'https://www.pv-magazine.com/2025/01/10/european-solar-market-2024-2025-balancing-growth-challenges-and-opportunities/',
+    germanyInstallers: '6,300',
+    italyInstallers: '3,100',
+    ukInstallers: '2,900',
+    installersSource: 'https://eupd-group.com/eupd-research-reveals-top-european-residential-solar-markets-and-most-impacting-installers-amidst-booming-market-growth/',
+    workforceNeeded: '500,000',
+    workforceNeededSource: 'https://www.solarpowereurope.org/insights/outlooks/eu-solar-jobs-report-2024',
   },
   countryCapacity: [
     { country: 'Germany', capacity: '100 GW', flag: '🇩🇪', new2024: '16.1 GW' },
@@ -149,28 +220,33 @@ const EUROPEAN_ENERGY_STATS = {
     { country: 'Netherlands', capacity: '26 GW', flag: '🇳🇱', new2024: '3.0 GW' },
     { country: 'France', capacity: '22 GW', flag: '🇫🇷', new2024: '+1.5 GW' },
   ],
+  countryCapacitySource: 'https://www.solarpowereurope.org/insights/interactive-data/total-eu-27-solar-pv-capacity-a-growth-story',
   workforce: {
-    solarJobs2024: '865,000', // EU solar workforce
-    projected2029: '916,000+', // Projected workforce
-    annualGrowth: '5%', // Year-on-year growth
+    solarJobs2024: '865,000',
+    projected2029: '916,000+',
+    annualGrowth: '5%',
+    source: 'https://www.solarpowereurope.org/insights/outlooks/eu-solar-jobs-report-2024',
   },
   batteryStorage: {
-    installed2024: '21.9 GWh', // BESS installed in Europe 2024
-    totalFleet: '61.1 GWh', // Total battery fleet
-    marketSize: '€15.5B', // 2025 market size
-    projected2030: '€32.7B', // Projected 2030
-    residentialSystems: '1.8M', // Germany home battery systems
+    installed2024: '21.9 GWh',
+    totalFleet: '61.1 GWh',
+    marketSize: '€15.5B',
+    projected2030: '€32.7B',
+    residentialSystems: '1.8M',
+    source: 'https://www.solarpowereurope.org/insights/outlooks/european-market-outlook-for-battery-storage-2025-2029',
   },
   heatPumps: {
-    sales2024: '2.31M', // Heat pumps sold in Europe 2024
-    totalStock: '25.5M', // Total heat pumps installed
-    marketSize: '€19.3B', // 2024 market value
-    recovery2025: '+9%', // H1 2025 recovery
+    sales2024: '2.31M',
+    totalStock: '25.5M',
+    marketSize: '€19.3B',
+    recovery2025: '+9%',
+    source: 'https://www.ehpa.org/market-data/',
   },
   energyTransition: {
-    marketSize: '€545B', // 2024 energy transition market
-    projected2025: '€637B', // 2025 projected
-    cagr: '16.2%', // Growth rate
+    marketSize: '€545B',
+    projected2025: '€637B',
+    cagr: '16.2%',
+    source: 'https://about.bnef.com/energy-transition-investment/',
   },
 };
 
@@ -698,31 +774,73 @@ export default function VisionPage() {
 
                 {/* European Solar Market Stats */}
                 <div className="grid md:grid-cols-4 gap-3 mb-6">
-                  <div className="text-center p-4 bg-black/30 rounded-lg border border-emerald-500/20">
+                  <a
+                    href={EUROPEAN_ENERGY_STATS.solarMarket.totalCapacitySource}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-center p-4 bg-black/30 rounded-lg border border-emerald-500/20 hover:border-emerald-500/50 hover:bg-black/40 transition-all cursor-pointer group"
+                  >
                     <p className="text-2xl font-bold text-emerald-400">{EUROPEAN_ENERGY_STATS.solarMarket.totalCapacity}</p>
                     <p className="text-xs text-zinc-400 mt-1">EU Solar Capacity</p>
                     <p className="text-xs text-emerald-400">+65.5 GW in 2024</p>
-                  </div>
-                  <div className="text-center p-4 bg-black/30 rounded-lg border border-violet-500/20">
+                    <p className="text-xs text-zinc-600 mt-2 group-hover:text-zinc-400 flex items-center justify-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> SolarPower Europe
+                    </p>
+                  </a>
+                  <a
+                    href={EUROPEAN_ENERGY_STATS.installers.europeSMEsSource}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-center p-4 bg-black/30 rounded-lg border border-violet-500/20 hover:border-violet-500/50 hover:bg-black/40 transition-all cursor-pointer group"
+                  >
                     <p className="text-2xl font-bold text-violet-400">{EUROPEAN_ENERGY_STATS.installers.europeSMEs}</p>
                     <p className="text-xs text-zinc-400 mt-1">SME Installers</p>
                     <p className="text-xs text-violet-400">Across Europe</p>
-                  </div>
-                  <div className="text-center p-4 bg-black/30 rounded-lg border border-amber-500/20">
+                    <p className="text-xs text-zinc-600 mt-2 group-hover:text-zinc-400 flex items-center justify-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> PV Magazine
+                    </p>
+                  </a>
+                  <a
+                    href={EUROPEAN_ENERGY_STATS.workforce.source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-center p-4 bg-black/30 rounded-lg border border-amber-500/20 hover:border-amber-500/50 hover:bg-black/40 transition-all cursor-pointer group"
+                  >
                     <p className="text-2xl font-bold text-amber-400">{EUROPEAN_ENERGY_STATS.workforce.solarJobs2024}</p>
                     <p className="text-xs text-zinc-400 mt-1">Solar Jobs in EU</p>
                     <p className="text-xs text-amber-400">+5% YoY growth</p>
-                  </div>
-                  <div className="text-center p-4 bg-black/30 rounded-lg border border-cyan-500/20">
+                    <p className="text-xs text-zinc-600 mt-2 group-hover:text-zinc-400 flex items-center justify-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> EU Solar Jobs Report
+                    </p>
+                  </a>
+                  <a
+                    href={EUROPEAN_ENERGY_STATS.energyTransition.source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-center p-4 bg-black/30 rounded-lg border border-cyan-500/20 hover:border-cyan-500/50 hover:bg-black/40 transition-all cursor-pointer group"
+                  >
                     <p className="text-2xl font-bold text-cyan-400">{EUROPEAN_ENERGY_STATS.energyTransition.marketSize}</p>
                     <p className="text-xs text-zinc-400 mt-1">Energy Transition</p>
                     <p className="text-xs text-cyan-400">+16.2% CAGR</p>
-                  </div>
+                    <p className="text-xs text-zinc-600 mt-2 group-hover:text-zinc-400 flex items-center justify-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> BloombergNEF
+                    </p>
+                  </a>
                 </div>
 
                 {/* Country Breakdown */}
                 <div className="mb-6">
-                  <h4 className="text-sm font-medium text-zinc-400 mb-3">Leading European Markets (2024)</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-zinc-400">Leading European Markets (2024)</h4>
+                    <a
+                      href={EUROPEAN_ENERGY_STATS.countryCapacitySource}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-zinc-500 hover:text-emerald-400 flex items-center gap-1 transition-colors"
+                    >
+                      <ExternalLink className="w-3 h-3" /> View interactive data
+                    </a>
+                  </div>
                   <div className="grid grid-cols-5 gap-2">
                     {EUROPEAN_ENERGY_STATS.countryCapacity.map((country) => (
                       <div key={country.country} className="text-center p-3 bg-zinc-800/50 rounded-lg">
@@ -742,21 +860,45 @@ export default function VisionPage() {
                     Beyond Solar: The Full Energy Ecosystem
                   </h4>
                   <div className="grid md:grid-cols-3 gap-3">
-                    <div className="p-3 bg-black/30 rounded-lg">
+                    <a
+                      href={EUROPEAN_ENERGY_STATS.batteryStorage.source}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 bg-black/30 rounded-lg hover:bg-black/50 transition-all cursor-pointer group"
+                    >
                       <p className="text-xs text-zinc-400">Battery Storage</p>
                       <p className="text-lg font-bold text-emerald-400">{EUROPEAN_ENERGY_STATS.batteryStorage.totalFleet}</p>
                       <p className="text-xs text-zinc-500">{EUROPEAN_ENERGY_STATS.batteryStorage.residentialSystems} home systems (DE)</p>
-                    </div>
-                    <div className="p-3 bg-black/30 rounded-lg">
+                      <p className="text-xs text-zinc-600 mt-1 group-hover:text-emerald-400 flex items-center gap-1">
+                        <ExternalLink className="w-3 h-3" /> SolarPower Europe
+                      </p>
+                    </a>
+                    <a
+                      href={EUROPEAN_ENERGY_STATS.heatPumps.source}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 bg-black/30 rounded-lg hover:bg-black/50 transition-all cursor-pointer group"
+                    >
                       <p className="text-xs text-zinc-400">Heat Pumps</p>
                       <p className="text-lg font-bold text-blue-400">{EUROPEAN_ENERGY_STATS.heatPumps.totalStock}</p>
                       <p className="text-xs text-zinc-500">{EUROPEAN_ENERGY_STATS.heatPumps.sales2024} sold in 2024</p>
-                    </div>
-                    <div className="p-3 bg-black/30 rounded-lg">
+                      <p className="text-xs text-zinc-600 mt-1 group-hover:text-blue-400 flex items-center gap-1">
+                        <ExternalLink className="w-3 h-3" /> EHPA
+                      </p>
+                    </a>
+                    <a
+                      href={EUROPEAN_ENERGY_STATS.installers.workforceNeededSource}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 bg-black/30 rounded-lg hover:bg-black/50 transition-all cursor-pointer group"
+                    >
                       <p className="text-xs text-zinc-400">Workers Needed by 2030</p>
                       <p className="text-lg font-bold text-amber-400">{EUROPEAN_ENERGY_STATS.installers.workforceNeeded}</p>
                       <p className="text-xs text-zinc-500">Massive skills gap</p>
-                    </div>
+                      <p className="text-xs text-zinc-600 mt-1 group-hover:text-amber-400 flex items-center gap-1">
+                        <ExternalLink className="w-3 h-3" /> EU Solar Jobs Report
+                      </p>
+                    </a>
                   </div>
                 </div>
 
@@ -764,6 +906,22 @@ export default function VisionPage() {
                   <p className="text-blue-200 text-sm">
                     <strong className="text-blue-300">Why Energy Matters:</strong> The energy industry is experiencing unprecedented transformation. Solar today. Batteries, heat pumps, EV charging, and grid services tomorrow. The workflows, challenges, and data patterns are similar across all energy installers. <strong>Our deep solar expertise is the wedge into a €545B+ market.</strong>
                   </p>
+                </div>
+
+                {/* Sources Summary */}
+                <div className="mt-4 pt-4 border-t border-zinc-700/50">
+                  <p className="text-xs text-zinc-500 mb-2">Data sources:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <a href="https://www.solarpowereurope.org" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-emerald-400 transition-colors">SolarPower Europe</a>
+                    <span className="text-zinc-700">•</span>
+                    <a href="https://eupd-group.com" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-emerald-400 transition-colors">EUPD Research</a>
+                    <span className="text-zinc-700">•</span>
+                    <a href="https://www.pv-magazine.com" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-emerald-400 transition-colors">PV Magazine</a>
+                    <span className="text-zinc-700">•</span>
+                    <a href="https://www.ehpa.org" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-emerald-400 transition-colors">EHPA</a>
+                    <span className="text-zinc-700">•</span>
+                    <a href="https://about.bnef.com" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-emerald-400 transition-colors">BloombergNEF</a>
+                  </div>
                 </div>
               </div>
             </div>
